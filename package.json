@@ -1,0 +1,35 @@
+{
+  "name": "weaver",
+  "version": "0.1.0",
+  "description": "Workflow editor creation library",
+  "main": "dist/weaver.cjs.js",
+  "module": "dist/weaver.esm.js",
+  "browser": "dist/weaver.umd.js",
+  "scripts": {
+    "lint": "eslint",
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "echo \"No tests available yet\""
+  },
+  "author": "Saiful B. Khan",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^11.0.1",
+    "@types/fabric": "^4.2.1",
+    "eslint": "^7.17.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "rollup": "^2.36.1",
+    "standard": "^16.0.3"
+  },
+  "dependencies": {
+    "fabric": "^4.3.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
