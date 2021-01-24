@@ -15,7 +15,7 @@ window.onload = function () {
   const rowAdjustment = rowPadding - (strokeWidth / 2);
 
   // We will use this to store positions of all movable objects on the canvas.
-  const objectLocations = new Map();
+  const locationsWithObjects = new Map();
 
   const canvas = new fabric.Canvas('canvas');
   canvas.selection = false;
@@ -53,6 +53,12 @@ window.onload = function () {
     }
   }
 
+  function updateCoordsOfObjects() {
+    for (const object of locationsWithObjects.values()) {
+      object.setCoords();
+    }
+  }
+
   function performZoom(wheelEvent) {
     const delta = wheelEvent.deltaY;
     let zoom = canvas.getZoom();
@@ -83,6 +89,7 @@ window.onload = function () {
     }
 
     restrictViewportToScene();
+    updateCoordsOfObjects();
     canvas.requestRenderAll();
   }
 
@@ -95,7 +102,7 @@ window.onload = function () {
   });
 
   canvas.on('mouse:down', (options) => {
-    if (canvas.findTarget(options.e) === undefined) {
+    if (!canvas.findTarget(options.e)) {
       canvas.isDragging = true;
       canvas.lastPosX = options.e.clientX;
       canvas.lastPosY = options.e.clientY;
@@ -111,8 +118,9 @@ window.onload = function () {
     const vpt = canvas.viewportTransform;
     vpt[4] += e.clientX - canvas.lastPosX;
     vpt[5] += e.clientY - canvas.lastPosY;
-    restrictViewportToScene();
 
+    restrictViewportToScene();
+    updateCoordsOfObjects();
     canvas.requestRenderAll();
     canvas.lastPosX = e.clientX;
     canvas.lastPosY = e.clientY;
@@ -203,12 +211,12 @@ window.onload = function () {
     return { left, top, col, row };
   }
 
-  function keyForCell(cell) {
+  function locationForCell(cell) {
     return `${cell.col}-${cell.row}`;
   }
 
-  function cellForKey(key) {
-    const vals = key.split('-');
+  function cellForLocation(location) {
+    const vals = location.split('-');
     const col = parseInt(vals[0], 10);
     const row = parseInt(vals[1], 10);
     return { col, row };
@@ -229,8 +237,11 @@ window.onload = function () {
     target.setCoords();
 
     const cell = findClosestCell(target);
-    const key = keyForCell(cell);
-    if (objectLocations.has(key) && objectLocations.get(key) !== target) {
+    const location = locationForCell(cell);
+    if (
+      locationsWithObjects.has(location) &&
+      locationsWithObjects.get(location) !== target
+    ) {
       dragOutline.set('visible', false);
     } else {
       moveDragOutline(cell.col, cell.row);
@@ -273,23 +284,23 @@ window.onload = function () {
     }
 
     let currentCell = null;
-    for (const key of objectLocations.keys()) {
-      if (objectLocations.get(key) === target) {
-        currentCell = cellForKey(key);
+    for (const location of locationsWithObjects.keys()) {
+      if (locationsWithObjects.get(location) === target) {
+        currentCell = cellForLocation(location);
         break;
       }
     }
 
     const cell = findClosestCell(target);
-    if (objectLocations.has(keyForCell(cell))) {
+    if (locationsWithObjects.has(locationForCell(cell))) {
       cell.col = currentCell.col;
       cell.row = currentCell.row;
       const { left, top } = coordinatesForCell(target, cell.col, cell.row);
       cell.left = left;
       cell.top = top;
     } else {
-      objectLocations.delete(keyForCell(currentCell));
-      objectLocations.set(keyForCell(cell), target);
+      locationsWithObjects.delete(locationForCell(currentCell));
+      locationsWithObjects.set(locationForCell(cell), target);
     }
 
     // Common animation arguments for both 'left' and 'top' coordinates.
@@ -364,7 +375,7 @@ window.onload = function () {
 
     canvas.add(circle);
     const cell = findClosestCell(circle);
-    objectLocations.set(keyForCell(cell), circle);
+    locationsWithObjects.set(locationForCell(cell), circle);
 
     return circle;
   }
@@ -376,7 +387,7 @@ window.onload = function () {
 
     canvas.add(rect);
     const cell = findClosestCell(rect);
-    objectLocations.set(keyForCell(cell), rect);
+    locationsWithObjects.set(locationForCell(cell), rect);
 
     return rect;
   }
