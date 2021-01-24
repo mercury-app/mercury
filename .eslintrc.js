@@ -17,6 +17,16 @@ module.exports = {
       'anonymous': 'always',
       'named': 'never',
       'asyncArrow': 'always'
-    }]
+    }],
+    'indent': [
+      'error',
+      2,
+      {
+        'VariableDeclarator': 'first',
+        'FunctionDeclaration': { 'parameters': 'first' },
+        'FunctionExpression': { 'parameters': 'first' },
+        'CallExpression': { 'arguments': 'first' }
+      }
+    ]
   }
 };
