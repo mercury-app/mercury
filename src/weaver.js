@@ -29,23 +29,10 @@ window.onload = function () {
     return Math.max(min, Math.min(number, max));
   }
 
-  canvas.on('mouse:wheel', (options) => {
-    const delta = options.e.deltaY;
-    let zoom = canvas.getZoom();
-    zoom *= 1.005 ** delta;
-    if (zoom > maxZoom) {
-      zoom = maxZoom;
-    }
-    if (zoom < minZoom) {
-      zoom = minZoom;
-    }
-    canvas.zoomToPoint({ x: options.e.offsetX, y: options.e.offsetY }, zoom);
-
-    options.e.preventDefault();
-    options.e.stopPropagation();
-
-    // Code to limit the movements within the scene's boundaries.
+  // Code to limit the movements within the scene's boundaries.
+  function restrictViewportToScene() {
     const vpt = canvas.viewportTransform;
+    const zoom = canvas.getZoom();
     if (zoom < canvas.getWidth() / sceneWidth) {
       vpt[4] = (canvas.getWidth() - sceneWidth * zoom) / 2;
     } else {
@@ -63,6 +50,47 @@ window.onload = function () {
       } else if (vpt[5] < canvas.getHeight() - sceneHeight * zoom) {
         vpt[5] = canvas.getHeight() - sceneHeight * zoom;
       }
+    }
+  }
+
+  function performZoom(wheelEvent) {
+    const delta = wheelEvent.deltaY;
+    let zoom = canvas.getZoom();
+    zoom *= 1.005 ** delta;
+    if (zoom > maxZoom) {
+      zoom = maxZoom;
+    }
+    if (zoom < minZoom) {
+      zoom = minZoom;
+    }
+    canvas.zoomToPoint({ x: wheelEvent.offsetX, y: wheelEvent.offsetY }, zoom);
+
+    wheelEvent.preventDefault();
+    wheelEvent.stopPropagation();
+    restrictViewportToScene();
+  }
+
+  function performScroll(wheelEvent) {
+    const deltaX = wheelEvent.deltaX;
+    const deltaY = wheelEvent.deltaY;
+    const vpt = canvas.viewportTransform;
+    if (wheelEvent.shiftKey === true) {
+      // Vertical scroll is made horizontal if Shift key is pressed
+      vpt[4] = vpt[4] + sceneWidth * (deltaY / 100);
+    } else {
+      vpt[4] = vpt[4] - sceneWidth * (deltaX / 100);
+      vpt[5] = vpt[5] - sceneHeight * (deltaY / 100);
+    }
+
+    restrictViewportToScene();
+    canvas.requestRenderAll();
+  }
+
+  canvas.on('mouse:wheel', (options) => {
+    if (options.e.ctrlKey === false) {
+      performScroll(options.e);
+    } else {
+      performZoom(options.e);
     }
   });
 
@@ -83,26 +111,7 @@ window.onload = function () {
     const vpt = canvas.viewportTransform;
     vpt[4] += e.clientX - canvas.lastPosX;
     vpt[5] += e.clientY - canvas.lastPosY;
-
-    const zoom = canvas.getZoom();
-    if (zoom < canvas.getWidth() / sceneWidth) {
-      vpt[4] = (canvas.getWidth() - sceneWidth * zoom) / 2;
-    } else {
-      if (vpt[4] >= 0) {
-        vpt[4] = 0;
-      } else if (vpt[4] < canvas.getWidth() - sceneWidth * zoom) {
-        vpt[4] = canvas.getWidth() - sceneWidth * zoom;
-      }
-    }
-    if (zoom < canvas.getHeight() / sceneHeight) {
-      vpt[5] = (canvas.getHeight() - sceneHeight * zoom) / 2;
-    } else {
-      if (vpt[5] >= 0) {
-        vpt[5] = 0;
-      } else if (vpt[5] < canvas.getHeight() - sceneHeight * zoom) {
-        vpt[5] = canvas.getHeight() - sceneHeight * zoom;
-      }
-    }
+    restrictViewportToScene();
 
     canvas.requestRenderAll();
     canvas.lastPosX = e.clientX;
