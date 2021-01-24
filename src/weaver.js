@@ -59,8 +59,44 @@ window.onload = function () {
     }
   }
 
-  function performZoom(wheelEvent) {
+  function targetUnderPointer(target, pointer) {
+    const { left, top, width, height } = target.getBoundingRect(true);
+    const xInsideTarget = pointer.x >= left && pointer.x <= left + width;
+    const yInsideTarget = pointer.y >= top && pointer.y <= top + height;
+    return xInsideTarget && yInsideTarget;
+  }
+
+  function highlightObjectUnderPointer(options, pointer = null) {
+    if (pointer === null) {
+      pointer = canvas.getPointer(options, false);
+    }
+    const mouseInBounds = options.e.target === canvas.getSelectionElement();
+
+    let oneTargetUnderPointer = false;
+    for (const object of locationsWithObjects.values()) {
+      options.target = object;
+      if (!mouseInBounds) {
+        // Unhighlight the object if pointer is out of bounds.
+        unhighlight(options);
+      } else if (!targetUnderPointer(object, pointer)) {
+        unhighlight(options);
+      } else {
+        highlight(options);
+        oneTargetUnderPointer = true;
+      }
+    }
+
+    if (oneTargetUnderPointer) {
+      canvas.setCursor(canvas.hoverCursor);
+    } else {
+      canvas.setCursor(canvas.defaultCursor);
+    }
+  }
+
+  function performZoom(options) {
+    const wheelEvent = options.e;
     const delta = wheelEvent.deltaY;
+
     let zoom = canvas.getZoom();
     zoom *= 1.005 ** delta;
     if (zoom > maxZoom) {
@@ -74,11 +110,15 @@ window.onload = function () {
     wheelEvent.preventDefault();
     wheelEvent.stopPropagation();
     restrictViewportToScene();
+    updateCoordsOfObjects();
+    highlightObjectUnderPointer(options);
   }
 
-  function performScroll(wheelEvent) {
+  function performScroll(options) {
+    const wheelEvent = options.e;
     const deltaX = wheelEvent.deltaX;
     const deltaY = wheelEvent.deltaY;
+
     const vpt = canvas.viewportTransform;
     if (wheelEvent.shiftKey === true) {
       // Vertical scroll is made horizontal if Shift key is pressed
@@ -90,14 +130,15 @@ window.onload = function () {
 
     restrictViewportToScene();
     updateCoordsOfObjects();
+    highlightObjectUnderPointer(options);
     canvas.requestRenderAll();
   }
 
   canvas.on('mouse:wheel', (options) => {
     if (options.e.ctrlKey === false) {
-      performScroll(options.e);
+      performScroll(options);
     } else {
-      performZoom(options.e);
+      performZoom(options);
     }
   });
 
@@ -113,6 +154,8 @@ window.onload = function () {
     if (!canvas.isDragging) {
       return;
     }
+
+    canvas.setCursor(canvas.moveCursor);
 
     const e = options.e;
     const vpt = canvas.viewportTransform;
@@ -130,6 +173,7 @@ window.onload = function () {
     // On mouse up we want to recalculate new interaction
     // for all objects, so we call `setViewportTransform`.
     canvas.setViewportTransform(canvas.viewportTransform);
+    canvas.setCursor(canvas.defaultCursor);
     canvas.isDragging = false;
   });
 
@@ -142,7 +186,7 @@ window.onload = function () {
     const color = new fabric.Color(target.stroke);
     color.setAlpha(0.3);
     target.set('fill', color.toRgba());
-    canvas.renderAll();
+    canvas.requestRenderAll();
   }
 
   function unhighlight(options) {
@@ -152,7 +196,7 @@ window.onload = function () {
     }
 
     target.set('fill', '#FFFFFF33');
-    canvas.renderAll();
+    canvas.requestRenderAll();
   }
 
   // Set hovering status.
@@ -257,26 +301,6 @@ window.onload = function () {
     'object:rotating': keepWithinScene
   });
 
-  // Unhighlight the object if pointer is out of bounds.
-  function unhighlightIfOutOfBounds(options, pointer) {
-    const target = options.target;
-    if (!target) {
-      return;
-    }
-
-    const mouseInBounds = options.e.target === canvas.getSelectionElement();
-    if (mouseInBounds) {
-      const { left, top, width, height } = target.getBoundingRect(true);
-      const xOutsideTarget = pointer.x < left || pointer.x > left + width;
-      const yOutsideTarget = pointer.y < top || pointer.y > top + height;
-      if (xOutsideTarget || yOutsideTarget) {
-        unhighlight(options);
-      }
-    } else {
-      unhighlight(options);
-    }
-  }
-
   function alignToCell(options) {
     const target = options.target;
     if (!target) {
@@ -308,7 +332,7 @@ window.onload = function () {
     const animationArgs = {
       duration: 250,
       onChange: canvas.renderAll.bind(canvas),
-      onComplete: () => unhighlightIfOutOfBounds(options, pointer),
+      onComplete: () => highlightObjectUnderPointer(options, pointer),
       easing: fabric.util.ease.easeInOutCubic
     };
 
