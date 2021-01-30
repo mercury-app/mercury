@@ -19,6 +19,13 @@ window.onload = function () {
 
   const canvas = new fabric.Canvas('canvas');
   canvas.selection = false;
+  canvas.isDragging = false;
+  canvas.objectIsMoving = false;
+
+  let mouseIsOnCanvas = false;
+  const canvasElem = canvas.getElement().parentElement;
+  canvasElem.addEventListener('mouseenter', () => { mouseIsOnCanvas = true; });
+  canvasElem.addEventListener('mouseout', () => { mouseIsOnCanvas = false; });
 
   const maxZoom = 2.0;
   const minZoom = Math.min(
@@ -59,7 +66,7 @@ window.onload = function () {
     }
   }
 
-  function targetUnderPointer(target, pointer) {
+  function isTargetUnderPointer(target, pointer) {
     const { left, top, width, height } = target.getBoundingRect(true);
     const xInsideTarget = pointer.x >= left && pointer.x <= left + width;
     const yInsideTarget = pointer.y >= top && pointer.y <= top + height;
@@ -74,14 +81,13 @@ window.onload = function () {
 
     let oneTargetUnderPointer = false;
     for (const object of locationsWithObjects.values()) {
-      options.target = object;
       if (!mouseInBounds) {
         // Unhighlight the object if pointer is out of bounds.
-        unhighlight(options);
-      } else if (!targetUnderPointer(object, pointer)) {
-        unhighlight(options);
+        unhighlightObject(object);
+      } else if (!isTargetUnderPointer(object, pointer)) {
+        unhighlightObject(object);
       } else {
-        highlight(options);
+        highlightObject(object);
         oneTargetUnderPointer = true;
       }
     }
@@ -151,22 +157,24 @@ window.onload = function () {
   });
 
   canvas.on('mouse:move', (options) => {
-    if (!canvas.isDragging) {
-      return;
+    if (!canvas.objectIsMoving) {
+      highlightObjectUnderPointer(options);
     }
 
-    canvas.setCursor(canvas.moveCursor);
+    if (canvas.isDragging) {
+      canvas.setCursor(canvas.moveCursor);
 
-    const e = options.e;
-    const vpt = canvas.viewportTransform;
-    vpt[4] += e.clientX - canvas.lastPosX;
-    vpt[5] += e.clientY - canvas.lastPosY;
+      const e = options.e;
+      const vpt = canvas.viewportTransform;
+      vpt[4] += e.clientX - canvas.lastPosX;
+      vpt[5] += e.clientY - canvas.lastPosY;
 
-    restrictViewportToScene();
-    updateCoordsOfObjects();
-    canvas.requestRenderAll();
-    canvas.lastPosX = e.clientX;
-    canvas.lastPosY = e.clientY;
+      restrictViewportToScene();
+      updateCoordsOfObjects();
+      canvas.requestRenderAll();
+      canvas.lastPosX = e.clientX;
+      canvas.lastPosY = e.clientY;
+    }
   });
 
   canvas.on('mouse:up', (_options) => {
@@ -177,31 +185,39 @@ window.onload = function () {
     canvas.isDragging = false;
   });
 
-  function highlight(options) {
-    const target = options.target;
-    if (!target) {
+  function highlightObject(object) {
+    if (!object) {
       return;
     }
 
-    const color = new fabric.Color(target.stroke);
+    const color = new fabric.Color(object.stroke);
     color.setAlpha(0.3);
-    target.set('fill', color.toRgba());
+    object.set('fill', color.toRgba());
     canvas.requestRenderAll();
   }
 
-  function unhighlight(options) {
-    const target = options.target;
-    if (!target) {
+  function unhighlightObject(object) {
+    if (!object) {
       return;
     }
 
-    target.set('fill', '#FFFFFF33');
+    object.set('fill', '#FFFFFF33');
     canvas.requestRenderAll();
   }
 
-  // Set hovering status.
-  canvas.on('mouse:over', highlight);
-  canvas.on('mouse:out', unhighlight);
+  document.body.addEventListener('mousemove', () => {
+    if (mouseIsOnCanvas || canvas.objectIsMoving) {
+      return;
+    }
+    for (const object of locationsWithObjects.values()) {
+      unhighlightObject(object);
+    }
+  });
+  document.body.addEventListener('mouseout', () => {
+    for (const object of locationsWithObjects.values()) {
+      unhighlightObject(object);
+    }
+  });
 
   const dragOutline = new fabric.Rect({
     left: 0,
@@ -273,6 +289,8 @@ window.onload = function () {
       return;
     }
 
+    canvas.objectIsMoving = true;
+
     target.setCoords();
     let { left, top, width, height } = target.getBoundingRect(true);
     left = clamp(left, colAdjustment, sceneWidth - width - colAdjustment);
@@ -292,7 +310,7 @@ window.onload = function () {
       dragOutline.set('visible', true);
     }
 
-    highlight(options);
+    highlightObject(target);
   }
 
   canvas.on({
@@ -306,6 +324,8 @@ window.onload = function () {
     if (!target) {
       return;
     }
+
+    canvas.objectIsMoving = false;
 
     let currentCell = null;
     for (const location of locationsWithObjects.keys()) {
