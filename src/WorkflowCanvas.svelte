@@ -2,11 +2,16 @@
   import { onMount } from "svelte";
   import { fabric } from "fabric";
 
-  const gridSize = { nColumns: 20, nRows: 10 };
-  const colWidth = 200;
-  const rowHeight = 200;
-  const sceneWidth = gridSize.nColumns * colWidth;
-  const sceneHeight = gridSize.nRows * rowHeight;
+  // Properties that can be modified by the caller
+  export let canvasWidth: number;
+  export let canvasHeight: number;
+  export let numColumns: number;
+  export let numRows: number;
+  export let colWidth: number;
+  export let rowHeight: number;
+
+  const sceneWidth = numColumns * colWidth;
+  const sceneHeight = numRows * rowHeight;
   const colPadding = colWidth / 5;
   const rowPadding = rowHeight / 5;
   const strokeWidth = 4;
@@ -20,14 +25,17 @@
     x: number;
     y: number;
   }
+
   interface Coordinate {
     left: number;
     top: number;
   }
+
   interface Cell {
     row: number;
     col: number;
   }
+
   interface EventOptions extends fabric.IEvent {
     e: Event & WheelEvent;
   }
@@ -42,6 +50,9 @@
     private _objectIsMoving: boolean;
     private _isDragging: boolean;
     private _mouseIsOnCanvas: boolean;
+    private _zoomEnabled: boolean;
+    private _viewMoveEnabled: boolean;
+    private _scrollEnabled: boolean;
     private _maxZoom: number;
     private _minZoom: number;
     private _lastPosX: number;
@@ -50,16 +61,17 @@
 
     constructor() {
       this._canvas = new fabric.Canvas("canvas");
+      this._canvas.selection = false;
       this._locationsWithObjects = new Map<string, CanvasObject>();
       this._objectIsMoving = false;
       this._isDragging = false;
       this._mouseIsOnCanvas = false;
+      this._zoomEnabled = true;
+      this._viewMoveEnabled = true;
+      this._scrollEnabled = true;
 
       this._maxZoom = 2.0;
-      this._minZoom = Math.min(
-        this._canvas.getWidth() / sceneWidth,
-        this._canvas.getHeight() / sceneHeight,
-      );
+      this._minZoom = 0.5;
 
       this._lastPosX = 0;
       this._lastPosY = 0;
@@ -80,42 +92,9 @@
         }
       });
 
-      this._canvas.on("mouse:down", (options: EventOptions) => {
-        if (!this._canvas.findTarget(options.e, false)) {
-          this._isDragging = true;
-          this._lastPosX = options.e.clientX;
-          this._lastPosY = options.e.clientY;
-        }
-      });
-
-      this._canvas.on("mouse:move", (options: EventOptions) => {
-        if (!this._objectIsMoving) {
-          this._highlightObjectUnderPointer(options);
-        }
-
-        if (this._isDragging) {
-          this._canvas.setCursor(this._canvas.moveCursor);
-
-          const wheelEvent: WheelEvent = options.e;
-          const vpt = this._canvas.viewportTransform;
-          vpt[4] += wheelEvent.clientX - this._lastPosX;
-          vpt[5] += wheelEvent.clientY - this._lastPosY;
-
-          this._restrictViewportToScene();
-          this._updateCoordsOfObjects();
-          this._canvas.requestRenderAll();
-          this._lastPosX = wheelEvent.clientX;
-          this._lastPosY = wheelEvent.clientY;
-        }
-      });
-
-      this._canvas.on("mouse:up", () => {
-        // On mouse up we want to recalculate new interaction
-        // for all objects, so we call `setViewportTransform`.
-        this._canvas.setViewportTransform(this._canvas.viewportTransform);
-        this._canvas.setCursor(this._canvas.defaultCursor);
-        this._isDragging = false;
-      });
+      this._canvas.on("mouse:down", this._beginViewMove.bind(this));
+      this._canvas.on("mouse:move", this._performViewMove.bind(this));
+      this._canvas.on("mouse:up", this._endViewMove.bind(this));
 
       document.body.addEventListener("mousemove", () => {
         if (this._mouseIsOnCanvas || this._objectIsMoving) {
@@ -130,6 +109,14 @@
           this._unhighlightObject(object);
         }
       });
+
+      this._canvas.on("object:moving", this._keepWithinScene.bind(this));
+      this._canvas.on("object:scaling", this._keepWithinScene.bind(this));
+      this._canvas.on("object:rotating", this._keepWithinScene.bind(this));
+
+      this._canvas.on("object:moved", this._alignToCell.bind(this));
+      this._canvas.on("object:scaled", this._alignToCell.bind(this));
+      this._canvas.on("object:rotated", this._alignToCell.bind(this));
 
       this._dragOutline = new fabric.Rect({
         left: 0,
@@ -146,14 +133,6 @@
       });
       this._dragOutline.visible = false;
       this._canvas.add(this._dragOutline);
-
-      this._canvas.on("object:moving", this._keepWithinScene.bind(this));
-      this._canvas.on("object:scaling", this._keepWithinScene.bind(this));
-      this._canvas.on("object:rotating", this._keepWithinScene.bind(this));
-
-      this._canvas.on("object:moved", this._alignToCell.bind(this));
-      this._canvas.on("object:scaled", this._alignToCell.bind(this));
-      this._canvas.on("object:rotated", this._alignToCell.bind(this));
 
       this._drawCellMarkers();
 
@@ -244,6 +223,10 @@
     }
 
     private _performZoom(options: EventOptions): void {
+      if (!this._zoomEnabled) {
+        return;
+      }
+
       const wheelEvent: WheelEvent = options.e;
       const delta = wheelEvent.deltaY;
 
@@ -266,6 +249,10 @@
     }
 
     private _performScroll(options: EventOptions): void {
+      if (!this._scrollEnabled) {
+        return;
+      }
+
       const wheelEvent: WheelEvent = options.e;
       const deltaX = wheelEvent.deltaX;
       const deltaY = wheelEvent.deltaY;
@@ -283,6 +270,55 @@
       this._updateCoordsOfObjects();
       this._highlightObjectUnderPointer(options);
       this._canvas.requestRenderAll();
+    }
+
+    private _beginViewMove(options: EventOptions): void {
+      if (!this._viewMoveEnabled) {
+        return;
+      }
+
+      if (!this._canvas.findTarget(options.e, false)) {
+        this._isDragging = true;
+        this._lastPosX = options.e.clientX;
+        this._lastPosY = options.e.clientY;
+      }
+    }
+
+    private _performViewMove(options: EventOptions): void {
+      if (!this._objectIsMoving) {
+        this._highlightObjectUnderPointer(options);
+      }
+
+      if (!this._viewMoveEnabled) {
+        return;
+      }
+
+      if (this._isDragging) {
+        this._canvas.setCursor(this._canvas.moveCursor);
+
+        const wheelEvent: WheelEvent = options.e;
+        const vpt = this._canvas.viewportTransform;
+        vpt[4] += wheelEvent.clientX - this._lastPosX;
+        vpt[5] += wheelEvent.clientY - this._lastPosY;
+
+        this._restrictViewportToScene();
+        this._updateCoordsOfObjects();
+        this._canvas.requestRenderAll();
+        this._lastPosX = wheelEvent.clientX;
+        this._lastPosY = wheelEvent.clientY;
+      }
+    }
+
+    private _endViewMove(_options: EventOptions): void {
+      if (!this._viewMoveEnabled) {
+        return;
+      }
+
+      // On mouse up we want to recalculate new interaction
+      // for all objects, so we call `setViewportTransform`.
+      this._canvas.setViewportTransform(this._canvas.viewportTransform);
+      this._canvas.setCursor(this._canvas.defaultCursor);
+      this._isDragging = false;
     }
 
     private _highlightObject(object: CanvasObject): void {
@@ -438,7 +474,7 @@
     }
 
     private _drawCellMarkers(): void {
-      function makeLine(coords: Array<number>) {
+      function makeLine(coords: Array<number>): CanvasObject {
         return new fabric.Line(coords, {
           fill: "lightgray",
           stroke: "lightgray",
@@ -452,9 +488,9 @@
 
       const rowMarkerLength = colWidth / 12;
       const colMarkerLength = rowHeight / 12;
-      for (let i = 0; i <= gridSize.nColumns; ++i) {
+      for (let i = 0; i <= numColumns; ++i) {
         const colLeft = i * colWidth;
-        for (let i = 0; i <= gridSize.nRows; ++i) {
+        for (let i = 0; i <= numRows; ++i) {
           const rowTop = i * rowHeight;
           const rowMarker = makeLine([
             colLeft - rowMarkerLength,
@@ -504,29 +540,57 @@
 
       return rect;
     }
+
+    get minZoom(): number {
+      return this._minZoom;
+    }
+
+    set minZoom(zoom: number) {
+      this._minZoom = zoom;
+    }
+
+    get maxZoom(): number {
+      return this._maxZoom;
+    }
+
+    set maxZoom(zoom: number) {
+      this._maxZoom = zoom;
+    }
+
+    get zoomEnabled(): boolean {
+      return this._zoomEnabled;
+    }
+
+    set zoomEnabled(enabled: boolean) {
+      this._zoomEnabled = enabled;
+    }
+
+    get viewMoveEnabled(): boolean {
+      return this._viewMoveEnabled;
+    }
+
+    set viewMoveEnabled(enabled: boolean) {
+      this._viewMoveEnabled = enabled;
+    }
+
+    get scrollEnabled(): boolean {
+      return this._scrollEnabled;
+    }
+
+    set scrollEnabled(enabled: boolean) {
+      this._scrollEnabled = enabled;
+    }
   }
 
   onMount(() => {
     const canvas = new WorkflowCanvas();
+    canvas.zoomEnabled = false;
+    canvas.viewMoveEnabled = false;
+    canvas.scrollEnabled = false;
   });
 </script>
 
-<div id="canvas-container">
-  <canvas id="canvas" width="800" height="400" />
-</div>
+<canvas id="canvas" width="{canvasWidth}" height="{canvasHeight}"></canvas>
 
 <style>
-  /* To remove the scrollbars */
-  #canvas-container {
-    margin: auto;
-    display: block;
-    width: 800px;
-    height: 400px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    border: 1px solid lightgray;
-  }
 </style>
