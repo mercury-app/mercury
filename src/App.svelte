@@ -10,10 +10,7 @@
 </script>
 
 <main>
-  <div
-    id="workflow-canvas-container"
-    style="width: {canvasWidth}px; height: {canvasHeight}px;"
-  >
+  <div id="workflow-canvas-container">
     <WorkflowCanvas
       canvasWidth="{canvasWidth}"
       canvasHeight="{canvasHeight}"
@@ -41,5 +38,10 @@
     bottom: 0;
     left: 0;
     right: 0;
+    height: 100%;
+    width: 800px;
+    overflow: scroll;
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
   }
 </style>
