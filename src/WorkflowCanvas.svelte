@@ -474,11 +474,16 @@
     }
 
     private _drawCellMarkers(): void {
-      function makeLine(coords: Array<number>): CanvasObject {
+      function makeLine(
+        coords: Array<number>,
+        dashLength: number,
+        gapLength: number,
+      ): CanvasObject {
         return new fabric.Line(coords, {
           fill: "lightgray",
           stroke: "lightgray",
           strokeWidth: strokeWidth,
+          strokeDashArray: [dashLength, gapLength],
           opacity: 0.5,
           selectable: false,
           evented: false,
@@ -486,27 +491,35 @@
         });
       }
 
-      const rowMarkerLength = colWidth / 12;
-      const colMarkerLength = rowHeight / 12;
+      const rowMarkerLength = colWidth / 12 * 2;
+      const colMarkerLength = rowHeight / 12 * 2;
+      for (let i = 0; i <= numRows; ++i) {
+        const row = i * rowHeight;
+        const rowMarker = makeLine(
+          [
+            0 - rowMarkerLength / 2,
+            row - strokeWidth / 2,
+            sceneWidth + rowMarkerLength / 2,
+            row - strokeWidth / 2,
+          ],
+          rowMarkerLength,
+          colWidth - rowMarkerLength
+        );
+        this._canvas.add(rowMarker);
+      }
       for (let i = 0; i <= numColumns; ++i) {
-        const colLeft = i * colWidth;
-        for (let i = 0; i <= numRows; ++i) {
-          const rowTop = i * rowHeight;
-          const rowMarker = makeLine([
-            colLeft - rowMarkerLength,
-            rowTop - strokeWidth / 2,
-            colLeft + rowMarkerLength,
-            rowTop - strokeWidth / 2,
-          ]);
-          this._canvas.add(rowMarker);
-          const colMarker = makeLine([
-            colLeft - strokeWidth / 2,
-            rowTop - colMarkerLength,
-            colLeft - strokeWidth / 2,
-            rowTop + colMarkerLength,
-          ]);
-          this._canvas.add(colMarker);
-        }
+        const col = i * colWidth;
+        const colMarker = makeLine(
+          [
+            col - strokeWidth / 2,
+            0 - colMarkerLength / 2,
+            col - strokeWidth / 2,
+            sceneHeight + colMarkerLength / 2,
+          ],
+          colMarkerLength,
+          rowHeight - colMarkerLength
+        );
+        this._canvas.add(colMarker);
       }
     }
 
