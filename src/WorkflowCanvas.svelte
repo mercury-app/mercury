@@ -47,28 +47,37 @@
   class WorkflowCanvas {
     private _canvas: Canvas;
     private _locationsWithObjects: Map<string, CanvasObject>;
-    private _objectIsMoving: boolean;
-    private _isDragging: boolean;
+    private _isObjectMoving: boolean;
+    private _isViewMoving: boolean;
     private _mouseIsOnCanvas: boolean;
     private _zoomEnabled: boolean;
     private _viewMoveEnabled: boolean;
     private _scrollEnabled: boolean;
+    private _stopViewScrolling: boolean;
     private _maxZoom: number;
     private _minZoom: number;
     private _lastPosX: number;
     private _lastPosY: number;
+    private _moveOffsetX: number;
+    private _moveOffsetY: number;
+    private _movingObject: CanvasObject;
     private _dragOutline: CanvasObject;
 
     constructor() {
       this._canvas = new fabric.Canvas("canvas");
       this._canvas.selection = false;
       this._locationsWithObjects = new Map<string, CanvasObject>();
-      this._objectIsMoving = false;
-      this._isDragging = false;
+      this._isObjectMoving = false;
+      this._isViewMoving = false;
       this._mouseIsOnCanvas = false;
       this._zoomEnabled = true;
       this._viewMoveEnabled = true;
       this._scrollEnabled = true;
+      this._stopViewScrolling = true;
+
+      this._movingObject = null;
+      this._moveOffsetX = 0;
+      this._moveOffsetY = 0;
 
       this._maxZoom = 2.0;
       this._minZoom = 0.5;
@@ -92,12 +101,12 @@
         }
       });
 
-      this._canvas.on("mouse:down", this._beginViewMove.bind(this));
-      this._canvas.on("mouse:move", this._performViewMove.bind(this));
-      this._canvas.on("mouse:up", this._endViewMove.bind(this));
+      this._canvas.on("mouse:down", this._beginMove.bind(this));
+      this._canvas.on("mouse:move", this._performMove.bind(this));
+      this._canvas.on("mouse:up", this._endMove.bind(this));
 
       document.body.addEventListener("mousemove", () => {
-        if (this._mouseIsOnCanvas || this._objectIsMoving) {
+        if (this._mouseIsOnCanvas || this._isObjectMoving) {
           return;
         }
         for (const object of this._locationsWithObjects.values()) {
@@ -109,14 +118,6 @@
           this._unhighlightObject(object);
         }
       });
-
-      this._canvas.on("object:moving", this._keepWithinScene.bind(this));
-      this._canvas.on("object:scaling", this._keepWithinScene.bind(this));
-      this._canvas.on("object:rotating", this._keepWithinScene.bind(this));
-
-      this._canvas.on("object:moved", this._alignToCell.bind(this));
-      this._canvas.on("object:scaled", this._alignToCell.bind(this));
-      this._canvas.on("object:rotated", this._alignToCell.bind(this));
 
       this._dragOutline = new fabric.Rect({
         left: 0,
@@ -273,28 +274,160 @@
       this._canvas.requestRenderAll();
     }
 
+    private _beginMove(options: EventOptions): void {
+      if (this._canvas.findTarget(options.e, false)) {
+        this._beginObjectMove(options);
+      } else {
+        this._beginViewMove(options);
+      }
+    }
+
+    private _beginObjectMove(options: EventOptions): void {
+      this._isObjectMoving = true;
+      this._movingObject = this._canvas.findTarget(options.e, false);
+
+      const pointer = this._canvas.getPointer(options.e, false);
+      this._moveOffsetX = pointer.x - this._movingObject.left;
+      this._moveOffsetY = pointer.y - this._movingObject.top;
+    }
+
     private _beginViewMove(options: EventOptions): void {
       if (!this._viewMoveEnabled) {
         return;
       }
 
-      if (!this._canvas.findTarget(options.e, false)) {
-        this._isDragging = true;
-        this._lastPosX = options.e.clientX;
-        this._lastPosY = options.e.clientY;
+      this._isViewMoving = true;
+      this._lastPosX = options.e.clientX;
+      this._lastPosY = options.e.clientY;
+    }
+
+    private _performMove(options: EventOptions): void {
+      if (this._isObjectMoving) {
+        this._performObjectMove(options);
+      } else {
+        this._highlightObjectUnderPointer(options);
+        this._performViewMove(options);
       }
     }
 
-    private _performViewMove(options: EventOptions): void {
-      if (!this._objectIsMoving) {
-        this._highlightObjectUnderPointer(options);
+    private _performObjectMove(options: EventOptions): void {
+      const pointer = this._canvas.getPointer(options.e, false);
+      const left = pointer.x - this._moveOffsetX;
+      const top = pointer.y - this._moveOffsetY;
+      const width = this._movingObject.width;
+      const height = this._movingObject.height;
+
+      // Prevent shapes from going outside the visible region.
+      const setTargetPosition = (
+        container: HTMLElement,
+        target: CanvasObject,
+        left: number,
+        top: number,
+        width: number,
+        height: number,
+      ): void => {
+        // Use the `container` to clamp the object's coords in the view.
+        const viewLeft = container.scrollLeft;
+        const viewRight = viewLeft + container.clientWidth;
+        const viewTop = container.scrollTop;
+        const viewBottom = viewTop + container.clientHeight;
+        left = clamp(
+          left,
+          viewLeft + colAdjustment,
+          viewRight - width - colAdjustment,
+        );
+        top = clamp(
+          top,
+          viewTop + rowAdjustment,
+          viewBottom - height - rowAdjustment,
+        );
+        target.set({ left, top });
+        target.setCoords();
+
+        const cell = this._findClosestCell(target);
+        const location = this._locationForCell(cell);
+        if (
+          this._locationsWithObjects.has(location) &&
+          this._locationsWithObjects.get(location) !== target
+        ) {
+          this._dragOutline.set("visible", false);
+        } else {
+          this._moveDragOutline(cell.col, cell.row);
+          this._dragOutline.set("visible", true);
+        }
+      };
+
+      const scrollView = (
+        scrollableView: HTMLElement,
+        target: CanvasObject,
+        scrollX: number,
+        scrollY: number,
+      ): void => {
+        let { left, top, width, height } = target.getBoundingRect(true);
+        setTargetPosition(
+          scrollableView,
+          target,
+          left + scrollX,
+          top + scrollY,
+          width,
+          height,
+        );
+        this._canvas.requestRenderAll();
+        scrollableView.scrollBy(scrollX, scrollY);
+
+        if (this._stopViewScrolling) {
+          this._dragOutline.set("visible", false);
+        } else {
+          setTimeout(
+            () => scrollView(scrollableView, target, scrollX, scrollY),
+            20,
+          );
+        }
+      };
+
+      const container = this.parentElement.parentElement;
+      setTargetPosition(
+        container,
+        this._movingObject,
+        left,
+        top,
+        width,
+        height,
+      );
+
+      this._stopViewScrolling = true;
+      if (
+        left + width + colAdjustment >
+        container.scrollLeft + container.clientWidth
+      ) {
+        this._stopViewScrolling = false;
+        scrollView(container, this._movingObject, 1, 0);
+      }
+      if (left - colAdjustment < container.scrollLeft) {
+        this._stopViewScrolling = false;
+        scrollView(container, this._movingObject, -1, 0);
+      }
+      if (
+        top + rowHeight + rowAdjustment >
+        container.scrollTop + container.clientHeight
+      ) {
+        this._stopViewScrolling = false;
+        scrollView(container, this._movingObject, 0, 1);
+      }
+      if (top - rowAdjustment < container.scrollTop) {
+        this._stopViewScrolling = false;
+        scrollView(container, this._movingObject, 0, -1);
       }
 
+      this._highlightObject(this._movingObject);
+    }
+
+    private _performViewMove(options: EventOptions): void {
       if (!this._viewMoveEnabled) {
         return;
       }
 
-      if (this._isDragging) {
+      if (this._isViewMoving) {
         this._canvas.setCursor(this._canvas.moveCursor);
 
         const wheelEvent: WheelEvent = options.e;
@@ -310,6 +443,58 @@
       }
     }
 
+    private _endMove(options: EventOptions): void {
+      if (this._isObjectMoving) {
+        this._endObjectMove(options);
+      } else {
+        this._endViewMove(options);
+      }
+    }
+
+    private _endObjectMove(options: EventOptions): void {
+      this._stopViewScrolling = true;
+
+      let currentCell = null;
+      for (const location of this._locationsWithObjects.keys()) {
+        if (this._locationsWithObjects.get(location) === this._movingObject) {
+          currentCell = this._cellForLocation(location);
+          break;
+        }
+      }
+
+      const cell = this._findClosestCell(this._movingObject);
+      if (this._locationsWithObjects.has(this._locationForCell(cell))) {
+        cell.col = currentCell.col;
+        cell.row = currentCell.row;
+        const { left, top } = this._coordinatesForCell(
+          this._movingObject,
+          cell.col,
+          cell.row,
+        );
+        cell.left = left;
+        cell.top = top;
+      } else {
+        this._locationsWithObjects.delete(this._locationForCell(currentCell));
+        this._locationsWithObjects.set(this._locationForCell(cell), this._movingObject);
+      }
+
+      // Common animation arguments for both 'left' and 'top' coordinates.
+      const pointer = this._canvas.getPointer(options.e, false);
+      const animationArgs = {
+        duration: 250,
+        onChange: this._canvas.renderAll.bind(this._canvas),
+        onComplete: () => this._highlightObjectUnderPointer(options, pointer),
+        easing: fabric.util.ease.easeInOutCubic,
+      };
+
+      this._movingObject.animate("left", cell.left, animationArgs);
+      this._movingObject.animate("top", cell.top, animationArgs);
+      this._dragOutline.set("visible", false);
+
+      this._movingObject = null;
+      this._isObjectMoving = false;
+    }
+
     private _endViewMove(_options: EventOptions): void {
       if (!this._viewMoveEnabled) {
         return;
@@ -319,7 +504,7 @@
       // for all objects, so we call `setViewportTransform`.
       this._canvas.setViewportTransform(this._canvas.viewportTransform);
       this._canvas.setCursor(this._canvas.defaultCursor);
-      this._isDragging = false;
+      this._isViewMoving = false;
     }
 
     private _highlightObject(object: CanvasObject): void {
@@ -397,83 +582,6 @@
       return { col, row };
     }
 
-    // Prevent shapes from going outside the scene.
-    private _keepWithinScene(options: EventOptions): void {
-      const target = options.target;
-      if (!target) {
-        return;
-      }
-
-      this._objectIsMoving = true;
-
-      target.setCoords();
-      let { left, top, width, height } = target.getBoundingRect(true);
-      left = clamp(left, colAdjustment, sceneWidth - width - colAdjustment);
-      top = clamp(top, rowAdjustment, sceneHeight - height - rowAdjustment);
-      target.set({ left, top });
-      target.setCoords();
-
-      const cell = this._findClosestCell(target);
-      const location = this._locationForCell(cell);
-      if (
-        this._locationsWithObjects.has(location) &&
-        this._locationsWithObjects.get(location) !== target
-      ) {
-        this._dragOutline.set("visible", false);
-      } else {
-        this._moveDragOutline(cell.col, cell.row);
-        this._dragOutline.set("visible", true);
-      }
-
-      this._highlightObject(target);
-    }
-
-    private _alignToCell(options: EventOptions): void {
-      const target = options.target;
-      if (!target) {
-        return;
-      }
-
-      this._objectIsMoving = false;
-
-      let currentCell = null;
-      for (const location of this._locationsWithObjects.keys()) {
-        if (this._locationsWithObjects.get(location) === target) {
-          currentCell = this._cellForLocation(location);
-          break;
-        }
-      }
-
-      const cell = this._findClosestCell(target);
-      if (this._locationsWithObjects.has(this._locationForCell(cell))) {
-        cell.col = currentCell.col;
-        cell.row = currentCell.row;
-        const { left, top } = this._coordinatesForCell(
-          target,
-          cell.col,
-          cell.row,
-        );
-        cell.left = left;
-        cell.top = top;
-      } else {
-        this._locationsWithObjects.delete(this._locationForCell(currentCell));
-        this._locationsWithObjects.set(this._locationForCell(cell), target);
-      }
-
-      // Common animation arguments for both 'left' and 'top' coordinates.
-      const pointer = this._canvas.getPointer(options.e, false);
-      const animationArgs = {
-        duration: 250,
-        onChange: this._canvas.renderAll.bind(this._canvas),
-        onComplete: () => this._highlightObjectUnderPointer(options, pointer),
-        easing: fabric.util.ease.easeInOutCubic,
-      };
-
-      target.animate("left", cell.left, animationArgs);
-      target.animate("top", cell.top, animationArgs);
-      this._dragOutline.set("visible", false);
-    }
-
     private _drawCellMarkers(): void {
       function makeLine(
         coords: Array<number>,
@@ -492,8 +600,8 @@
         });
       }
 
-      const rowMarkerLength = colWidth / 12 * 2;
-      const colMarkerLength = rowHeight / 12 * 2;
+      const rowMarkerLength = (colWidth / 12) * 2;
+      const colMarkerLength = (rowHeight / 12) * 2;
       for (let i = 0; i <= numRows; ++i) {
         const row = i * rowHeight;
         const rowMarker = makeLine(
@@ -504,7 +612,7 @@
             row - strokeWidth / 2,
           ],
           rowMarkerLength,
-          colWidth - rowMarkerLength
+          colWidth - rowMarkerLength,
         );
         this._canvas.add(rowMarker);
       }
@@ -518,7 +626,7 @@
             sceneHeight + colMarkerLength / 2,
           ],
           colMarkerLength,
-          rowHeight - colMarkerLength
+          rowHeight - colMarkerLength,
         );
         this._canvas.add(colMarker);
       }
@@ -529,6 +637,8 @@
       object.strokeWidth = strokeWidth;
       object.hasControls = false;
       object.hasBorders = false;
+      object.lockMovementX = true;
+      object.lockMovementY = true;
     }
 
     private _addCircle(args: object) {
@@ -553,6 +663,10 @@
       this._locationsWithObjects.set(this._locationForCell(cell), rect);
 
       return rect;
+    }
+
+    get parentElement() {
+      return this._canvas.getElement().parentElement;
     }
 
     get minZoom(): number {
