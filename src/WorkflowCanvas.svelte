@@ -602,8 +602,7 @@
         gapLength: number,
       ): CanvasObject {
         return new fabric.Line(coords, {
-          fill: "lightgray",
-          stroke: "lightgray",
+          stroke: "#e1e1e1",
           strokeWidth: strokeWidth,
           strokeDashArray: [dashLength, gapLength],
           opacity: 0.5,
@@ -656,7 +655,7 @@
 
     private _addCircle(args: object) {
       const circle = new fabric.Circle(args);
-      circle.stroke = "orangered";
+      circle.stroke = "black";
       this._setCommonProps(circle);
 
       this._canvas.add(circle);
@@ -668,7 +667,7 @@
 
     private _addRect(args: object) {
       const rect = new fabric.Rect(args);
-      rect.stroke = "#1C75BC";
+      rect.stroke = "black";
       this._setCommonProps(rect);
 
       this._canvas.add(rect);
