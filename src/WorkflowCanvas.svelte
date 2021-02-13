@@ -60,6 +60,8 @@
     private _lastPosY: number;
     private _moveOffsetX: number;
     private _moveOffsetY: number;
+    private _scrollX: number;
+    private _scrollY: number;
     private _movingObject: CanvasObject;
     private _dragOutline: CanvasObject;
 
@@ -73,7 +75,10 @@
       this._zoomEnabled = true;
       this._viewMoveEnabled = true;
       this._scrollEnabled = true;
+
       this._stopViewScrolling = true;
+      this._scrollX = 0;
+      this._scrollY = 0;
 
       this._movingObject = null;
       this._moveOffsetX = 0;
@@ -360,28 +365,23 @@
       const scrollView = (
         scrollableView: HTMLElement,
         target: CanvasObject,
-        scrollX: number,
-        scrollY: number,
       ): void => {
-        let { left, top, width, height } = target.getBoundingRect(true);
+        const { left, top, width, height } = target.getBoundingRect(true);
         setTargetPosition(
           scrollableView,
           target,
-          left + scrollX,
-          top + scrollY,
+          left + this._scrollX,
+          top + this._scrollY,
           width,
           height,
         );
         this._canvas.requestRenderAll();
-        scrollableView.scrollBy(scrollX, scrollY);
+        scrollableView.scrollBy(this._scrollX, this._scrollY);
 
         if (this._stopViewScrolling) {
           this._dragOutline.set("visible", false);
         } else {
-          setTimeout(
-            () => scrollView(scrollableView, target, scrollX, scrollY),
-            20,
-          );
+          setTimeout(() => scrollView(scrollableView, target), 20);
         }
       };
 
@@ -396,29 +396,34 @@
       );
 
       this._stopViewScrolling = true;
+      this._scrollX = 0;
+      this._scrollY = 0;
       if (
         left + width + colAdjustment >
         container.scrollLeft + container.clientWidth
       ) {
         this._stopViewScrolling = false;
-        scrollView(container, this._movingObject, 1, 0);
+        this._scrollX = 1;
       }
       if (left - colAdjustment < container.scrollLeft) {
         this._stopViewScrolling = false;
-        scrollView(container, this._movingObject, -1, 0);
+        this._scrollX = -1;
       }
       if (
-        top + rowHeight + rowAdjustment >
+        top + height + rowAdjustment >
         container.scrollTop + container.clientHeight
       ) {
         this._stopViewScrolling = false;
-        scrollView(container, this._movingObject, 0, 1);
+        this._scrollY = 1;
       }
       if (top - rowAdjustment < container.scrollTop) {
         this._stopViewScrolling = false;
-        scrollView(container, this._movingObject, 0, -1);
+        this._scrollY = -1;
       }
 
+      if (!this._stopViewScrolling) {
+        scrollView(container, this._movingObject);
+      }
       this._highlightObject(this._movingObject);
     }
 
@@ -453,6 +458,8 @@
 
     private _endObjectMove(options: EventOptions): void {
       this._stopViewScrolling = true;
+      this._scrollX = 0;
+      this._scrollY = 0;
 
       let currentCell = null;
       for (const location of this._locationsWithObjects.keys()) {
@@ -475,7 +482,10 @@
         cell.top = top;
       } else {
         this._locationsWithObjects.delete(this._locationForCell(currentCell));
-        this._locationsWithObjects.set(this._locationForCell(cell), this._movingObject);
+        this._locationsWithObjects.set(
+          this._locationForCell(cell),
+          this._movingObject,
+        );
       }
 
       // Common animation arguments for both 'left' and 'top' coordinates.
