@@ -366,26 +366,29 @@
         scrollableView: HTMLElement,
         target: CanvasObject,
       ): void => {
-        const { left, top, width, height } = target.getBoundingRect(true);
-        setTargetPosition(
-          scrollableView,
-          target,
-          left + this._scrollX,
-          top + this._scrollY,
-          width,
-          height,
-        );
-        this._canvas.requestRenderAll();
-        scrollableView.scrollBy(this._scrollX, this._scrollY);
-
         if (this._stopViewScrolling) {
           this._dragOutline.set("visible", false);
         } else {
+          const { left, top, width, height } = target.getBoundingRect(true);
+          setTargetPosition(
+            scrollableView,
+            target,
+            left + this._scrollX,
+            top + this._scrollY,
+            width,
+            height,
+          );
+          this._canvas.requestRenderAll();
+          scrollableView.scrollBy(this._scrollX, this._scrollY);
+
+          // Continue scrolling if allowed...
           setTimeout(() => scrollView(scrollableView, target), 20);
         }
       };
 
-      const container = this.parentElement.parentElement;
+      // Note: this element is wrapped inside a SimpleBar scroller. To get the
+      // actual scrollable container, the following needs to be done.
+      const container = this.parentElement.parentElement.parentElement;
       setTargetPosition(
         container,
         this._movingObject,

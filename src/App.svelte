@@ -1,5 +1,7 @@
 <script lang="ts">
   import WorkflowCanvas from "./WorkflowCanvas.svelte";
+  import "simplebar";
+  import "simplebar/dist/simplebar.css";
 
   const numColumns = 20;
   const numRows = 20;
@@ -10,7 +12,7 @@
 </script>
 
 <main>
-  <div id="workflow-canvas-container">
+  <div id="workflow-canvas-container" data-simplebar>
     <WorkflowCanvas
       canvasWidth="{canvasWidth}"
       canvasHeight="{canvasHeight}"
@@ -29,7 +31,6 @@
     }
   }
 
-  /* To remove the scrollbars */
   #workflow-canvas-container {
     margin: 0 auto;
     display: block;
@@ -40,7 +41,6 @@
     right: 0;
     height: 100%;
     width: 800px;
-    overflow: scroll;
     border-left: 1px solid lightgray;
     border-right: 1px solid lightgray;
   }
