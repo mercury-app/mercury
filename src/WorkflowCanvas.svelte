@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { SVG, Svg, G, Box } from "@svgdotjs/svg.js";
+  import { Box, G, SVG, Svg, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   export let numColumns: number;
@@ -15,9 +15,29 @@
     y: number;
   }
 
+  interface AnimatedElement {
+    animate: (args: {
+      duration?: number;
+      delay?: number;
+      when?: string;
+      swing?: boolean;
+      ease?: string;
+      times?: number;
+      wait?: number;
+    }) => Runner;
+  }
+
+  interface DragHandler {
+    startDrag: () => void;
+    drag: () => void;
+    endDrag: () => void;
+    move: (x: number, y: number) => void;
+    el: AnimatedElement;
+  }
+
   interface SvgDragEvent extends Event {
     detail: {
-      handler: G;
+      handler: DragHandler;
       box: Box;
     };
   }
@@ -70,7 +90,7 @@
         y = y - diffY;
       }
 
-      handler.move(x, y);
+      handler.el.animate({ duration: 80, when: "absolute" }).move(x, y);
 
       const container = this._svg.node.parentElement.parentElement
         .parentElement;
@@ -93,7 +113,11 @@
       if (y - cellSize < container.scrollTop) {
         scrollDelta.y = -1;
       }
-      container.scrollBy(scrollDelta.x * cellSize, scrollDelta.y * cellSize);
+      container.scrollTo({
+        left: container.scrollLeft + scrollDelta.x * cellSize,
+        top: container.scrollTop + scrollDelta.y * cellSize,
+        behavior: "smooth",
+      });
     }
 
     public addNode(): G {
@@ -124,7 +148,7 @@
     const canvas = new WorkflowCanvas(
       "#workflow-canvas",
       canvasWidth,
-      canvasHeight,
+      canvasHeight
     );
     canvas.addNode();
   });
