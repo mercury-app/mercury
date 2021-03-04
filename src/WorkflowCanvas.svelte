@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { Box, G, SVG, Svg, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
+  import "simplebar";
+  import "simplebar/dist/simplebar.css";
 
   export let numColumns: number;
   export let numRows: number;
@@ -92,8 +94,7 @@
 
       handler.el.animate({ duration: 80, when: "absolute" }).move(x, y);
 
-      const container = this._svg.node.parentElement.parentElement
-        .parentElement;
+      const container = this._svg.node.parentElement.parentElement;
       let scrollDelta: Delta = { x: 0, y: 0 };
       if (
         x + box.width + cellSize >
@@ -124,7 +125,7 @@
       const innerRect = this._svg
         .rect(cellSize * 4, cellSize * 4)
         .radius(strokeWidth)
-        .fill("#f06")
+        .fill("lightgray")
         .opacity(0.2);
       const outerRect = this._svg
         .rect(innerRect.width(), innerRect.height())

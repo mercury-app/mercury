@@ -1,21 +1,23 @@
 <script lang="ts">
+  import Headerbar from "./Headerbar.svelte";
   import WorkflowCanvas from "./WorkflowCanvas.svelte";
-  import "simplebar";
-  import "simplebar/dist/simplebar.css";
 
-  const numColumns = 20;
-  const numRows = 20;
-  const colWidth = 100;
-  const rowHeight = 100;
+  const headerbarHeight = 44;
+
+  const numCanvasColumns = 20;
+  const numCanvasRows = 20;
+  const canvasColWidth = 100;
+  const canvasRowHeight = 100;
 </script>
 
 <main>
-  <div id="workflow-canvas-container" data-simplebar>
+  <Headerbar headerbarHeight="{headerbarHeight}" />
+  <div id="workflow-canvas-container" style="top: {headerbarHeight}px;">
     <WorkflowCanvas
-      numColumns="{numColumns}"
-      numRows="{numRows}"
-      colWidth="{colWidth}"
-      rowHeight="{rowHeight}"
+      numColumns="{numCanvasColumns}"
+      numRows="{numCanvasRows}"
+      colWidth="{canvasColWidth}"
+      rowHeight="{canvasRowHeight}"
     />
   </div>
 </main>
@@ -35,7 +37,6 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 100%;
-    width: 100%;
+    overflow: scroll;
   }
 </style>
