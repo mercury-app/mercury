@@ -2,13 +2,11 @@
   import { onMount } from "svelte";
   import { Box, G, SVG, Svg, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
-  import "simplebar";
-  import "simplebar/dist/simplebar.css";
 
-  export let numColumns: number;
-  export let numRows: number;
-  export let colWidth: number;
-  export let rowHeight: number;
+  export let numColumns: number = 20;
+  export let numRows: number = 20;
+  export let colWidth: number = 50;
+  export let rowHeight: number = 50;
 
   type Delta = Point;
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let headerbarHeight: number;
+  export let headerbarHeight: number = 48;
 </script>
 
 <div id="headerbar" style="height: {headerbarHeight}px">
