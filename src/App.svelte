@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Headerbar from "./Headerbar.svelte";
+  import NodeBar from "./NodeBar.svelte";
   import WorkflowCanvas from "./WorkflowCanvas.svelte";
 
-  const headerbarHeight = 44;
+  const nodeBarWidth = 48;
 
   const numCanvasColumns = 20;
   const numCanvasRows = 20;
@@ -11,8 +11,10 @@
 </script>
 
 <main>
-  <Headerbar headerbarHeight="{headerbarHeight}" />
-  <div id="workflow-canvas-container" style="top: {headerbarHeight}px;">
+  <div id="node-bar-container">
+    <NodeBar nodeBarWidth="{nodeBarWidth}" />
+  </div>
+  <div id="workflow-canvas-container">
     <WorkflowCanvas
       numColumns="{numCanvasColumns}"
       numRows="{numCanvasRows}"
@@ -26,17 +28,21 @@
   @media (min-width: 640px) {
     main {
       max-width: none;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 48px auto;
+      grid-template-areas: "node-bar canvas";
+      gap: 0;
     }
   }
 
+  #node-bar-container {
+    grid-area: node-bar;
+  }
+
   #workflow-canvas-container {
+    grid-area: canvas;
     margin: 0;
-    display: block;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    overflow: scroll;
+    overflow: auto;
   }
 </style>
