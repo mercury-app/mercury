@@ -1,6 +1,6 @@
 <script lang="ts">
   import WorkflowBar from "./WorkflowBar.svelte";
-  import WorkflowCanvas from "./WorkflowCanvas.svelte";
+  import WorkflowCanvas, { placeNewNode } from "./WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
 
@@ -11,8 +11,11 @@
 </script>
 
 <main>
-  <div class="container">
-    <WorkflowBar workflowBarWidth="{workflowBarWidth}" />
+  <div class="container" id="workflow-bar-container">
+    <WorkflowBar
+      workflowBarWidth="{workflowBarWidth}"
+      on:newNodeRequested="{placeNewNode}"
+    />
   </div>
   <div class="container" id="workflow-canvas-container">
     <WorkflowCanvas

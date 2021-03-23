@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   export let workflowBarWidth: number = 48;
 
   const spacing = 6;
@@ -10,11 +12,18 @@
   const buttonWidthStyle = `width: ${workflowBarWidth - spacing * 2}px;`;
   const buttonHeightStyle = `height: ${workflowBarWidth - spacing * 2}px;`;
   const buttonStyle = buttonWidthStyle + buttonHeightStyle;
+
+  const dispatch = createEventDispatcher();
 </script>
 
 <div id="workflow-bar-container" style="{workflowBarWidthStyle}">
   <div id="workflow-bar" style="{workflowBarStyle}">
-    <button style="{buttonStyle}">+</button>
+    <button
+      style="{buttonStyle}"
+      on:click="{() => dispatch('newNodeRequested')}"
+    >
+      +
+    </button>
   </div>
 </div>
 

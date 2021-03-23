@@ -1,12 +1,6 @@
-<script lang="ts">
-  import { onMount } from "svelte";
+<script lang="ts" context="module">
   import { Box, G, SVG, Svg, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
-
-  export let numColumns: number = 20;
-  export let numRows: number = 20;
-  export let colWidth: number = 50;
-  export let rowHeight: number = 50;
 
   type Delta = Point;
 
@@ -42,8 +36,6 @@
     };
   }
 
-  const canvasWidth = numColumns * colWidth;
-  const canvasHeight = numRows * rowHeight;
   const cellSize = 20;
   const strokeWidth = 4;
 
@@ -65,7 +57,7 @@
       const pattern = this._svg.pattern(cellSize * 2, cellSize * 2, (add) => {
         add.circle(strokeWidth).center(cellSize, cellSize).fill("#eaeaea");
       });
-      this._svg.rect(canvasWidth, canvasHeight).fill(pattern);
+      this._svg.rect(this._width, this._height).fill(pattern);
     }
 
     private _performDrag(event: SvgDragEvent): void {
@@ -73,8 +65,8 @@
       event.preventDefault();
 
       // Use the `container` to clamp the object's coords in the view.
-      let x = clamp(box.x, cellSize, canvasWidth - box.width - cellSize);
-      let y = clamp(box.y, cellSize, canvasHeight - box.height - cellSize);
+      let x = clamp(box.x, cellSize, this._width - box.width - cellSize);
+      let y = clamp(box.y, cellSize, this._height - box.height - cellSize);
 
       const diffX = x % cellSize;
       if (diffX > cellSize / 2) {
@@ -143,13 +135,31 @@
     }
   }
 
+  // All node events are handled by the global canvas instance.
+  let canvas: WorkflowCanvas = null;
+
+  export const placeNewNode = () => {
+    canvas.addNode();
+  };
+</script>
+
+<script lang="ts">
+  import { onMount } from "svelte";
+
+  export let numColumns: number = 20;
+  export let numRows: number = 20;
+  export let colWidth: number = 50;
+  export let rowHeight: number = 50;
+
+  const canvasWidth = numColumns * colWidth;
+  const canvasHeight = numRows * rowHeight;
+
   onMount(() => {
-    const canvas = new WorkflowCanvas(
+    canvas = new WorkflowCanvas(
       "#workflow-canvas",
       canvasWidth,
       canvasHeight
     );
-    canvas.addNode();
   });
 </script>
 
