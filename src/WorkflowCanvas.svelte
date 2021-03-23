@@ -65,23 +65,30 @@
       });
       this._svg.rect(this._width, this._height).fill(pattern);
 
-      this._setupPlacementMode();
       this._inPlacementMode = false;
+      this._setupPlacementMode();
     }
 
     private _setupPlacementMode() {
       const placementMarker = this._svg
         .rect(cellSize * 4, cellSize * 4)
-        .fill("#dadada");
+        .radius(strokeWidth)
+        .fill("none")
+        .stroke({
+          width: strokeWidth,
+          color: "gray",
+          linecap: "round",
+          dasharray: "4, 8",
+        });
       placementMarker.hide();
 
-      this._svg.node.onmouseenter = (_event) => {
+      this._svg.node.onmousemove = (event: SvgMouseMoveEvent) => {
         if (this._inPlacementMode) {
           placementMarker.show();
+        } else {
+          placementMarker.hide();
         }
-      };
 
-      this._svg.node.onmousemove = (event: SvgMouseMoveEvent) => {
         const { x, y } = this._adjustMoveCoordinates(
           event.layerX - placementMarker.width() / 2.0,
           event.layerY - placementMarker.height() / 2.0,
@@ -94,17 +101,14 @@
         placementMarker.animate({ duration: 80, when: "absolute" }).move(x, y);
       };
 
-      this._svg.node.onmouseleave = (_event) => {
-        placementMarker.hide();
-      };
-
-      this._svg.node.onclick =  (_event) => {
+      this._svg.node.onclick = (_event) => {
         if (this._inPlacementMode) {
           this._addNode(placementMarker.x(), placementMarker.y());
           this._inPlacementMode = false;
           placementMarker.hide();
+          placementMarker.front();
         }
-      }
+      };
     }
 
     private _adjustMoveCoordinates(
@@ -172,7 +176,7 @@
       });
     }
 
-    private _addNode(x: number, y:number): G {
+    private _addNode(x: number, y: number): G {
       const innerRect = this._svg
         .rect(cellSize * 4, cellSize * 4)
         .radius(strokeWidth)
