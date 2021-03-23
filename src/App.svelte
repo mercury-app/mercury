@@ -1,8 +1,8 @@
 <script lang="ts">
-  import NodeBar from "./NodeBar.svelte";
+  import WorkflowBar from "./WorkflowBar.svelte";
   import WorkflowCanvas from "./WorkflowCanvas.svelte";
 
-  const nodeBarWidth = 48;
+  const workflowBarWidth = 48;
 
   const numCanvasColumns = 20;
   const numCanvasRows = 20;
@@ -11,10 +11,10 @@
 </script>
 
 <main>
-  <div id="node-bar-container">
-    <NodeBar nodeBarWidth="{nodeBarWidth}" />
+  <div class="container">
+    <WorkflowBar workflowBarWidth="{workflowBarWidth}" />
   </div>
-  <div id="workflow-canvas-container">
+  <div class="container" id="workflow-canvas-container">
     <WorkflowCanvas
       numColumns="{numCanvasColumns}"
       numRows="{numCanvasRows}"
@@ -31,18 +31,16 @@
       height: 100%;
       display: grid;
       grid-template-columns: 48px auto;
-      grid-template-areas: "node-bar canvas";
+      grid-template-areas: "workflow-bar-container workflow-canvas-container";
       gap: 0;
     }
   }
 
-  #node-bar-container {
-    grid-area: node-bar;
+  .container {
+    margin: 0;
   }
 
   #workflow-canvas-container {
-    grid-area: canvas;
-    margin: 0;
     overflow: auto;
   }
 </style>
