@@ -85,8 +85,10 @@
       this._svg.node.onmousemove = (event: SvgMouseMoveEvent) => {
         if (this._inPlacementMode) {
           placementMarker.show();
+          this._setMoveCursor();
         } else {
           placementMarker.hide();
+          this._setNormalCursor();
         }
 
         const { x, y } = this._adjustMoveCoordinates(
@@ -107,8 +109,17 @@
           this._inPlacementMode = false;
           placementMarker.hide();
           placementMarker.front();
+          this._setNormalCursor();
         }
       };
+    }
+
+    private _setMoveCursor() {
+      this._svg.css("cursor", "move");
+    }
+
+    private _setNormalCursor() {
+      this._svg.css("cursor", "auto");
     }
 
     private _adjustMoveCoordinates(
@@ -149,6 +160,7 @@
         box.height
       );
       handler.el.animate({ duration: 80, when: "absolute" }).move(x, y);
+      this._setMoveCursor();
 
       let scrollDelta: Delta = { x: 0, y: 0 };
       if (
@@ -194,7 +206,9 @@
       node.move(x, y);
 
       node.draggable();
+      node.on("dragstart.namespace", this._setMoveCursor.bind(this));
       node.on("dragmove.namespace", this._performDrag.bind(this));
+      node.on("dragend.namespace", this._setNormalCursor.bind(this));
 
       return node;
     }
