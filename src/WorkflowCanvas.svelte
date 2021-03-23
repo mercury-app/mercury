@@ -36,6 +36,11 @@
     };
   }
 
+  interface SvgMouseMoveEvent extends MouseEvent {
+    layerX: number;
+    layerY: number;
+  }
+
   const cellSize = 20;
   const strokeWidth = 4;
 
@@ -47,6 +52,7 @@
     private _svg: Svg;
     private _width: number;
     private _height: number;
+    private _inPlacementMode: boolean;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -58,15 +64,58 @@
         add.circle(strokeWidth).center(cellSize, cellSize).fill("#eaeaea");
       });
       this._svg.rect(this._width, this._height).fill(pattern);
+
+      this._setupPlacementMode();
+      this._inPlacementMode = false;
     }
 
-    private _performDrag(event: SvgDragEvent): void {
-      const { handler, box } = event.detail;
-      event.preventDefault();
+    private _setupPlacementMode() {
+      const placementMarker = this._svg
+        .rect(cellSize * 4, cellSize * 4)
+        .fill("#dadada");
+      placementMarker.hide();
 
+      this._svg.node.onmouseenter = (_event) => {
+        if (this._inPlacementMode) {
+          placementMarker.show();
+        }
+      };
+
+      this._svg.node.onmousemove = (event: SvgMouseMoveEvent) => {
+        const { x, y } = this._adjustMoveCoordinates(
+          event.layerX - placementMarker.width() / 2.0,
+          event.layerY - placementMarker.height() / 2.0,
+          placementMarker.width(),
+          placementMarker.height()
+        );
+
+        // The svg.js library's `animate` method incomplete type information.
+        // @ts-ignore
+        placementMarker.animate({ duration: 80, when: "absolute" }).move(x, y);
+      };
+
+      this._svg.node.onmouseleave = (_event) => {
+        placementMarker.hide();
+      };
+
+      this._svg.node.onclick =  (_event) => {
+        if (this._inPlacementMode) {
+          this._addNode(placementMarker.x(), placementMarker.y());
+          this._inPlacementMode = false;
+          placementMarker.hide();
+        }
+      }
+    }
+
+    private _adjustMoveCoordinates(
+      x: number,
+      y: number,
+      elemWidth: number,
+      elemHeight: number
+    ): { x: number; y: number } {
       // Use the `container` to clamp the object's coords in the view.
-      let x = clamp(box.x, cellSize, this._width - box.width - cellSize);
-      let y = clamp(box.y, cellSize, this._height - box.height - cellSize);
+      x = clamp(x, cellSize, this._width - elemWidth - cellSize);
+      y = clamp(y, cellSize, this._height - elemHeight - cellSize);
 
       const diffX = x % cellSize;
       if (diffX > cellSize / 2) {
@@ -82,36 +131,48 @@
         y = y - diffY;
       }
 
+      return { x, y };
+    }
+
+    private _performDrag(event: SvgDragEvent): void {
+      const { handler, box } = event.detail;
+      event.preventDefault();
+
+      const { x, y } = this._adjustMoveCoordinates(
+        box.x,
+        box.y,
+        box.width,
+        box.height
+      );
       handler.el.animate({ duration: 80, when: "absolute" }).move(x, y);
 
-      const container = this._svg.node.parentElement.parentElement;
       let scrollDelta: Delta = { x: 0, y: 0 };
       if (
         x + box.width + cellSize >
-        container.scrollLeft + container.clientWidth
+        this.container.scrollLeft + this.container.clientWidth
       ) {
         scrollDelta.x = 1;
       }
-      if (x - cellSize < container.scrollLeft) {
+      if (x - cellSize < this.container.scrollLeft) {
         scrollDelta.x = -1;
       }
       if (
         y + box.height + cellSize >
-        container.scrollTop + container.clientHeight
+        this.container.scrollTop + this.container.clientHeight
       ) {
         scrollDelta.y = 1;
       }
-      if (y - cellSize < container.scrollTop) {
+      if (y - cellSize < this.container.scrollTop) {
         scrollDelta.y = -1;
       }
-      container.scrollTo({
-        left: container.scrollLeft + scrollDelta.x * cellSize,
-        top: container.scrollTop + scrollDelta.y * cellSize,
+      this.container.scrollTo({
+        left: this.container.scrollLeft + scrollDelta.x * cellSize,
+        top: this.container.scrollTop + scrollDelta.y * cellSize,
         behavior: "smooth",
       });
     }
 
-    public addNode(): G {
+    private _addNode(x: number, y:number): G {
       const innerRect = this._svg
         .rect(cellSize * 4, cellSize * 4)
         .radius(strokeWidth)
@@ -126,12 +187,20 @@
       const node = this._svg.group();
       node.add(innerRect);
       node.add(outerRect);
-      node.move(cellSize, cellSize);
+      node.move(x, y);
 
       node.draggable();
       node.on("dragmove.namespace", this._performDrag.bind(this));
 
       return node;
+    }
+
+    get container(): HTMLElement {
+      return this._svg.node.parentElement.parentElement;
+    }
+
+    public placeNewNode() {
+      this._inPlacementMode = true;
     }
   }
 
@@ -139,7 +208,9 @@
   let canvas: WorkflowCanvas = null;
 
   export const placeNewNode = () => {
-    canvas.addNode();
+    if (canvas != null) {
+      canvas.placeNewNode();
+    }
   };
 </script>
 
@@ -155,11 +226,7 @@
   const canvasHeight = numRows * rowHeight;
 
   onMount(() => {
-    canvas = new WorkflowCanvas(
-      "#workflow-canvas",
-      canvasWidth,
-      canvasHeight
-    );
+    canvas = new WorkflowCanvas("#workflow-canvas", canvasWidth, canvasHeight);
   });
 </script>
 
