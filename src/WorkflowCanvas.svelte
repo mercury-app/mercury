@@ -228,16 +228,33 @@
         return inputRect;
       };
 
-      const inputReceiverRect = createInputRect().move(- padSize, 0);
+      const inputReceiverRect = createInputRect().move(-padSize, 0);
       const inputTransmitterRect = createInputRect()
         .flip()
-        .move(- padSize - innerRect.width(), - cellSize);
+        .move(-padSize - innerRect.width(), -cellSize);
+
+      const titleOffset = 6;
+      const titleObject = this._svg
+        // @ts-ignore
+        .foreignObject(innerRect.width(), cellSize)
+        .move(titleOffset, 0);
+      const titleElement = document.createElement("p");
+      titleElement.textContent = "Untitled";
+      titleElement.style.display = "table-cell"; // For some reason this works
+      titleElement.style.maxWidth = `${innerRect.width() - titleOffset * 2}px`;
+      titleElement.style.fontSize = "14px";
+      titleElement.style.lineHeight = `${cellSize}px`;
+      titleElement.style.overflow = "hidden";
+      titleElement.style.textOverflow = "ellipsis";
+      titleElement.style.whiteSpace = "nowrap";
+      titleObject.add(titleElement);
 
       const node = this._svg.group();
       node.add(innerRect);
       node.add(outerRect);
       node.add(inputReceiverRect);
       node.add(inputTransmitterRect);
+      node.add(titleObject);
       node.move(position.x - padSize, position.y);
 
       node.draggable();
