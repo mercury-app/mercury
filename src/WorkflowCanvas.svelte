@@ -42,7 +42,7 @@
     layerY: number;
   }
 
-  const cellSize = 25;
+  const cellSize = 24;
   const padSize = cellSize / 2;
   const initialWidth = cellSize * 6;
   const initialHeight = cellSize * 6;
@@ -256,15 +256,14 @@
     }
 
     private _performDrag(event: SvgDragEvent): void {
+      const { handler, box } = event.detail;
+      event.preventDefault();
       if (
         event.detail.event.movementX == 0 &&
         event.detail.event.movementY == 0
       ) {
         return;
       }
-
-      const { handler, box } = event.detail;
-      event.preventDefault();
 
       const { x, y } = this._adjustMoveCoordinates(
         box.x,
@@ -346,7 +345,6 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { element } from "svelte/internal";
 
   export let numColumns: number = 20;
   export let numRows: number = 20;
