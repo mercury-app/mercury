@@ -41,8 +41,11 @@
     layerY: number;
   }
 
-  const cellSize = 20;
-  const strokeWidth = 4;
+  const cellSize = 25;
+  const padSize = cellSize / 2;
+  const initialWidth = cellSize * 6;
+  const initialHeight = cellSize * 6;
+  const strokeWidth = 2;
 
   const clamp = (num: number, min: number, max: number): number => {
     return Math.max(min, Math.min(num, max));
@@ -61,7 +64,7 @@
 
       // Draw dot-grid for position intuition
       const pattern = this._svg.pattern(cellSize * 2, cellSize * 2, (add) => {
-        add.circle(strokeWidth).center(cellSize, cellSize).fill("#eaeaea");
+        add.circle(4).center(cellSize, cellSize).fill("#eaeaea");
       });
       this._svg.rect(this._width, this._height).fill(pattern);
 
@@ -71,7 +74,7 @@
 
     private _setupPlacementMode() {
       const placementMarker = this._svg
-        .rect(cellSize * 4, cellSize * 4)
+        .rect(initialWidth, initialHeight)
         .radius(strokeWidth)
         .fill("none")
         .stroke({
@@ -95,7 +98,8 @@
           event.layerX - placementMarker.width() / 2.0,
           event.layerY - placementMarker.height() / 2.0,
           placementMarker.width(),
-          placementMarker.height()
+          placementMarker.height(),
+          false
         );
 
         // The svg.js library's `animate` method incomplete type information.
@@ -105,7 +109,7 @@
 
       this._svg.node.onclick = (_event) => {
         if (this._inPlacementMode) {
-          this._addNode(placementMarker.x(), placementMarker.y());
+          this._addNode({ x: placementMarker.x(), y: placementMarker.y() });
           this._inPlacementMode = false;
           placementMarker.hide();
           placementMarker.front();
@@ -126,7 +130,8 @@
       x: number,
       y: number,
       elemWidth: number,
-      elemHeight: number
+      elemHeight: number,
+      adjustForPads: boolean = true
     ): { x: number; y: number } {
       // Use the `container` to clamp the object's coords in the view.
       x = clamp(x, cellSize, this._width - elemWidth - cellSize);
@@ -144,6 +149,11 @@
         y = y + (cellSize - diffY);
       } else {
         y = y - diffY;
+      }
+
+      // Adjust for the input receiver/transmitter pads
+      if (adjustForPads) {
+        x = x - padSize;
       }
 
       return { x, y };
@@ -188,9 +198,9 @@
       });
     }
 
-    private _addNode(x: number, y: number): G {
+    private _addNode(position: Point): G {
       const innerRect = this._svg
-        .rect(cellSize * 4, cellSize * 4)
+        .rect(initialWidth, initialHeight)
         .radius(strokeWidth)
         .fill("lightgray")
         .opacity(0.2);
@@ -200,10 +210,35 @@
         .fill("none")
         .stroke({ width: strokeWidth, color: innerRect.fill() });
 
+      const createInputRect = (): G => {
+        const mainRect = this._svg
+          .rect(padSize, cellSize)
+          .radius(strokeWidth)
+          .fill(innerRect.fill())
+          .stroke({ width: strokeWidth, color: innerRect.fill() });
+        const fillerRect = this._svg
+          .rect(padSize / 2, cellSize)
+          .fill(innerRect.fill())
+          .stroke({ width: strokeWidth, color: innerRect.fill() })
+          .move(padSize / 2, 0);
+
+        const inputRect = this._svg.group();
+        inputRect.add(mainRect);
+        inputRect.add(fillerRect);
+        return inputRect;
+      };
+
+      const inputReceiverRect = createInputRect().move(- padSize, 0);
+      const inputTransmitterRect = createInputRect()
+        .flip()
+        .move(- padSize - innerRect.width(), - cellSize);
+
       const node = this._svg.group();
       node.add(innerRect);
       node.add(outerRect);
-      node.move(x, y);
+      node.add(inputReceiverRect);
+      node.add(inputTransmitterRect);
+      node.move(position.x - padSize, position.y);
 
       node.draggable();
       node.on("dragstart.namespace", this._setMoveCursor.bind(this));
