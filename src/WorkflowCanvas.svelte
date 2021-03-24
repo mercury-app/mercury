@@ -33,6 +33,7 @@
     detail: {
       handler: DragHandler;
       box: Box;
+      event: MouseEvent;
     };
   }
 
@@ -160,6 +161,13 @@
     }
 
     private _performDrag(event: SvgDragEvent): void {
+      if (
+        event.detail.event.movementX == 0 &&
+        event.detail.event.movementY == 0
+      ) {
+        return;
+      }
+
       const { handler, box } = event.detail;
       event.preventDefault();
 
@@ -257,8 +265,11 @@
       node.add(titleObject);
       node.move(position.x - padSize, position.y);
 
+      node.click((event: MouseEvent) => {
+        event.preventDefault();
+      });
+
       node.draggable();
-      node.on("dragstart.namespace", this._setMoveCursor.bind(this));
       node.on("dragmove.namespace", this._performDrag.bind(this));
       node.on("dragend.namespace", this._setNormalCursor.bind(this));
 
