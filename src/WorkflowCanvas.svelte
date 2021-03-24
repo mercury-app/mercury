@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  import { Box, G, SVG, Svg, Runner } from "@svgdotjs/svg.js";
+  import { Box, G, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   type Delta = Point;
@@ -52,11 +52,99 @@
     return Math.max(min, Math.min(num, max));
   };
 
+  class WorkflowNode extends G {
+    private _innerRect: Rect;
+    private _outlineRect: Rect;
+    private _titleElement: HTMLParagraphElement;
+    private _isSelected: boolean;
+
+    constructor(svg: Svg, position: Point) {
+      super();
+
+      this._innerRect = svg
+        .rect(initialWidth, initialHeight)
+        .radius(strokeWidth)
+        .fill("lightgray")
+        .opacity(0.2);
+      this._outlineRect = svg
+        .rect(this._innerRect.width(), this._innerRect.height())
+        .radius(strokeWidth)
+        .fill("none")
+        .stroke({ width: strokeWidth, color: this._innerRect.fill() });
+
+      const createInputRect = (): G => {
+        const mainRect = svg
+          .rect(padSize, cellSize)
+          .radius(strokeWidth)
+          .fill(this._innerRect.fill())
+          .stroke({ width: strokeWidth, color: this._innerRect.fill() });
+        const fillerRect = svg
+          .rect(padSize / 2, cellSize)
+          .fill(this._innerRect.fill())
+          .stroke({ width: strokeWidth, color: this._innerRect.fill() })
+          .move(padSize / 2, 0);
+
+        const inputRect = svg.group();
+        inputRect.add(mainRect);
+        inputRect.add(fillerRect);
+        return inputRect;
+      };
+
+      const inputReceiverRect = createInputRect().move(-padSize, 0);
+      const inputTransmitterRect = createInputRect()
+        .flip()
+        .move(-padSize - this._innerRect.width(), -cellSize);
+
+      const titleOffset = 6;
+      const titleObject = svg
+        // @ts-ignore
+        .foreignObject(this._innerRect.width(), cellSize)
+        .move(titleOffset, 0);
+      this._titleElement = document.createElement("p");
+      this._titleElement.textContent = "Untitled";
+      this._titleElement.style.display = "table-cell"; // For some reason this works
+      this._titleElement.style.maxWidth = `${
+        this._innerRect.width() - titleOffset * 2
+      }px`;
+      this._titleElement.style.fontSize = "14px";
+      this._titleElement.style.lineHeight = `${cellSize}px`;
+      this._titleElement.style.overflow = "hidden";
+      this._titleElement.style.textOverflow = "ellipsis";
+      this._titleElement.style.whiteSpace = "nowrap";
+      titleObject.add(this._titleElement);
+
+      svg.add(this);
+      this.add(this._innerRect);
+      this.add(inputReceiverRect);
+      this.add(inputTransmitterRect);
+      this.add(this._outlineRect);
+      this.add(titleObject);
+      this.move(position.x - padSize, position.y);
+
+      this._isSelected = false;
+    }
+
+    public select() {
+      this._outlineRect.stroke({ color: "black" });
+      this._isSelected = true;
+    }
+
+    public unselect() {
+      this._outlineRect.stroke({ color: "lightgray" });
+      this._isSelected = false;
+    }
+
+    get isSelected() {
+      return this._isSelected;
+    }
+  }
+
   class WorkflowCanvas {
     private _svg: Svg;
     private _width: number;
     private _height: number;
     private _inPlacementMode: boolean;
+    private _nodes: Array<WorkflowNode>;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -71,6 +159,8 @@
 
       this._inPlacementMode = false;
       this._setupPlacementMode();
+
+      this._nodes = new Array();
     }
 
     private _setupPlacementMode() {
@@ -110,7 +200,12 @@
 
       this._svg.node.onclick = (_event) => {
         if (this._inPlacementMode) {
-          this._addNode({ x: placementMarker.x(), y: placementMarker.y() });
+          const node = this._addNode({
+            x: placementMarker.x(),
+            y: placementMarker.y(),
+          });
+          this._nodes.push(node);
+
           this._inPlacementMode = false;
           placementMarker.hide();
           placementMarker.front();
@@ -206,74 +301,28 @@
       });
     }
 
-    private _addNode(position: Point): G {
-      const innerRect = this._svg
-        .rect(initialWidth, initialHeight)
-        .radius(strokeWidth)
-        .fill("lightgray")
-        .opacity(0.2);
-      const outerRect = this._svg
-        .rect(innerRect.width(), innerRect.height())
-        .radius(strokeWidth)
-        .fill("none")
-        .stroke({ width: strokeWidth, color: innerRect.fill() });
-
-      const createInputRect = (): G => {
-        const mainRect = this._svg
-          .rect(padSize, cellSize)
-          .radius(strokeWidth)
-          .fill(innerRect.fill())
-          .stroke({ width: strokeWidth, color: innerRect.fill() });
-        const fillerRect = this._svg
-          .rect(padSize / 2, cellSize)
-          .fill(innerRect.fill())
-          .stroke({ width: strokeWidth, color: innerRect.fill() })
-          .move(padSize / 2, 0);
-
-        const inputRect = this._svg.group();
-        inputRect.add(mainRect);
-        inputRect.add(fillerRect);
-        return inputRect;
-      };
-
-      const inputReceiverRect = createInputRect().move(-padSize, 0);
-      const inputTransmitterRect = createInputRect()
-        .flip()
-        .move(-padSize - innerRect.width(), -cellSize);
-
-      const titleOffset = 6;
-      const titleObject = this._svg
-        // @ts-ignore
-        .foreignObject(innerRect.width(), cellSize)
-        .move(titleOffset, 0);
-      const titleElement = document.createElement("p");
-      titleElement.textContent = "Untitled";
-      titleElement.style.display = "table-cell"; // For some reason this works
-      titleElement.style.maxWidth = `${innerRect.width() - titleOffset * 2}px`;
-      titleElement.style.fontSize = "14px";
-      titleElement.style.lineHeight = `${cellSize}px`;
-      titleElement.style.overflow = "hidden";
-      titleElement.style.textOverflow = "ellipsis";
-      titleElement.style.whiteSpace = "nowrap";
-      titleObject.add(titleElement);
-
-      const node = this._svg.group();
-      node.add(innerRect);
-      node.add(outerRect);
-      node.add(inputReceiverRect);
-      node.add(inputTransmitterRect);
-      node.add(titleObject);
-      node.move(position.x - padSize, position.y);
-
+    private _addNode(position: Point): WorkflowNode {
+      const node = new WorkflowNode(this._svg, position);
       node.click((event: MouseEvent) => {
         event.preventDefault();
+        this._selectNode(node);
       });
 
       node.draggable();
-      node.on("dragmove.namespace", this._performDrag.bind(this));
+      node.on("dragmove.namespace", (event: SvgDragEvent) => {
+        this._selectNode(node);
+        this._performDrag(event);
+      });
       node.on("dragend.namespace", this._setNormalCursor.bind(this));
 
       return node;
+    }
+
+    private _selectNode(node: WorkflowNode): void {
+      this._nodes.forEach((element) => {
+        element.unselect();
+      });
+      node.select();
     }
 
     get container(): HTMLElement {
@@ -297,6 +346,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
+  import type { element } from "svelte/internal";
 
   export let numColumns: number = 20;
   export let numRows: number = 20;
