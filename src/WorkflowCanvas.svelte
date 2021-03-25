@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  import { Box, G, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
+  import { Box, Element, G, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   type Delta = Point;
@@ -144,7 +144,9 @@
     private _width: number;
     private _height: number;
     private _inPlacementMode: boolean;
-    private _nodes: Array<WorkflowNode>;
+    private _nodes: Set<WorkflowNode>;
+    private _selectedNode: WorkflowNode;
+    private _nodeSelectionMenu: any;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -160,7 +162,8 @@
       this._inPlacementMode = false;
       this._setupPlacementMode();
 
-      this._nodes = new Array();
+      this._nodes = new Set();
+      this._nodeSelectionMenu = this._setupNodeSelectionMenu();
     }
 
     private _setupPlacementMode() {
@@ -204,7 +207,7 @@
             x: placementMarker.x(),
             y: placementMarker.y(),
           });
-          this._nodes.push(node);
+          this._nodes.add(node);
 
           this._inPlacementMode = false;
           placementMarker.hide();
@@ -212,6 +215,33 @@
           this._setNormalCursor();
         }
       };
+    }
+
+    private _setupNodeSelectionMenu() {
+      // @ts-ignore
+      const nodeSelectionMenu = this._svg.foreignObject(48, 20);
+
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.style.fontSize = "12px";
+      deleteButton.style.width = "100%";
+      deleteButton.style.height = "100%";
+      deleteButton.style.padding = "0";
+      deleteButton.style.margin = "0";
+      deleteButton.style.display = "flex";
+      deleteButton.style.justifyContent = "center";
+      deleteButton.style.alignItems = "center";
+      deleteButton.onclick = (event: MouseEvent) => {
+        event.preventDefault();
+        this._deleteNode(this._selectedNode);
+        this._hideNodeSelectionMenu();
+      };
+      nodeSelectionMenu.add(deleteButton);
+
+      this._svg.add(nodeSelectionMenu);
+      nodeSelectionMenu.hide();
+
+      return nodeSelectionMenu;
     }
 
     private _setMoveCursor() {
@@ -302,19 +332,30 @@
 
     private _addNode(position: Point): WorkflowNode {
       const node = new WorkflowNode(this._svg, position);
+
       node.click((event: MouseEvent) => {
         event.preventDefault();
         this._selectNode(node);
+        this._showNodeSelectionMenu(node);
       });
 
       node.draggable();
       node.on("dragmove.namespace", (event: SvgDragEvent) => {
+        this._hideNodeSelectionMenu();
         this._selectNode(node);
         this._performDrag(event);
       });
-      node.on("dragend.namespace", this._setNormalCursor.bind(this));
+      node.on("dragend.namespace", () => {
+        this._setNormalCursor();
+        this._showNodeSelectionMenu(node);
+      });
 
       return node;
+    }
+
+    private _deleteNode(node: WorkflowNode): void {
+      this._nodes.delete(node);
+      node.remove();
     }
 
     private _selectNode(node: WorkflowNode): void {
@@ -322,10 +363,29 @@
         element.unselect();
       });
       node.select();
+      this._selectedNode = node;
+    }
+
+    private _showNodeSelectionMenu(node: WorkflowNode): void {
+      setTimeout(() => {
+        this._nodeSelectionMenu.move(
+          node.x() + node.width() - this._nodeSelectionMenu.width() - padSize,
+          node.y() + node.height() + 3
+        );
+        this._nodeSelectionMenu.show();
+      }, 100);
+    }
+
+    private _hideNodeSelectionMenu(): void {
+      this._nodeSelectionMenu.hide();
     }
 
     get container(): HTMLElement {
       return this._svg.node.parentElement.parentElement;
+    }
+
+    get svgNode(): SVGElement {
+      return this._svg.node;
     }
 
     public placeNewNode() {
@@ -356,7 +416,8 @@
 
   onMount(() => {
     canvas = new WorkflowCanvas("#workflow-canvas", canvasWidth, canvasHeight);
+    canvas.svgNode.style.display = "block";
   });
 </script>
 
-<div id="workflow-canvas" width="{canvasWidth}" height="{canvasHeight}"></div>
+<div id="workflow-canvas"></div>

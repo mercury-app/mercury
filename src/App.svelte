@@ -4,8 +4,8 @@
 
   const workflowBarWidth = 48;
 
-  const numCanvasColumns = 20;
-  const numCanvasRows = 20;
+  const numCanvasColumns = 24;
+  const numCanvasRows = 24;
   const canvasColWidth = 100;
   const canvasRowHeight = 100;
 </script>
