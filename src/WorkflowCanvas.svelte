@@ -158,12 +158,20 @@
       const pattern = this._svg.pattern(cellSize * 2, cellSize * 2, (add) => {
         add.circle(4).center(cellSize, cellSize).fill("#eaeaea");
       });
-      this._svg.rect(this._width, this._height).fill(pattern);
+      const background = this._svg
+        .rect(this._width, this._height)
+        .fill(pattern);
+      background.click((event: MouseEvent) => {
+        event.preventDefault();
+        this._selectNode(null);
+        this._hideNodeSelectionMenu();
+      });
 
       this._inPlacementMode = false;
       this._setupPlacementMode();
 
       this._nodes = new Set();
+      this._selectedNode = null;
       this._nodeSelectionMenu = this._setupNodeSelectionMenu();
 
       this._moveAnimationDuration = 100;
@@ -378,7 +386,9 @@
       this._nodes.forEach((element) => {
         element.unselect();
       });
-      node.select();
+      if (node != null) {
+        node.select();
+      }
       this._selectedNode = node;
     }
 
