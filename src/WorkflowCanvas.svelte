@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  import { Box, Element, G, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
+  import { Box, G, Line, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   type Delta = Point;
@@ -55,6 +55,7 @@
   class WorkflowNode extends G {
     private _innerRect: Rect;
     private _outlineRect: Rect;
+    private _titleSeparator: Line;
     private _titleElement: HTMLParagraphElement;
     private _isSelected: boolean;
 
@@ -95,6 +96,10 @@
         .flip()
         .move(-padSize - this._innerRect.width(), -cellSize);
 
+      this._titleSeparator = svg
+        .line(0, cellSize, this._innerRect.width(), cellSize)
+        .stroke({ color: this._innerRect.fill(), width: strokeWidth });
+
       const titleOffset = 6;
       const titleObject = svg
         // @ts-ignore
@@ -117,8 +122,9 @@
       this.add(this._innerRect);
       this.add(inputReceiverRect);
       this.add(inputTransmitterRect);
-      this.add(this._outlineRect);
       this.add(titleObject);
+      this.add(this._titleSeparator);
+      this.add(this._outlineRect);
       this.move(position.x - padSize, position.y);
 
       this._isSelected = false;
@@ -126,11 +132,13 @@
 
     public select() {
       this._outlineRect.stroke({ color: "black" });
+      this._titleSeparator.stroke({ color: "black" });
       this._isSelected = true;
     }
 
     public unselect() {
       this._outlineRect.stroke({ color: "lightgray" });
+      this._titleSeparator.stroke({ color: "lightgray" });
       this._isSelected = false;
     }
 
