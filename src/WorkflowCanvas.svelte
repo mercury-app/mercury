@@ -260,7 +260,16 @@
       adjustForPads: boolean = true
     ): { x: number; y: number } {
       // Use the `container` to clamp the object's coords in the view.
-      x = clamp(x, cellSize, this._width - elemWidth - cellSize);
+      if (adjustForPads) {
+        // Adjust for the input receiver/transmitter pads.
+        x = clamp(
+          x,
+          cellSize,
+          this._width - elemWidth - cellSize + padSize * 2
+        );
+      } else {
+        x = clamp(x, cellSize, this._width - elemWidth - cellSize);
+      }
       y = clamp(y, cellSize, this._height - elemHeight - cellSize);
 
       const diffX = x % cellSize;
