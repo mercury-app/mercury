@@ -239,26 +239,44 @@
     }
 
     private _setupNodeSelectionMenu() {
-      // @ts-ignore
-      const nodeSelectionMenu = this._svg.foreignObject(48, 20);
+      const containerDiv = document.createElement("div");
+      containerDiv.style.display = "flex";
+      containerDiv.style.flexDirection = "row";
 
-      const deleteButton = document.createElement("button");
-      deleteButton.textContent = "Delete";
-      deleteButton.style.fontSize = "12px";
-      deleteButton.style.width = "100%";
-      deleteButton.style.height = "100%";
-      deleteButton.style.padding = "0";
-      deleteButton.style.margin = "0";
-      deleteButton.style.display = "flex";
-      deleteButton.style.justifyContent = "center";
-      deleteButton.style.alignItems = "center";
+      const createButton = (buttonText: string): HTMLButtonElement => {
+        const button = document.createElement("button");
+        button.textContent = buttonText;
+        button.style.fontSize = "12px";
+        button.style.width = "100%";
+        button.style.height = "100%";
+        button.style.padding = "0";
+        button.style.margin = "0";
+        button.style.display = "flex";
+        button.style.justifyContent = "center";
+        button.style.alignItems = "center";
+        return button;
+      };
+
+      const editButton = createButton("Edit");
+      containerDiv.appendChild(editButton);
+
+      const deleteButton = createButton("Delete");
       deleteButton.onclick = (event: MouseEvent) => {
         event.preventDefault();
         this._deleteNode(this._selectedNode);
         this._hideNodeSelectionMenu();
       };
-      nodeSelectionMenu.add(deleteButton);
+      containerDiv.appendChild(deleteButton);
 
+      const menuItemWidth = 48;
+      const menuItemHeight = 20;
+      // @ts-ignore
+      const nodeSelectionMenu = this._svg.foreignObject(
+        menuItemWidth * containerDiv.childElementCount,
+        menuItemHeight
+      );
+
+      nodeSelectionMenu.add(containerDiv);
       this._svg.add(nodeSelectionMenu);
       nodeSelectionMenu.hide();
 
@@ -403,7 +421,7 @@
     private _showNodeSelectionMenu(node: WorkflowNode): void {
       setTimeout(() => {
         this._nodeSelectionMenu.move(
-          node.x() + node.width() - this._nodeSelectionMenu.width() - padSize,
+          node.cx() - this._nodeSelectionMenu.width() / 2,
           node.y() + node.height() + 3
         );
         this._nodeSelectionMenu.show();
