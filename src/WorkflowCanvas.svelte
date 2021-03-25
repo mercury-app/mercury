@@ -147,6 +147,7 @@
     private _nodes: Set<WorkflowNode>;
     private _selectedNode: WorkflowNode;
     private _nodeSelectionMenu: any;
+    private _moveAnimationDuration: number;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -164,6 +165,8 @@
 
       this._nodes = new Set();
       this._nodeSelectionMenu = this._setupNodeSelectionMenu();
+
+      this._moveAnimationDuration = 100;
     }
 
     private _setupPlacementMode() {
@@ -198,7 +201,9 @@
 
         // The svg.js library's `animate` method incomplete type information.
         // @ts-ignore
-        placementMarker.animate({ duration: 80, when: "absolute" }).move(x, y);
+        placementMarker
+          .animate({ duration: this._moveAnimationDuration, when: "absolute" })
+          .move(x, y);
       };
 
       this._svg.node.onclick = (_event) => {
@@ -310,7 +315,9 @@
         box.width,
         box.height
       );
-      handler.el.animate({ duration: 80, when: "absolute" }).move(x, y);
+      handler.el
+        .animate({ duration: this._moveAnimationDuration, when: "absolute" })
+        .move(x, y);
       this._setMoveCursor();
 
       let scrollDelta: Delta = { x: 0, y: 0 };
@@ -382,7 +389,7 @@
           node.y() + node.height() + 3
         );
         this._nodeSelectionMenu.show();
-      }, 100);
+      }, this._moveAnimationDuration + 20);
     }
 
     private _hideNodeSelectionMenu(): void {
