@@ -541,6 +541,7 @@
     }
 
     private _deleteNode(node: WorkflowNode): void {
+      this._removeAllConnectionsForNode(node);
       this._nodes.delete(node);
       node.remove();
     }
@@ -613,6 +614,35 @@
         for (const entry of this._connectionsDestToSrc.get(node).entries()) {
           this._updateConnection(entry[0], node, entry[1]);
         }
+      }
+    }
+
+    private _removeAllConnectionsForNode(node: WorkflowNode): void {
+      if (this._connectionsSrcToDest.has(node)) {
+        const connections = this._connectionsSrcToDest.get(node);
+        for (const entry of connections.entries()) {
+          // Remove the dest->src binding
+          const dest = entry[0];
+          this._connectionsDestToSrc.get(dest).delete(node);
+
+          // Delete the connector from the svg itself
+          const connector = entry[1];
+          connector.remove();
+        }
+        this._connectionsSrcToDest.delete(node);
+      }
+      if (this._connectionsDestToSrc.has(node)) {
+        const connections = this._connectionsDestToSrc.get(node);
+        for (const entry of connections.entries()) {
+          // Remove the src->dest binding
+          const src = entry[0];
+          this._connectionsSrcToDest.get(src).delete(node);
+
+          // Delete the connector from the svg itself
+          const connector = entry[1];
+          connector.remove();
+        }
+        this._connectionsDestToSrc.delete(node);
       }
     }
 
