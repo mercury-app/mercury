@@ -474,7 +474,10 @@
 
       node.receiverGroup.mouseover((event: MouseEvent) => {
         event.preventDefault();
-        if (this._connectionInProgress) {
+        if (
+          this._connectionInProgress &&
+          !this._connectionExists(this._currentConnectionSource, node)
+        ) {
           node.highlightReceiver();
         }
       });
@@ -485,7 +488,10 @@
         }
       });
       node.receiverGroup.click(() => {
-        if (!this._connectionInProgress) {
+        if (
+          !this._connectionInProgress ||
+          this._connectionExists(this._currentConnectionSource, node)
+        ) {
           return;
         }
         this._endConnection(node);
@@ -695,6 +701,16 @@
         connectorDest.highlightReceiver();
       }
       this._currentConnector = connector;
+    }
+
+    private _connectionExists(src: WorkflowNode, dest: WorkflowNode): boolean {
+      if (this._connectionsSrcToDest.has(src)) {
+        const existingConnections = this._connectionsSrcToDest.get(src);
+        if (existingConnections.has(dest)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     public placeNewNode() {
