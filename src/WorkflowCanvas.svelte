@@ -505,7 +505,10 @@
       });
       node.transmitterGroup.mouseout((event: MouseEvent) => {
         event.preventDefault();
-        if (!this._connectionInProgress) {
+        if (
+          !this._connectionInProgress &&
+          node !== this._currentConnectionSource
+        ) {
           node.unhighlightTransmitter();
         }
       });
@@ -701,6 +704,8 @@
         connectorDest.highlightReceiver();
       }
       this._currentConnector = connector;
+      this._currentConnectionSource = connectorSrc;
+      this._currentConnectionDestination = connectorDest;
     }
 
     private _connectionExists(src: WorkflowNode, dest: WorkflowNode): boolean {
