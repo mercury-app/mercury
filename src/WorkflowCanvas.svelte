@@ -57,6 +57,9 @@
     private _outlineRect: Rect;
     private _titleSeparator: Line;
     private _titleElement: HTMLParagraphElement;
+    private _mainBody: G;
+    private _transmitterGroup: G;
+    private _receiverGroup: G;
     private _isSelected: boolean;
 
     constructor(svg: Svg, position: Point) {
@@ -72,8 +75,11 @@
         .radius(strokeWidth)
         .fill("none")
         .stroke({ width: strokeWidth, color: this._innerRect.fill() });
+      this._mainBody = svg.group();
+      this._mainBody.add(this._innerRect);
+      this._mainBody.add(this._outlineRect);
 
-      const createInputRect = (): G => {
+      const createEnvIORect = (): G => {
         const mainRect = svg
           .rect(padSize, cellSize)
           .radius(strokeWidth)
@@ -91,8 +97,8 @@
         return inputRect;
       };
 
-      const inputReceiverRect = createInputRect().move(-padSize, 0);
-      const inputTransmitterRect = createInputRect()
+      this._receiverGroup = createEnvIORect().move(-padSize, 0);
+      this._transmitterGroup = createEnvIORect()
         .flip()
         .move(-padSize - this._innerRect.width(), -cellSize);
 
@@ -119,31 +125,82 @@
       titleObject.add(this._titleElement);
 
       svg.add(this);
-      this.add(this._innerRect);
-      this.add(inputReceiverRect);
-      this.add(inputTransmitterRect);
+      this.add(this._receiverGroup);
+      this.add(this._transmitterGroup);
+      this.add(this._mainBody);
       this.add(titleObject);
       this.add(this._titleSeparator);
-      this.add(this._outlineRect);
       this.move(position.x - padSize, position.y);
 
       this._isSelected = false;
     }
 
-    public select() {
+    public select(): void {
       this._outlineRect.stroke({ color: "black" });
       this._titleSeparator.stroke({ color: "black" });
       this._isSelected = true;
     }
 
-    public unselect() {
+    public unselect(): void {
       this._outlineRect.stroke({ color: "lightgray" });
       this._titleSeparator.stroke({ color: "lightgray" });
       this._isSelected = false;
     }
 
-    get isSelected() {
+    public highlightReceiver(): void {
+      this._receiverGroup.children().forEach((element) => {
+        element.fill("black");
+        element.stroke({ color: "black" });
+      });
+    }
+
+    public unhighlightReceiver(): void {
+      this._receiverGroup.children().forEach((element) => {
+        element.fill("lightgray");
+        element.stroke({ color: "lightgray" });
+      });
+    }
+
+    public highlightTransmitter(): void {
+      this._transmitterGroup.children().forEach((element) => {
+        element.fill("black");
+        element.stroke({ color: "black" });
+      });
+    }
+
+    public unhighlightTransmitter(): void {
+      this._transmitterGroup.children().forEach((element) => {
+        element.fill("lightgray");
+        element.stroke({ color: "lightgray" });
+      });
+    }
+
+    get isSelected(): boolean {
       return this._isSelected;
+    }
+
+    get mainBody(): G {
+      return this._mainBody;
+    }
+
+    get receiverGroup(): G {
+      return this._receiverGroup;
+    }
+
+    get receiverCoordinate(): Point {
+      const x = this.x();
+      const y = this.y() + this._receiverGroup.height() / 2;
+      return { x, y };
+    }
+
+    get transmitterGroup(): G {
+      return this._transmitterGroup;
+    }
+
+    get transmitterCoordinate(): Point {
+      const x = this.x() + this.width();
+      const y = this.y() + this._transmitterGroup.height() / 2;
+      return { x, y };
     }
   }
 
@@ -156,6 +213,12 @@
     private _selectedNode: WorkflowNode;
     private _nodeSelectionMenu: any;
     private _moveAnimationDuration: number;
+    private _connectionInProgress: boolean;
+    private _currentConnector: Line;
+    private _currentConnectionSource: WorkflowNode;
+    private _currentConnectionDestination: WorkflowNode;
+    private _connectionsSrcToDest: Map<WorkflowNode, Map<WorkflowNode, Line>>;
+    private _connectionsDestToSrc: Map<WorkflowNode, Map<WorkflowNode, Line>>;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -174,7 +237,17 @@
         this._selectNode(null);
         this._hideNodeSelectionMenu();
       });
+      background.mousemove((event: SvgMouseMoveEvent) => {
+        if (this._connectionInProgress && this._currentConnector != null) {
+          const { x, y } = this._currentConnectionSource.transmitterCoordinate;
+          // @ts-ignore
+          this._currentConnector
+            .animate({ duration: 100, when: "absolute" })
+            .plot(x, y, event.layerX, event.layerY);
+        }
+      });
 
+      this._moveAnimationDuration = 100;
       this._inPlacementMode = false;
       this._setupPlacementMode();
 
@@ -182,7 +255,12 @@
       this._selectedNode = null;
       this._nodeSelectionMenu = this._setupNodeSelectionMenu();
 
-      this._moveAnimationDuration = 100;
+      this._connectionInProgress = false;
+      this._currentConnector = null;
+      this._currentConnectionSource = null;
+      this._currentConnectionDestination = null;
+      this._connectionsSrcToDest = new Map();
+      this._connectionsDestToSrc = new Map();
     }
 
     private _setupPlacementMode() {
@@ -349,9 +427,7 @@
         box.width,
         box.height
       );
-      handler.el
-        .animate({ duration: this._moveAnimationDuration, when: "absolute" })
-        .move(x, y);
+      handler.move(x, y);
       this._setMoveCursor();
 
       let scrollDelta: Delta = { x: 0, y: 0 };
@@ -383,21 +459,82 @@
     private _addNode(position: Point): WorkflowNode {
       const node = new WorkflowNode(this._svg, position);
 
-      node.click((event: MouseEvent) => {
+      node.mainBody.click((event: MouseEvent) => {
         event.preventDefault();
         this._selectNode(node);
         this._showNodeSelectionMenu(node);
       });
 
+      node.receiverGroup.mouseover((event: MouseEvent) => {
+        event.preventDefault();
+        if (this._connectionInProgress) {
+          node.highlightReceiver();
+        }
+      });
+      node.receiverGroup.mouseout((event: MouseEvent) => {
+        event.preventDefault();
+        if (this._connectionInProgress) {
+          node.unhighlightReceiver();
+        }
+      });
+      node.receiverGroup.click(() => {
+        if (this._connectionInProgress) {
+          this._connectionInProgress = false;
+
+          this._currentConnectionDestination = node;
+          this._addConnection(
+            this._currentConnectionSource,
+            this._currentConnectionDestination,
+            this._currentConnector
+          );
+          node.highlightReceiver();
+
+          this._currentConnector = null;
+        }
+      });
+
+      node.transmitterGroup.mouseover((event: MouseEvent) => {
+        event.preventDefault();
+        if (!this._connectionInProgress) {
+          node.highlightTransmitter();
+        }
+      });
+      node.transmitterGroup.mouseout((event: MouseEvent) => {
+        event.preventDefault();
+        if (!this._connectionInProgress) {
+          node.unhighlightTransmitter();
+        }
+      });
+      node.transmitterGroup.click(() => {
+        this._connectionInProgress = true;
+        this._currentConnectionSource = node;
+        const { x, y } = node.transmitterCoordinate;
+        this._currentConnector = this._svg.line(x, y, x, y);
+        this._currentConnector.stroke({
+          color: "black",
+          width: 4,
+          linecap: "round",
+        });
+        node.highlightTransmitter();
+      });
+
       node.draggable();
       node.on("dragmove.namespace", (event: SvgDragEvent) => {
-        this._hideNodeSelectionMenu();
-        this._selectNode(node);
+        if (
+          event.detail.event.movementX != 0 &&
+          event.detail.event.movementY != 0
+        ) {
+          this._hideNodeSelectionMenu();
+          this._selectNode(node);
+        }
         this._performDrag(event);
+        this._updateAllConnectionsForNode(node);
       });
       node.on("dragend.namespace", () => {
         this._setNormalCursor();
-        this._showNodeSelectionMenu(node);
+        if (node.isSelected) {
+          this._showNodeSelectionMenu(node);
+        }
       });
 
       return node;
@@ -432,16 +569,63 @@
       this._nodeSelectionMenu.hide();
     }
 
+    private _addConnection(
+      src: WorkflowNode,
+      dest: WorkflowNode,
+      connector: Line
+    ): void {
+      this._updateConnection(
+        this._currentConnectionSource,
+        this._currentConnectionDestination,
+        this._currentConnector
+      );
+
+      if (this._connectionsSrcToDest.has(src)) {
+        this._connectionsSrcToDest.get(src).set(dest, connector);
+      } else {
+        this._connectionsSrcToDest.set(src, new Map([[dest, connector]]));
+      }
+      if (this._connectionsDestToSrc.has(dest)) {
+        this._connectionsDestToSrc.get(dest).set(src, connector);
+      } else {
+        this._connectionsDestToSrc.set(dest, new Map([[src, connector]]));
+      }
+    }
+
+    private _updateConnection(
+      src: WorkflowNode,
+      dest: WorkflowNode,
+      connector: Line
+    ): void {
+      const p1 = src.transmitterCoordinate;
+      const p2 = dest.receiverCoordinate;
+      // @ts-ignore
+      connector.plot(p1.x, p1.y, p2.x, p2.y);
+    }
+
+    private _updateAllConnectionsForNode(node: WorkflowNode): void {
+      if (this._connectionsSrcToDest.has(node)) {
+        for (const entry of this._connectionsSrcToDest.get(node).entries()) {
+          this._updateConnection(node, entry[0], entry[1]);
+        }
+      }
+      if (this._connectionsDestToSrc.has(node)) {
+        for (const entry of this._connectionsDestToSrc.get(node).entries()) {
+          this._updateConnection(entry[0], node, entry[1]);
+        }
+      }
+    }
+
+    public placeNewNode() {
+      this._inPlacementMode = true;
+    }
+
     get container(): HTMLElement {
       return this._svg.node.parentElement.parentElement;
     }
 
     get svgNode(): SVGElement {
       return this._svg.node;
-    }
-
-    public placeNewNode() {
-      this._inPlacementMode = true;
     }
   }
 
