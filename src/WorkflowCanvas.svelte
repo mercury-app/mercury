@@ -236,9 +236,12 @@
         event.preventDefault();
         this._selectNode(null);
         this._hideNodeSelectionMenu();
+        if (!this._connectionInProgress) {
+          this._selectConnector(null);
+        }
       });
       background.mousemove((event: SvgMouseMoveEvent) => {
-        if (this._connectionInProgress && this._currentConnector != null) {
+        if (this._connectionInProgress && this._currentConnector !== null) {
           const { x, y } = this._currentConnectionSource.transmitterCoordinate;
           // @ts-ignore
           this._currentConnector
@@ -415,8 +418,8 @@
       const { handler, box } = event.detail;
       event.preventDefault();
       if (
-        event.detail.event.movementX == 0 &&
-        event.detail.event.movementY == 0
+        event.detail.event.movementX === 0 &&
+        event.detail.event.movementY === 0
       ) {
         return;
       }
@@ -460,9 +463,13 @@
       const node = new WorkflowNode(this._svg, position);
 
       node.mainBody.click((event: MouseEvent) => {
+        if (this._connectionInProgress) {
+          return;
+        }
         event.preventDefault();
         this._selectNode(node);
         this._showNodeSelectionMenu(node);
+        this._selectConnector(null);
       });
 
       node.receiverGroup.mouseover((event: MouseEvent) => {
@@ -478,19 +485,10 @@
         }
       });
       node.receiverGroup.click(() => {
-        if (this._connectionInProgress) {
-          this._connectionInProgress = false;
-
-          this._currentConnectionDestination = node;
-          this._addConnection(
-            this._currentConnectionSource,
-            this._currentConnectionDestination,
-            this._currentConnector
-          );
-          node.highlightReceiver();
-
-          this._currentConnector = null;
+        if (!this._connectionInProgress) {
+          return;
         }
+        this._endConnection(node);
       });
 
       node.transmitterGroup.mouseover((event: MouseEvent) => {
@@ -506,24 +504,23 @@
         }
       });
       node.transmitterGroup.click(() => {
-        this._connectionInProgress = true;
-        this._currentConnectionSource = node;
-        const { x, y } = node.transmitterCoordinate;
-        this._currentConnector = this._svg.line(x, y, x, y);
-        this._currentConnector.stroke({
-          color: "black",
-          width: 4,
-          linecap: "round",
-        });
-        node.highlightTransmitter();
+        if (this._connectionInProgress) {
+          return;
+        }
+        this._beginConnection(node);
       });
 
       node.draggable();
       node.on("dragmove.namespace", (event: SvgDragEvent) => {
+        if (this._connectionInProgress) {
+          event.preventDefault();
+          return;
+        }
         if (
-          event.detail.event.movementX != 0 &&
-          event.detail.event.movementY != 0
+          event.detail.event.movementX !== 0 ||
+          event.detail.event.movementY !== 0
         ) {
+          this._selectConnector(null);
           this._hideNodeSelectionMenu();
           this._selectNode(node);
         }
@@ -547,10 +544,10 @@
     }
 
     private _selectNode(node: WorkflowNode): void {
-      this._nodes.forEach((element) => {
-        element.unselect();
+      this._nodes.forEach((workflowNode) => {
+        workflowNode.unselect();
       });
-      if (node != null) {
+      if (node !== null) {
         node.select();
       }
       this._selectedNode = node;
@@ -570,16 +567,43 @@
       this._nodeSelectionMenu.hide();
     }
 
+    private _beginConnection(node: WorkflowNode) {
+      this._selectNode(null);
+      this._hideNodeSelectionMenu();
+
+      this._connectionInProgress = true;
+      this._currentConnectionSource = node;
+      const { x, y } = node.transmitterCoordinate;
+      this._currentConnector = this._svg.line(x, y, x, y);
+      this._currentConnector.stroke({
+        color: "black",
+        width: 2,
+        linecap: "round",
+      });
+      this._currentConnectionSource.highlightTransmitter();
+    }
+
+    private _endConnection(node: WorkflowNode) {
+      this._connectionInProgress = false;
+      this._currentConnectionDestination = node;
+      this._addConnection(
+        this._currentConnectionSource,
+        this._currentConnectionDestination,
+        this._currentConnector
+      );
+    }
+
     private _addConnection(
       src: WorkflowNode,
       dest: WorkflowNode,
       connector: Line
     ): void {
-      this._updateConnection(
-        this._currentConnectionSource,
-        this._currentConnectionDestination,
-        this._currentConnector
-      );
+      this._updateConnection(src, dest, connector);
+      connector.click(() => {
+        this._selectNode(null);
+        this._hideNodeSelectionMenu();
+        this._selectConnector(connector);
+      });
 
       if (this._connectionsSrcToDest.has(src)) {
         this._connectionsSrcToDest.get(src).set(dest, connector);
@@ -591,6 +615,7 @@
       } else {
         this._connectionsDestToSrc.set(dest, new Map([[src, connector]]));
       }
+      this._selectConnector(connector);
     }
 
     private _updateConnection(
@@ -606,13 +631,17 @@
 
     private _updateAllConnectionsForNode(node: WorkflowNode): void {
       if (this._connectionsSrcToDest.has(node)) {
-        for (const entry of this._connectionsSrcToDest.get(node).entries()) {
-          this._updateConnection(node, entry[0], entry[1]);
+        for (const [dest, connector] of this._connectionsSrcToDest
+          .get(node)
+          .entries()) {
+          this._updateConnection(node, dest, connector);
         }
       }
       if (this._connectionsDestToSrc.has(node)) {
-        for (const entry of this._connectionsDestToSrc.get(node).entries()) {
-          this._updateConnection(entry[0], node, entry[1]);
+        for (const [src, connector] of this._connectionsDestToSrc
+          .get(node)
+          .entries()) {
+          this._updateConnection(src, node, connector);
         }
       }
     }
@@ -620,30 +649,52 @@
     private _removeAllConnectionsForNode(node: WorkflowNode): void {
       if (this._connectionsSrcToDest.has(node)) {
         const connections = this._connectionsSrcToDest.get(node);
-        for (const entry of connections.entries()) {
+        for (const [dest, connector] of connections.entries()) {
           // Remove the dest->src binding
-          const dest = entry[0];
           this._connectionsDestToSrc.get(dest).delete(node);
 
-          // Delete the connector from the svg itself
-          const connector = entry[1];
+          // Delete the connector itself
           connector.remove();
         }
         this._connectionsSrcToDest.delete(node);
       }
       if (this._connectionsDestToSrc.has(node)) {
         const connections = this._connectionsDestToSrc.get(node);
-        for (const entry of connections.entries()) {
+        for (const [src, connector] of connections.entries()) {
           // Remove the src->dest binding
-          const src = entry[0];
           this._connectionsSrcToDest.get(src).delete(node);
 
-          // Delete the connector from the svg itself
-          const connector = entry[1];
+          // Delete the connector itself
           connector.remove();
         }
         this._connectionsDestToSrc.delete(node);
       }
+    }
+
+    private _selectConnector(connector: Line): void {
+      let connectorSrc = null;
+      let connectorDest = null;
+      for (const [src, connections] of this._connectionsSrcToDest.entries()) {
+        src.unhighlightTransmitter();
+        for (const [dest, conn] of connections) {
+          dest.unhighlightReceiver();
+          conn.stroke({ color: "lightgray" });
+          if (conn === connector) {
+            connectorSrc = src;
+            connectorDest = dest;
+          }
+        }
+      }
+      if (
+        connector !== null &&
+        connectorSrc !== null &&
+        connectorDest !== null
+      ) {
+        connector.stroke({ color: "black" });
+        connectorSrc.highlightTransmitter();
+        connectorDest.highlightReceiver();
+      }
+      this._currentConnector = connector;
     }
 
     public placeNewNode() {
@@ -663,7 +714,7 @@
   let canvas: WorkflowCanvas = null;
 
   export const placeNewNode = () => {
-    if (canvas != null) {
+    if (canvas !== null) {
       canvas.placeNewNode();
     }
   };
