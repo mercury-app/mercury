@@ -43,9 +43,10 @@
   }
 
   const cellSize = 24;
-  const padSize = cellSize / 2;
-  const initialWidth = cellSize * 6;
-  const initialHeight = cellSize * 6;
+  const padWidth = cellSize / 2;
+  const padHeight = cellSize;
+  const mainBodyWidth = cellSize * 6;
+  const mainBodyHeight = cellSize * 6;
   const strokeWidth = 2;
 
   const clamp = (num: number, min: number, max: number): number => {
@@ -66,7 +67,7 @@
       super();
 
       this._innerRect = svg
-        .rect(initialWidth, initialHeight)
+        .rect(mainBodyWidth, mainBodyHeight)
         .radius(strokeWidth)
         .fill("lightgray")
         .opacity(0.2);
@@ -81,15 +82,15 @@
 
       const createEnvIORect = (): G => {
         const mainRect = svg
-          .rect(padSize, cellSize)
+          .rect(padWidth, padHeight)
           .radius(strokeWidth)
           .fill(this._innerRect.fill())
           .stroke({ width: strokeWidth, color: this._innerRect.fill() });
         const fillerRect = svg
-          .rect(padSize / 2, cellSize)
+          .rect(padWidth / 2, padHeight)
           .fill(this._innerRect.fill())
           .stroke({ width: strokeWidth, color: this._innerRect.fill() })
-          .move(padSize / 2, 0);
+          .move(padWidth / 2, 0);
 
         const inputRect = svg.group();
         inputRect.add(mainRect);
@@ -97,10 +98,10 @@
         return inputRect;
       };
 
-      this._receiverGroup = createEnvIORect().move(-padSize, 0);
+      this._receiverGroup = createEnvIORect().move(-padWidth, 0);
       this._transmitterGroup = createEnvIORect()
         .flip()
-        .move(-padSize - this._innerRect.width(), -cellSize);
+        .move(-padWidth - this._innerRect.width(), -padHeight);
 
       this._titleSeparator = svg
         .line(0, cellSize, this._innerRect.width(), cellSize)
@@ -130,7 +131,7 @@
       this.add(this._mainBody);
       this.add(titleObject);
       this.add(this._titleSeparator);
-      this.move(position.x - padSize, position.y);
+      this.move(position.x - padWidth, position.y);
 
       this._isSelected = false;
     }
@@ -272,7 +273,7 @@
 
     private _setupPlacementMode() {
       const placementMarker = this._svg
-        .rect(initialWidth, initialHeight)
+        .rect(mainBodyWidth, mainBodyHeight)
         .radius(strokeWidth)
         .fill("none")
         .stroke({
@@ -389,7 +390,7 @@
         x = clamp(
           x,
           cellSize,
-          this._width - elemWidth - cellSize + padSize * 2
+          this._width - elemWidth - cellSize + padWidth * 2
         );
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
@@ -412,7 +413,7 @@
 
       // Adjust for the input receiver/transmitter pads
       if (adjustForPads) {
-        x = x - padSize;
+        x = x - padWidth;
       }
 
       return { x, y };
@@ -573,6 +574,7 @@
           node.y() + node.height() + 3
         );
         this._nodeSelectionMenu.show();
+        this._nodeSelectionMenu.front();
       }, this._moveAnimationDuration + 20);
     }
 
@@ -589,28 +591,111 @@
     ) {
       const deltaX = endX - startX;
       const deltaY = endY - startY;
-      let curveDelta = strokeWidth * 10;
-      curveDelta = clamp(curveDelta, 0, Math.abs(deltaX) / 2);
-      curveDelta = clamp(curveDelta, 0, Math.abs(deltaY) / 2);
 
-      // Draw a pipe-like path:
-      // 1. move a bit right
-      // 2. curve (quadratic)
-      // 3. move a bit up/down
-      // 2. curve (quadratic)
-      // 5. move right to the end
-      path.plot(
-        `M ${startX} ${startY} ` +
-          `H ${startX + deltaX * 0.5 - curveDelta} ` +
-          `Q ${startX + deltaX * 0.5} ${startY} ${startX + deltaX * 0.5} ${
-            startY + curveDelta * Math.sign(deltaY)
-          } ` +
-          `V ${endY - curveDelta * Math.sign(deltaY)} ` +
-          `Q ${startX + deltaX * 0.5} ${endY} ${
-            startX + deltaX * 0.5 + curveDelta
-          } ${endY} ` +
-          `H ${endX}`
-      );
+      if (endX >= startX) {
+        let curveDelta = cellSize / 2;
+        curveDelta = clamp(curveDelta, 0, Math.abs(deltaX) / 2);
+        curveDelta = clamp(curveDelta, 0, Math.abs(deltaY) / 2);
+
+        // Category I => regular two-bend connector from start to end
+        // 1. move a bit right
+        // 2. curve up/down
+        // 3. move a bit up/down
+        // 4. curve right
+        // 5. move right to the endX
+        path.plot(
+          `M ${startX} ${startY} ` +
+            `H ${startX + deltaX * 0.5 - curveDelta} ` +
+            `Q ${startX + deltaX * 0.5} ${startY} ${startX + deltaX * 0.5} ${
+              startY + curveDelta * Math.sign(deltaY)
+            } ` +
+            `V ${endY - curveDelta * Math.sign(deltaY)} ` +
+            `Q ${startX + deltaX * 0.5} ${endY} ${
+              startX + deltaX * 0.5 + curveDelta
+            } ${endY} ` +
+            `H ${endX}`
+        );
+      } else if (
+        endX < startX &&
+        (startY + mainBodyHeight + padHeight <= endY ||
+          startY - mainBodyHeight - padHeight >= endY)
+      ) {
+        const curveDelta = cellSize / 2;
+        let midPoint = (startY + endY) / 2;
+        if (startY + mainBodyHeight + padHeight <= endY) {
+          // Category IIa  => four-bend connector going below
+          const top = endY - padHeight / 2;
+          const bottom = startY + (mainBodyHeight - padHeight / 2);
+          midPoint = (top + bottom) / 2;
+        } else {
+          // Category IIb  => four-bend connector going above
+          const top = startY - padHeight / 2;
+          const bottom = endY + (mainBodyHeight - padHeight / 2);
+          midPoint = (top + bottom) / 2;
+        }
+
+        // 1. move right by curveDelta
+        // 2. curve up/down
+        // 3. move up/down about half the distance between the nodes' bodies
+        // 4. curve left
+        // 5. move left to endX - curveDelta
+        // 6. curve up/down
+        // 7. move up/down towards endY
+        // 8. curve right
+        // 9. move right to the endX
+        path.plot(
+          `M ${startX} ${startY} ` +
+            `H ${startX + curveDelta} ` +
+            `Q ${startX + 2 * curveDelta} ${startY} ${
+              startX + 2 * curveDelta
+            } ${startY + curveDelta * Math.sign(deltaY)} ` +
+            `V ${midPoint - curveDelta * Math.sign(deltaY)} ` +
+            `Q ${startX + 2 * curveDelta} ${midPoint} ${
+              startX + curveDelta
+            } ${midPoint} ` +
+            `H ${endX - curveDelta} ` +
+            `Q ${endX - 2 * curveDelta} ${midPoint} ${endX - 2 * curveDelta} ${
+              midPoint + curveDelta * Math.sign(deltaY)
+            } ` +
+            `V ${endY - curveDelta * Math.sign(deltaY)} ` +
+            `Q ${endX - 2 * curveDelta} ${endY} ${endX - curveDelta} ${endY} ` +
+            `H ${endX}`
+        );
+      } else {
+        const curveDelta = cellSize / 2;
+        const startTop = startY - padHeight / 2;
+        const endTop = endY - padHeight / 2;
+        const top = Math.min(startTop, endTop);
+
+        // Category III => four-bend loop-over connector
+        // 1. move right by curveDelta
+        // 2. curve up
+        // 3. move up to higher among top of nodes' bodies + curveDelta
+        // 4. curve left
+        // 5. move left to endX - curveDelta
+        // 6. curve down
+        // 7. move down towards endY
+        // 8. curve right
+        // 9. move right to the endX
+        path.plot(
+          `M ${startX} ${startY} ` +
+            `H ${startX + curveDelta} ` +
+            `Q ${startX + 2 * curveDelta} ${startY} ${
+              startX + 2 * curveDelta
+            } ${startY - curveDelta} ` +
+            `V ${top - curveDelta} ` +
+            `Q ${startX + 2 * curveDelta} ${top - 2 * curveDelta} ${
+              startX + curveDelta
+            } ${top - 2 * curveDelta} ` +
+            `H ${endX - curveDelta} ` +
+            `Q ${endX - 2 * curveDelta} ${top - 2 * curveDelta} ${
+              endX - 2 * curveDelta
+            } ${top - curveDelta} ` +
+            `V ${endY - curveDelta} ` +
+            `Q ${endX - 2 * curveDelta} ${endY} ${endX - curveDelta} ${endY} ` +
+            `H ${endX}`
+        );
+      }
     }
 
     private _beginConnection(node: WorkflowNode) {
