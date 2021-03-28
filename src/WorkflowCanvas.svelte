@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  import { Box, G, Line, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
+  import { Box, G, Line, Path, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   type Delta = Point;
@@ -214,11 +214,11 @@
     private _nodeSelectionMenu: any;
     private _moveAnimationDuration: number;
     private _connectionInProgress: boolean;
-    private _currentConnector: Line;
+    private _currentConnector: Path;
     private _currentConnectionSource: WorkflowNode;
     private _currentConnectionDestination: WorkflowNode;
-    private _connectionsSrcToDest: Map<WorkflowNode, Map<WorkflowNode, Line>>;
-    private _connectionsDestToSrc: Map<WorkflowNode, Map<WorkflowNode, Line>>;
+    private _connectionsSrcToDest: Map<WorkflowNode, Map<WorkflowNode, Path>>;
+    private _connectionsDestToSrc: Map<WorkflowNode, Map<WorkflowNode, Path>>;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -244,9 +244,13 @@
         if (this._connectionInProgress && this._currentConnector !== null) {
           const { x, y } = this._currentConnectionSource.transmitterCoordinate;
           // @ts-ignore
-          this._currentConnector
-            .animate({ duration: 100, when: "absolute" })
-            .plot(x, y, event.layerX, event.layerY);
+          this._drawPath(
+            this._currentConnector,
+            x,
+            y,
+            event.layerX,
+            event.layerY
+          );
         }
       });
 
@@ -576,6 +580,39 @@
       this._nodeSelectionMenu.hide();
     }
 
+    private _drawPath(
+      path: Path,
+      startX: number,
+      startY: number,
+      endX: number,
+      endY: number
+    ) {
+      const deltaX = endX - startX;
+      const deltaY = endY - startY;
+      let curveDelta = strokeWidth * 10;
+      curveDelta = clamp(curveDelta, 0, Math.abs(deltaX) / 2);
+      curveDelta = clamp(curveDelta, 0, Math.abs(deltaY) / 2);
+
+      // Draw a pipe-like path:
+      // 1. move a bit right
+      // 2. curve (quadratic)
+      // 3. move a bit up/down
+      // 2. curve (quadratic)
+      // 5. move right to the end
+      path.plot(
+        `M ${startX} ${startY} ` +
+          `H ${startX + deltaX * 0.5 - curveDelta} ` +
+          `Q ${startX + deltaX * 0.5} ${startY} ${startX + deltaX * 0.5} ${
+            startY + curveDelta * Math.sign(deltaY)
+          } ` +
+          `V ${endY - curveDelta * Math.sign(deltaY)} ` +
+          `Q ${startX + deltaX * 0.5} ${endY} ${
+            startX + deltaX * 0.5 + curveDelta
+          } ${endY} ` +
+          `H ${endX}`
+      );
+    }
+
     private _beginConnection(node: WorkflowNode) {
       this._selectNode(null);
       this._hideNodeSelectionMenu();
@@ -583,7 +620,7 @@
       this._connectionInProgress = true;
       this._currentConnectionSource = node;
       const { x, y } = node.transmitterCoordinate;
-      this._currentConnector = this._svg.line(x, y, x, y);
+      this._currentConnector = this._svg.path(`M${x} ${y}`).fill("none");
       this._currentConnector.stroke({
         color: "black",
         width: 2,
@@ -605,7 +642,7 @@
     private _addConnection(
       src: WorkflowNode,
       dest: WorkflowNode,
-      connector: Line
+      connector: Path
     ): void {
       this._updateConnection(src, dest, connector);
       connector.click(() => {
@@ -630,12 +667,12 @@
     private _updateConnection(
       src: WorkflowNode,
       dest: WorkflowNode,
-      connector: Line
+      connector: Path
     ): void {
       const p1 = src.transmitterCoordinate;
       const p2 = dest.receiverCoordinate;
       // @ts-ignore
-      connector.plot(p1.x, p1.y, p2.x, p2.y);
+      this._drawPath(connector, p1.x, p1.y, p2.x, p2.y);
     }
 
     private _updateAllConnectionsForNode(node: WorkflowNode): void {
@@ -680,7 +717,7 @@
       }
     }
 
-    private _selectConnector(connector: Line): void {
+    private _selectConnector(connector: Path): void {
       let connectorSrc = null;
       let connectorDest = null;
       for (const [src, connections] of this._connectionsSrcToDest.entries()) {
