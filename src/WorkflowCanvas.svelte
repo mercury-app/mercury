@@ -479,6 +479,7 @@
     private _connectionInProgress: boolean;
     private _unfinishedConnector: WorkflowConnector;
     private _unconnectedSource: WorkflowNode;
+    private _possibleDestination: WorkflowNode;
     private _selectedConnectors: Set<WorkflowConnector>;
     private _connectionsSrcToDest: Map<
       WorkflowNode,
@@ -512,7 +513,10 @@
       this._svg.mousemove((event: SvgMouseMoveEvent) => {
         if (this._connectionInProgress && this._unfinishedConnector !== null) {
           const start = this._unconnectedSource.transmitterCoordinate;
-          const end = { x: event.layerX - 2, y: event.layerY };
+          let end = { x: event.layerX - 2, y: event.layerY };
+          if (this._possibleDestination !== null) {
+            end = this._possibleDestination.receiverCoordinate;
+          }
           this._unfinishedConnector.redraw(start, end);
         }
       });
@@ -528,6 +532,7 @@
       this._connectionInProgress = false;
       this._unfinishedConnector = null;
       this._unconnectedSource = null;
+      this._possibleDestination = null;
       this._selectedConnectors = new Set();
       this._connectionsSrcToDest = new Map();
       this._connectionsDestToSrc = new Map();
@@ -769,13 +774,15 @@
       });
 
       node.receiverGroup.mouseover((event: MouseEvent) => {
-        event.preventDefault();
         if (
-          this._connectionInProgress &&
-          !this._connectionExists(this._unconnectedSource, node)
+          !this._connectionInProgress ||
+          this._connectionExists(this._unconnectedSource, node)
         ) {
-          node.highlightReceiver();
+          return;
         }
+        event.preventDefault();
+        node.highlightReceiver();
+        this._possibleDestination = node;
       });
       node.receiverGroup.mouseout((event: MouseEvent) => {
         if (!this._connectionInProgress) {
@@ -783,6 +790,7 @@
         }
         event.preventDefault();
         node.unhighlightReceiver();
+        this._possibleDestination = null;
       });
       node.receiverGroup.click((event: MouseEvent) => {
         if (
@@ -896,6 +904,9 @@
         node,
         this._unfinishedConnector
       );
+      this._unconnectedSource = null;
+      this._unfinishedConnector = null;
+      this._possibleDestination = null;
     }
 
     private _addConnection(
