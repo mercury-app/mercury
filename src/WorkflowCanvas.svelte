@@ -62,8 +62,8 @@
     private _transmitterGroup: G;
     private _receiverGroup: G;
     private _isSelected: boolean;
-    private _receiverIsSelected: boolean;
-    private _transmitterIsSelected: boolean;
+    private _isReceiverSelected: boolean;
+    private _isTransmitterSelected: boolean;
 
     constructor(svg: Svg, position: Point) {
       super();
@@ -144,8 +144,8 @@
       this.move(position.x - padWidth * 1.5, position.y - padHeight / 2);
 
       this._isSelected = false;
-      this._receiverIsSelected = false;
-      this._transmitterIsSelected = false;
+      this._isReceiverSelected = false;
+      this._isTransmitterSelected = false;
     }
 
     public select(): void {
@@ -162,12 +162,18 @@
     }
 
     public highlight(): void {
+      if (this._isSelected) {
+        return;
+      }
       this._outlineRect.stroke({ color: "darkgray" });
       this._titleSeparator.stroke({ color: "darkgray" });
       this.front();
     }
 
     public unhighlight(): void {
+      if (this._isSelected) {
+        return;
+      }
       this._outlineRect.stroke({ color: "lightgray" });
       this._titleSeparator.stroke({ color: "lightgray" });
     }
@@ -177,7 +183,7 @@
         element.fill("black");
         element.stroke({ color: "black" });
       });
-      this._receiverIsSelected = true;
+      this._isReceiverSelected = true;
     }
 
     public unselectReceiver(): void {
@@ -185,10 +191,13 @@
         element.fill("lightgray");
         element.stroke({ color: "lightgray" });
       });
-      this._receiverIsSelected = false;
+      this._isReceiverSelected = false;
     }
 
     public highlightReceiver(): void {
+      if (this._isReceiverSelected) {
+        return;
+      }
       this._receiverGroup.children().forEach((element) => {
         element.fill("darkgray");
         element.stroke({ color: "darkgray" });
@@ -196,6 +205,9 @@
     }
 
     public unhighlightReceiver(): void {
+      if (this._isReceiverSelected) {
+        return;
+      }
       this._receiverGroup.children().forEach((element) => {
         element.fill("lightgray");
         element.stroke({ color: "lightgray" });
@@ -207,7 +219,7 @@
         element.fill("black");
         element.stroke({ color: "black" });
       });
-      this._transmitterIsSelected = true;
+      this._isTransmitterSelected = true;
     }
 
     public unselectTransmitter(): void {
@@ -215,10 +227,13 @@
         element.fill("lightgray");
         element.stroke({ color: "lightgray" });
       });
-      this._transmitterIsSelected = false;
+      this._isTransmitterSelected = false;
     }
 
     public highlightTransmitter(): void {
+      if (this._isTransmitterSelected) {
+        return;
+      }
       this._transmitterGroup.children().forEach((element) => {
         element.fill("darkgray");
         element.stroke({ color: "darkgray" });
@@ -226,6 +241,9 @@
     }
 
     public unhighlightTransmitter(): void {
+      if (this._isTransmitterSelected) {
+        return;
+      }
       this._transmitterGroup.children().forEach((element) => {
         element.fill("lightgray");
         element.stroke({ color: "lightgray" });
@@ -250,8 +268,8 @@
       return { x, y };
     }
 
-    get receiverIsSelected(): boolean {
-      return this._receiverIsSelected;
+    get isReceiverSelected(): boolean {
+      return this._isReceiverSelected;
     }
 
     get transmitterGroup(): G {
@@ -264,8 +282,8 @@
       return { x, y };
     }
 
-    get transmitterIsSelected(): boolean {
-      return this._transmitterIsSelected;
+    get isTransmitterSelected(): boolean {
+      return this._isTransmitterSelected;
     }
   }
 
@@ -430,11 +448,17 @@
     }
 
     public highlight() {
+      if (this._isSelected) {
+        return;
+      }
       this._mainPath.stroke({ color: "darkgray" });
       this.front();
     }
 
     public unhighlight() {
+      if (this._isSelected) {
+        return;
+      }
       this._mainPath.stroke({ color: "lightgray" });
     }
 
@@ -453,9 +477,9 @@
     private _nodeSelectionMenu: any;
     private _moveAnimationDuration: number;
     private _connectionInProgress: boolean;
-    private _currentConnector: WorkflowConnector;
-    private _currentConnectionSource: WorkflowNode;
-    private _currentConnectionDestination: WorkflowNode;
+    private _unfinishedConnector: WorkflowConnector;
+    private _unconnectedSource: WorkflowNode;
+    private _selectedConnectors: Set<WorkflowConnector>;
     private _connectionsSrcToDest: Map<
       WorkflowNode,
       Map<WorkflowNode, WorkflowConnector>
@@ -486,11 +510,11 @@
         }
       });
       background.mousemove((event: SvgMouseMoveEvent) => {
-        if (this._connectionInProgress && this._currentConnector !== null) {
-          const start = this._currentConnectionSource.transmitterCoordinate;
+        if (this._connectionInProgress && this._unfinishedConnector !== null) {
+          const start = this._unconnectedSource.transmitterCoordinate;
           const end = { x: event.layerX, y: event.layerY };
           // @ts-ignore
-          this._currentConnector.redraw(start, end);
+          this._unfinishedConnector.redraw(start, end);
         }
       });
 
@@ -503,9 +527,9 @@
       this._nodeSelectionMenu = this._setupNodeSelectionMenu();
 
       this._connectionInProgress = false;
-      this._currentConnector = null;
-      this._currentConnectionSource = null;
-      this._currentConnectionDestination = null;
+      this._unfinishedConnector = null;
+      this._unconnectedSource = null;
+      this._selectedConnectors = new Set();
       this._connectionsSrcToDest = new Map();
       this._connectionsDestToSrc = new Map();
     }
@@ -589,6 +613,7 @@
       deleteButton.onclick = (event: MouseEvent) => {
         event.preventDefault();
         this._deleteNode(this._selectedNode);
+        this._selectedNode = null;
         this._hideNodeSelectionMenu();
       };
       containerDiv.appendChild(deleteButton);
@@ -631,7 +656,11 @@
           cellSize,
           this._width - elemWidth - cellSize + padWidth * 3
         );
-        y = clamp(y, cellSize, this._height - elemHeight - cellSize + padHeight / 2);
+        y = clamp(
+          y,
+          cellSize,
+          this._height - elemHeight - cellSize + padHeight / 2
+        );
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
         y = clamp(y, cellSize, this._height - elemHeight - cellSize);
@@ -713,9 +742,9 @@
           return;
         }
         event.preventDefault();
+        this._selectConnector(null);
         this._selectNode(node);
         this._showNodeSelectionMenu(node);
-        this._selectConnector(null);
       });
       node.mainBody.mouseover((event: MouseEvent) => {
         if (node.isSelected || this._connectionInProgress) {
@@ -723,6 +752,10 @@
         }
         event.preventDefault();
         node.highlight();
+        this._highlightAllConnectionsForNode(node);
+        if (this._nodeSelectionMenu.visible()) {
+          this._nodeSelectionMenu.front();
+        }
       });
       node.mainBody.mouseout((event: MouseEvent) => {
         if (node.isSelected || this._connectionInProgress) {
@@ -730,6 +763,7 @@
         }
         event.preventDefault();
         node.unhighlight();
+        this._unhighlightAllConnectionsForNode(node);
         if (this._selectedNode !== null) {
           this._selectedNode.front();
         }
@@ -739,7 +773,7 @@
         event.preventDefault();
         if (
           this._connectionInProgress &&
-          !this._connectionExists(this._currentConnectionSource, node)
+          !this._connectionExists(this._unconnectedSource, node)
         ) {
           node.highlightReceiver();
         }
@@ -754,7 +788,7 @@
       node.receiverGroup.click((event: MouseEvent) => {
         if (
           !this._connectionInProgress ||
-          this._connectionExists(this._currentConnectionSource, node)
+          this._connectionExists(this._unconnectedSource, node)
         ) {
           return;
         }
@@ -763,14 +797,14 @@
       });
 
       node.transmitterGroup.mouseover((event: MouseEvent) => {
-        if (this._connectionInProgress || node.transmitterIsSelected) {
+        if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
         node.highlightTransmitter();
       });
       node.transmitterGroup.mouseout((event: MouseEvent) => {
-        if (this._connectionInProgress || node.transmitterIsSelected) {
+        if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
@@ -814,14 +848,17 @@
       this._removeAllConnectionsForNode(node);
       this._nodes.delete(node);
       node.remove();
+      this._selectConnector(null);
     }
 
     private _selectNode(node: WorkflowNode): void {
       this._nodes.forEach((workflowNode) => {
         workflowNode.unselect();
+        this._unselectAllConnectionsForNode(workflowNode);
       });
       if (node !== null) {
         node.select();
+        this._selectAllConnectionsForNode(node);
       }
       this._selectedNode = node;
     }
@@ -847,19 +884,18 @@
       this._hideNodeSelectionMenu();
 
       this._connectionInProgress = true;
-      this._currentConnectionSource = node;
+      this._unconnectedSource = node;
       const start = node.transmitterCoordinate;
-      this._currentConnector = new WorkflowConnector(this._svg, start);
-      this._currentConnectionSource.selectTransmitter();
+      this._unfinishedConnector = new WorkflowConnector(this._svg, start);
+      this._unconnectedSource.selectTransmitter();
     }
 
     private _endConnection(node: WorkflowNode) {
       this._connectionInProgress = false;
-      this._currentConnectionDestination = node;
       this._addConnection(
-        this._currentConnectionSource,
-        this._currentConnectionDestination,
-        this._currentConnector
+        this._unconnectedSource,
+        node,
+        this._unfinishedConnector
       );
     }
 
@@ -876,6 +912,7 @@
         event.preventDefault();
         this._selectNode(null);
         this._hideNodeSelectionMenu();
+        this._selectedConnectors.clear();
         this._selectConnector(connector);
       });
       connector.mouseover((event: MouseEvent) => {
@@ -886,6 +923,9 @@
         src.highlightTransmitter();
         dest.highlightReceiver();
         connector.highlight();
+        if (this._nodeSelectionMenu.visible()) {
+          this._nodeSelectionMenu.front();
+        }
       });
       connector.mouseout((event: MouseEvent) => {
         if (connector.isSelected || this._connectionInProgress) {
@@ -895,9 +935,9 @@
         src.unhighlightTransmitter();
         dest.unhighlightReceiver();
         connector.unhighlight();
-        if (this._currentConnector !== null) {
-          this._currentConnector.front();
-        }
+        this._selectedConnectors.forEach((connector) => {
+          this._selectConnector(connector);
+        });
       });
 
       if (this._connectionsSrcToDest.has(src)) {
@@ -925,20 +965,7 @@
     }
 
     private _updateAllConnectionsForNode(node: WorkflowNode): void {
-      if (this._connectionsSrcToDest.has(node)) {
-        for (const [dest, connector] of this._connectionsSrcToDest
-          .get(node)
-          .entries()) {
-          this._updateConnection(node, dest, connector);
-        }
-      }
-      if (this._connectionsDestToSrc.has(node)) {
-        for (const [src, connector] of this._connectionsDestToSrc
-          .get(node)
-          .entries()) {
-          this._updateConnection(src, node, connector);
-        }
-      }
+      this._forAllNodeConnections(node, this._updateConnection.bind(this));
     }
 
     private _removeAllConnectionsForNode(node: WorkflowNode): void {
@@ -949,6 +976,9 @@
           this._connectionsDestToSrc.get(dest).delete(node);
 
           // Delete the connector itself
+          if (this._selectedConnectors.has(connector)) {
+            this._selectedConnectors.delete(connector);
+          }
           connector.remove();
         }
         this._connectionsSrcToDest.delete(node);
@@ -961,25 +991,119 @@
 
           // Delete the connector itself
           connector.remove();
+          if (this._selectedConnectors.has(connector)) {
+            this._selectedConnectors.delete(connector);
+          }
         }
         this._connectionsDestToSrc.delete(node);
       }
     }
 
+    private _selectAllConnectionsForNode(node: WorkflowNode) {
+      this._selectedConnectors.clear();
+      this._forAllNodeConnections(
+        node,
+        (
+          src: WorkflowNode,
+          dest: WorkflowNode,
+          connector: WorkflowConnector
+        ) => {
+          src.selectTransmitter();
+          dest.selectReceiver();
+          connector.select();
+          this._selectedConnectors.add(connector);
+        }
+      );
+    }
+
+    private _unselectAllConnectionsForNode(node: WorkflowNode) {
+      this._forAllNodeConnections(
+        node,
+        (
+          src: WorkflowNode,
+          dest: WorkflowNode,
+          connector: WorkflowConnector
+        ) => {
+          src.unselectTransmitter();
+          dest.unselectReceiver();
+          connector.unselect();
+        }
+      );
+    }
+
+    private _highlightAllConnectionsForNode(node: WorkflowNode) {
+      this._forAllNodeConnections(
+        node,
+        (
+          src: WorkflowNode,
+          dest: WorkflowNode,
+          connector: WorkflowConnector
+        ) => {
+          src.highlightTransmitter();
+          dest.highlightReceiver();
+          connector.highlight();
+        }
+      );
+    }
+
+    private _unhighlightAllConnectionsForNode(node: WorkflowNode) {
+      this._forAllNodeConnections(
+        node,
+        (
+          src: WorkflowNode,
+          dest: WorkflowNode,
+          connector: WorkflowConnector
+        ) => {
+          src.unhighlightTransmitter();
+          dest.unhighlightReceiver();
+          connector.unhighlight();
+        }
+      );
+      this._selectedConnectors.forEach((connector) => {
+        this._selectConnector(connector);
+      });
+    }
+
+    private _forAllNodeConnections(node: WorkflowNode, fn: Function): void {
+      if (this._connectionsSrcToDest.has(node)) {
+        for (const [dest, connector] of this._connectionsSrcToDest
+          .get(node)
+          .entries()) {
+          fn(node, dest, connector);
+        }
+      }
+      if (this._connectionsDestToSrc.has(node)) {
+        for (const [src, connector] of this._connectionsDestToSrc
+          .get(node)
+          .entries()) {
+          fn(src, node, connector);
+        }
+      }
+    }
+
     private _selectConnector(connector: WorkflowConnector): void {
+      const unselectedTransmitters = new Set(this._connectionsSrcToDest.keys());
+      const unselectedReceivers = new Set(this._connectionsDestToSrc.keys());
       let connectorSrc = null;
       let connectorDest = null;
       for (const [src, connections] of this._connectionsSrcToDest.entries()) {
-        src.unselectTransmitter();
         for (const [dest, conn] of connections) {
-          dest.unselectReceiver();
-          conn.unselect();
           if (conn === connector) {
             connectorSrc = src;
             connectorDest = dest;
           }
+
+          if (this._selectedConnectors.has(conn)) {
+            unselectedTransmitters.delete(src);
+            unselectedReceivers.delete(dest);
+          } else {
+            conn.unselect();
+          }
         }
       }
+      unselectedTransmitters.forEach((src) => src.unselectTransmitter());
+      unselectedReceivers.forEach((dest) => dest.unselectReceiver());
+
       if (
         connector !== null &&
         connectorSrc !== null &&
@@ -988,10 +1112,10 @@
         connector.select();
         connectorSrc.selectTransmitter();
         connectorDest.selectReceiver();
+        this._selectedConnectors.add(connector);
+      } else {
+        this._selectedConnectors.clear();
       }
-      this._currentConnector = connector;
-      this._currentConnectionSource = connectorSrc;
-      this._currentConnectionDestination = connectorDest;
     }
 
     private _connectionExists(src: WorkflowNode, dest: WorkflowNode): boolean {
