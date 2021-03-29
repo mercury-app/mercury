@@ -91,17 +91,25 @@
           .fill(this._innerRect.fill())
           .stroke({ width: strokeWidth, color: this._innerRect.fill() })
           .move(padWidth / 2, 0);
+        const overlayRect = svg
+          .rect(padWidth * 2, padHeight * 2)
+          .opacity(0)
+          .move(-padWidth / 2, -padHeight / 2);
 
         const inputRect = svg.group();
         inputRect.add(mainRect);
         inputRect.add(fillerRect);
+        inputRect.add(overlayRect);
         return inputRect;
       };
 
-      this._receiverGroup = createEnvIORect().move(-padWidth, 0);
+      this._receiverGroup = createEnvIORect().move(
+        -padWidth * 1.5,
+        -padHeight / 2
+      );
       this._transmitterGroup = createEnvIORect()
         .flip()
-        .move(-padWidth - this._innerRect.width(), -padHeight);
+        .move(-padWidth * 1.5 - this._innerRect.width(), -padHeight * 1.5);
 
       this._titleSeparator = svg
         .line(0, cellSize, this._innerRect.width(), cellSize)
@@ -140,6 +148,7 @@
       this._outlineRect.stroke({ color: "black" });
       this._titleSeparator.stroke({ color: "black" });
       this._isSelected = true;
+      this.front();
     }
 
     public unselect(): void {
@@ -189,7 +198,7 @@
     }
 
     get receiverCoordinate(): Point {
-      const x = this.x();
+      const x = this.x() + padWidth / 2;
       const y = this.y() + this._receiverGroup.height() / 2;
       return { x, y };
     }
@@ -199,9 +208,174 @@
     }
 
     get transmitterCoordinate(): Point {
-      const x = this.x() + this.width();
+      const x = this.x() + this.width() - padWidth / 2;
       const y = this.y() + this._transmitterGroup.height() / 2;
       return { x, y };
+    }
+  }
+
+  class WorkflowConnector extends G {
+    private _mainPath: Path;
+    private _overlayPath: Path;
+    private _isSelected: boolean;
+
+    constructor(svg: Svg, start: Point) {
+      super();
+
+      this._mainPath = svg.path(`M${start.x} ${start.y}`).fill("none");
+      this._mainPath.stroke({
+        color: "black",
+        width: strokeWidth,
+        linecap: "round",
+      });
+      this.add(this._mainPath);
+
+      this._overlayPath = svg
+        .path(`M${start.x} ${start.y}`)
+        .fill("none")
+        .opacity(0);
+      this._overlayPath.stroke({ color: "black", width: strokeWidth * 9 });
+      this.add(this._overlayPath);
+
+      this._isSelected = false;
+
+      svg.add(this);
+    }
+
+    private _drawPath(
+      path: Path,
+      startX: number,
+      startY: number,
+      endX: number,
+      endY: number
+    ) {
+      const deltaX = endX - startX;
+      const deltaY = endY - startY;
+
+      if (endX >= startX) {
+        let curveDelta = cellSize / 2;
+        curveDelta = clamp(curveDelta, 0, Math.abs(deltaX) / 2);
+        curveDelta = clamp(curveDelta, 0, Math.abs(deltaY) / 2);
+
+        // Category I => regular two-bend connector from start to end
+        // 1. move a bit right
+        // 2. curve up/down
+        // 3. move a bit up/down
+        // 4. curve right
+        // 5. move right to the endX
+        path.plot(
+          `M ${startX} ${startY} ` +
+            `H ${startX + deltaX * 0.5 - curveDelta} ` +
+            `Q ${startX + deltaX * 0.5} ${startY} ${startX + deltaX * 0.5} ${
+              startY + curveDelta * Math.sign(deltaY)
+            } ` +
+            `V ${endY - curveDelta * Math.sign(deltaY)} ` +
+            `Q ${startX + deltaX * 0.5} ${endY} ${
+              startX + deltaX * 0.5 + curveDelta
+            } ${endY} ` +
+            `H ${endX}`
+        );
+      } else if (
+        endX < startX &&
+        (startY + mainBodyHeight + padHeight <= endY ||
+          startY - mainBodyHeight - padHeight >= endY)
+      ) {
+        const curveDelta = cellSize / 2;
+        let midPoint = (startY + endY) / 2;
+        if (startY + mainBodyHeight + padHeight <= endY) {
+          // Category IIa  => four-bend connector going below
+          const top = endY - padHeight / 2;
+          const bottom = startY + (mainBodyHeight - padHeight / 2);
+          midPoint = (top + bottom) / 2;
+        } else {
+          // Category IIb  => four-bend connector going above
+          const top = startY - padHeight / 2;
+          const bottom = endY + (mainBodyHeight - padHeight / 2);
+          midPoint = (top + bottom) / 2;
+        }
+
+        // 1. move right by curveDelta
+        // 2. curve up/down
+        // 3. move up/down about half the distance between the nodes' bodies
+        // 4. curve left
+        // 5. move left to endX - curveDelta
+        // 6. curve up/down
+        // 7. move up/down towards endY
+        // 8. curve right
+        // 9. move right to the endX
+        path.plot(
+          `M ${startX} ${startY} ` +
+            `H ${startX + curveDelta} ` +
+            `Q ${startX + 2 * curveDelta} ${startY} ${
+              startX + 2 * curveDelta
+            } ${startY + curveDelta * Math.sign(deltaY)} ` +
+            `V ${midPoint - curveDelta * Math.sign(deltaY)} ` +
+            `Q ${startX + 2 * curveDelta} ${midPoint} ${
+              startX + curveDelta
+            } ${midPoint} ` +
+            `H ${endX - curveDelta} ` +
+            `Q ${endX - 2 * curveDelta} ${midPoint} ${endX - 2 * curveDelta} ${
+              midPoint + curveDelta * Math.sign(deltaY)
+            } ` +
+            `V ${endY - curveDelta * Math.sign(deltaY)} ` +
+            `Q ${endX - 2 * curveDelta} ${endY} ${endX - curveDelta} ${endY} ` +
+            `H ${endX}`
+        );
+      } else {
+        const curveDelta = cellSize / 2;
+        const startTop = startY - padHeight / 2;
+        const endTop = endY - padHeight / 2;
+        const top = Math.min(startTop, endTop);
+
+        // Category III => four-bend loop-over connector
+        // 1. move right by curveDelta
+        // 2. curve up
+        // 3. move up to higher among top of nodes' bodies + curveDelta
+        // 4. curve left
+        // 5. move left to endX - curveDelta
+        // 6. curve down
+        // 7. move down towards endY
+        // 8. curve right
+        // 9. move right to the endX
+        path.plot(
+          `M ${startX} ${startY} ` +
+            `H ${startX + curveDelta} ` +
+            `Q ${startX + 2 * curveDelta} ${startY} ${
+              startX + 2 * curveDelta
+            } ${startY - curveDelta} ` +
+            `V ${top - curveDelta} ` +
+            `Q ${startX + 2 * curveDelta} ${top - 2 * curveDelta} ${
+              startX + curveDelta
+            } ${top - 2 * curveDelta} ` +
+            `H ${endX - curveDelta} ` +
+            `Q ${endX - 2 * curveDelta} ${top - 2 * curveDelta} ${
+              endX - 2 * curveDelta
+            } ${top - curveDelta} ` +
+            `V ${endY - curveDelta} ` +
+            `Q ${endX - 2 * curveDelta} ${endY} ${endX - curveDelta} ${endY} ` +
+            `H ${endX}`
+        );
+      }
+    }
+
+    public redraw(start: Point, end: Point) {
+      this._drawPath(this._mainPath, start.x, start.y, end.x, end.y);
+      this._drawPath(this._overlayPath, start.x, start.y, end.x, end.y);
+    }
+
+    public select() {
+      this._mainPath.stroke({ color: "black" });
+      this._isSelected = true;
+      this.front();
+    }
+
+    public unselect() {
+      this._mainPath.stroke({ color: "lightgray" });
+      this._isSelected = false;
+    }
+
+    get isSelected(): boolean {
+      return this._isSelected;
     }
   }
 
@@ -215,11 +389,17 @@
     private _nodeSelectionMenu: any;
     private _moveAnimationDuration: number;
     private _connectionInProgress: boolean;
-    private _currentConnector: Path;
+    private _currentConnector: WorkflowConnector;
     private _currentConnectionSource: WorkflowNode;
     private _currentConnectionDestination: WorkflowNode;
-    private _connectionsSrcToDest: Map<WorkflowNode, Map<WorkflowNode, Path>>;
-    private _connectionsDestToSrc: Map<WorkflowNode, Map<WorkflowNode, Path>>;
+    private _connectionsSrcToDest: Map<
+      WorkflowNode,
+      Map<WorkflowNode, WorkflowConnector>
+    >;
+    private _connectionsDestToSrc: Map<
+      WorkflowNode,
+      Map<WorkflowNode, WorkflowConnector>
+    >;
 
     constructor(elementId: string, width: number, height: number) {
       this._width = width;
@@ -243,15 +423,10 @@
       });
       background.mousemove((event: SvgMouseMoveEvent) => {
         if (this._connectionInProgress && this._currentConnector !== null) {
-          const { x, y } = this._currentConnectionSource.transmitterCoordinate;
+          const start = this._currentConnectionSource.transmitterCoordinate;
+          const end = { x: event.layerX, y: event.layerY };
           // @ts-ignore
-          this._drawPath(
-            this._currentConnector,
-            x,
-            y,
-            event.layerX,
-            event.layerY
-          );
+          this._currentConnector.redraw(start, end);
         }
       });
 
@@ -390,12 +565,13 @@
         x = clamp(
           x,
           cellSize,
-          this._width - elemWidth - cellSize + padWidth * 2
+          this._width - elemWidth - cellSize + padWidth * 3
         );
+        y = clamp(y, cellSize, this._height - elemHeight - cellSize + padHeight / 2);
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
+        y = clamp(y, cellSize, this._height - elemHeight - cellSize);
       }
-      y = clamp(y, cellSize, this._height - elemHeight - cellSize);
 
       const diffX = x % cellSize;
       if (diffX > cellSize / 2) {
@@ -413,7 +589,8 @@
 
       // Adjust for the input receiver/transmitter pads
       if (adjustForPads) {
-        x = x - padWidth;
+        x = x - padWidth * 1.5;
+        y = y - padHeight / 2;
       }
 
       return { x, y };
@@ -582,135 +759,14 @@
       this._nodeSelectionMenu.hide();
     }
 
-    private _drawPath(
-      path: Path,
-      startX: number,
-      startY: number,
-      endX: number,
-      endY: number
-    ) {
-      const deltaX = endX - startX;
-      const deltaY = endY - startY;
-
-      if (endX >= startX) {
-        let curveDelta = cellSize / 2;
-        curveDelta = clamp(curveDelta, 0, Math.abs(deltaX) / 2);
-        curveDelta = clamp(curveDelta, 0, Math.abs(deltaY) / 2);
-
-        // Category I => regular two-bend connector from start to end
-        // 1. move a bit right
-        // 2. curve up/down
-        // 3. move a bit up/down
-        // 4. curve right
-        // 5. move right to the endX
-        path.plot(
-          `M ${startX} ${startY} ` +
-            `H ${startX + deltaX * 0.5 - curveDelta} ` +
-            `Q ${startX + deltaX * 0.5} ${startY} ${startX + deltaX * 0.5} ${
-              startY + curveDelta * Math.sign(deltaY)
-            } ` +
-            `V ${endY - curveDelta * Math.sign(deltaY)} ` +
-            `Q ${startX + deltaX * 0.5} ${endY} ${
-              startX + deltaX * 0.5 + curveDelta
-            } ${endY} ` +
-            `H ${endX}`
-        );
-      } else if (
-        endX < startX &&
-        (startY + mainBodyHeight + padHeight <= endY ||
-          startY - mainBodyHeight - padHeight >= endY)
-      ) {
-        const curveDelta = cellSize / 2;
-        let midPoint = (startY + endY) / 2;
-        if (startY + mainBodyHeight + padHeight <= endY) {
-          // Category IIa  => four-bend connector going below
-          const top = endY - padHeight / 2;
-          const bottom = startY + (mainBodyHeight - padHeight / 2);
-          midPoint = (top + bottom) / 2;
-        } else {
-          // Category IIb  => four-bend connector going above
-          const top = startY - padHeight / 2;
-          const bottom = endY + (mainBodyHeight - padHeight / 2);
-          midPoint = (top + bottom) / 2;
-        }
-
-        // 1. move right by curveDelta
-        // 2. curve up/down
-        // 3. move up/down about half the distance between the nodes' bodies
-        // 4. curve left
-        // 5. move left to endX - curveDelta
-        // 6. curve up/down
-        // 7. move up/down towards endY
-        // 8. curve right
-        // 9. move right to the endX
-        path.plot(
-          `M ${startX} ${startY} ` +
-            `H ${startX + curveDelta} ` +
-            `Q ${startX + 2 * curveDelta} ${startY} ${
-              startX + 2 * curveDelta
-            } ${startY + curveDelta * Math.sign(deltaY)} ` +
-            `V ${midPoint - curveDelta * Math.sign(deltaY)} ` +
-            `Q ${startX + 2 * curveDelta} ${midPoint} ${
-              startX + curveDelta
-            } ${midPoint} ` +
-            `H ${endX - curveDelta} ` +
-            `Q ${endX - 2 * curveDelta} ${midPoint} ${endX - 2 * curveDelta} ${
-              midPoint + curveDelta * Math.sign(deltaY)
-            } ` +
-            `V ${endY - curveDelta * Math.sign(deltaY)} ` +
-            `Q ${endX - 2 * curveDelta} ${endY} ${endX - curveDelta} ${endY} ` +
-            `H ${endX}`
-        );
-      } else {
-        const curveDelta = cellSize / 2;
-        const startTop = startY - padHeight / 2;
-        const endTop = endY - padHeight / 2;
-        const top = Math.min(startTop, endTop);
-
-        // Category III => four-bend loop-over connector
-        // 1. move right by curveDelta
-        // 2. curve up
-        // 3. move up to higher among top of nodes' bodies + curveDelta
-        // 4. curve left
-        // 5. move left to endX - curveDelta
-        // 6. curve down
-        // 7. move down towards endY
-        // 8. curve right
-        // 9. move right to the endX
-        path.plot(
-          `M ${startX} ${startY} ` +
-            `H ${startX + curveDelta} ` +
-            `Q ${startX + 2 * curveDelta} ${startY} ${
-              startX + 2 * curveDelta
-            } ${startY - curveDelta} ` +
-            `V ${top - curveDelta} ` +
-            `Q ${startX + 2 * curveDelta} ${top - 2 * curveDelta} ${
-              startX + curveDelta
-            } ${top - 2 * curveDelta} ` +
-            `H ${endX - curveDelta} ` +
-            `Q ${endX - 2 * curveDelta} ${top - 2 * curveDelta} ${
-              endX - 2 * curveDelta
-            } ${top - curveDelta} ` +
-            `V ${endY - curveDelta} ` +
-            `Q ${endX - 2 * curveDelta} ${endY} ${endX - curveDelta} ${endY} ` +
-            `H ${endX}`
-        );
-      }
-    }
-
     private _beginConnection(node: WorkflowNode) {
       this._selectNode(null);
       this._hideNodeSelectionMenu();
 
       this._connectionInProgress = true;
       this._currentConnectionSource = node;
-      const { x, y } = node.transmitterCoordinate;
-      this._currentConnector = this._svg.path(`M${x} ${y}`).fill("none");
-      this._currentConnector.stroke({
-        color: "black",
-        width: 2,
-        linecap: "round",
-      });
+      const start = node.transmitterCoordinate;
+      this._currentConnector = new WorkflowConnector(this._svg, start);
       this._currentConnectionSource.highlightTransmitter();
     }
 
@@ -727,10 +783,14 @@
     private _addConnection(
       src: WorkflowNode,
       dest: WorkflowNode,
-      connector: Path
+      connector: WorkflowConnector
     ): void {
       this._updateConnection(src, dest, connector);
       connector.click(() => {
+        if (this._connectionInProgress) {
+          return;
+        }
+
         this._selectNode(null);
         this._hideNodeSelectionMenu();
         this._selectConnector(connector);
@@ -752,12 +812,12 @@
     private _updateConnection(
       src: WorkflowNode,
       dest: WorkflowNode,
-      connector: Path
+      connector: WorkflowConnector
     ): void {
       const p1 = src.transmitterCoordinate;
       const p2 = dest.receiverCoordinate;
       // @ts-ignore
-      this._drawPath(connector, p1.x, p1.y, p2.x, p2.y);
+      connector.redraw(p1, p2);
     }
 
     private _updateAllConnectionsForNode(node: WorkflowNode): void {
@@ -802,14 +862,14 @@
       }
     }
 
-    private _selectConnector(connector: Path): void {
+    private _selectConnector(connector: WorkflowConnector): void {
       let connectorSrc = null;
       let connectorDest = null;
       for (const [src, connections] of this._connectionsSrcToDest.entries()) {
         src.unhighlightTransmitter();
         for (const [dest, conn] of connections) {
           dest.unhighlightReceiver();
-          conn.stroke({ color: "lightgray" });
+          conn.unselect();
           if (conn === connector) {
             connectorSrc = src;
             connectorDest = dest;
@@ -821,7 +881,7 @@
         connectorSrc !== null &&
         connectorDest !== null
       ) {
-        connector.stroke({ color: "black" });
+        connector.select();
         connectorSrc.highlightTransmitter();
         connectorDest.highlightReceiver();
       }
