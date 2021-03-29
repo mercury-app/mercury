@@ -1,5 +1,15 @@
 <script lang="ts" context="module">
-  import { Box, G, Line, Path, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
+  import {
+    Box,
+    Circle,
+    G,
+    Line,
+    Path,
+    SVG,
+    Svg,
+    Rect,
+    Runner,
+  } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   type Delta = Point;
@@ -45,6 +55,7 @@
   const cellSize = 24;
   const padWidth = cellSize / 2;
   const padHeight = cellSize;
+  const padRadius = cellSize * 2;
   const mainBodyWidth = cellSize * 6;
   const mainBodyHeight = cellSize * 6;
   const strokeWidth = 2;
@@ -60,7 +71,9 @@
     private _titleElement: HTMLParagraphElement;
     private _mainBody: G;
     private _transmitterGroup: G;
+    private _transmitterRegion: Circle;
     private _receiverGroup: G;
+    private _receiverRegion: Circle;
     private _isSelected: boolean;
     private _isReceiverSelected: boolean;
     private _isTransmitterSelected: boolean;
@@ -93,25 +106,28 @@
           .fill(this._innerRect.fill())
           .stroke({ width: strokeWidth, color: this._innerRect.fill() })
           .move(padWidth / 2, 0);
-        const overlayRect = svg
-          .rect(padWidth * 2, padHeight * 2)
-          .opacity(0)
-          .move(-padWidth / 2, -padHeight / 2);
 
         const inputRect = svg.group();
         inputRect.add(mainRect);
         inputRect.add(fillerRect);
-        inputRect.add(overlayRect);
         return inputRect;
       };
 
-      this._receiverGroup = createEnvIORect().move(
-        -padWidth * 1.5,
-        -padHeight / 2
-      );
+      this._receiverGroup = createEnvIORect().move(-padWidth, 0);
+      this._receiverRegion = svg
+        .circle()
+        .radius(padRadius)
+        .opacity(0)
+        .center(this._receiverGroup.cx(), this._receiverGroup.cy());
       this._transmitterGroup = createEnvIORect()
         .flip()
-        .move(-padWidth * 1.5 - this._innerRect.width(), -padHeight * 1.5);
+        .move(-padWidth - this._innerRect.width(), -padHeight);
+      this._transmitterRegion = svg
+        .circle()
+        .radius(padRadius)
+        .opacity(0)
+        .flip()
+        .center(this._transmitterGroup.cx(), this._transmitterGroup.cy());
 
       this._titleSeparator = svg
         .line(0, cellSize, this._innerRect.width(), cellSize)
@@ -141,7 +157,12 @@
       this.add(this._transmitterGroup);
       this.add(this._mainBody);
       this.add(this._titleSeparator);
-      this.move(position.x - padWidth * 1.5, position.y - padHeight / 2);
+      this.add(this._receiverRegion);
+      this.add(this._transmitterRegion);
+      this.move(
+        position.x - padRadius - padWidth / 2,
+        position.y - padRadius + padHeight / 2
+      );
 
       this._isSelected = false;
       this._isReceiverSelected = false;
@@ -258,13 +279,13 @@
       return this._mainBody;
     }
 
-    get receiverGroup(): G {
-      return this._receiverGroup;
+    get receiverRegion(): Circle {
+      return this._receiverRegion;
     }
 
     get receiverCoordinate(): Point {
-      const x = this.x() + padWidth / 2;
-      const y = this.y() + this._receiverGroup.height() / 2;
+      const x = this.x() + padRadius - padWidth / 2;
+      const y = this.y() + padRadius;
       return { x, y };
     }
 
@@ -272,13 +293,13 @@
       return this._isReceiverSelected;
     }
 
-    get transmitterGroup(): G {
-      return this._transmitterGroup;
+    get transmitterRegion(): Circle {
+      return this._transmitterRegion;
     }
 
     get transmitterCoordinate(): Point {
-      const x = this.x() + this.width() - padWidth / 2;
-      const y = this.y() + this._transmitterGroup.height() / 2;
+      const x = this.x() + this.width() - padRadius + padWidth / 2;
+      const y = this.y() + padRadius;
       return { x, y };
     }
 
@@ -307,7 +328,7 @@
         .path(`M${start.x} ${start.y}`)
         .fill("none")
         .opacity(0);
-      this._overlayPath.stroke({ color: "black", width: strokeWidth * 9 });
+      this._overlayPath.stroke({ color: "black", width: strokeWidth * 13 });
       this.add(this._overlayPath);
 
       this._isSelected = false;
@@ -654,16 +675,16 @@
     ): { x: number; y: number } {
       // Use the `container` to clamp the object's coords in the view.
       if (adjustForPads) {
-        // Adjust for the input receiver/transmitter pads.
+        // Adjust for the input receiver/transmitter regions.
         x = clamp(
           x,
-          cellSize,
-          this._width - elemWidth - cellSize + padWidth * 3
+          cellSize - padRadius - padWidth / 2,
+          this._width - elemWidth - cellSize + padRadius + 2 * padWidth
         );
         y = clamp(
           y,
-          cellSize,
-          this._height - elemHeight - cellSize + padHeight / 2
+          cellSize - padRadius,
+          this._height - elemHeight - cellSize
         );
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
@@ -684,10 +705,10 @@
         y = y - diffY;
       }
 
-      // Adjust for the input receiver/transmitter pads
+      // Adjust for the input receiver/transmitter regions.
       if (adjustForPads) {
-        x = x - padWidth * 1.5;
-        y = y - padHeight / 2;
+        x = x - padWidth / 2;
+        y = y + padHeight / 2;
       }
 
       return { x, y };
@@ -773,7 +794,7 @@
         }
       });
 
-      node.receiverGroup.mouseover((event: MouseEvent) => {
+      node.receiverRegion.mouseover((event: MouseEvent) => {
         if (
           !this._connectionInProgress ||
           this._connectionExists(this._unconnectedSource, node)
@@ -784,7 +805,7 @@
         node.highlightReceiver();
         this._possibleDestination = node;
       });
-      node.receiverGroup.mouseout((event: MouseEvent) => {
+      node.receiverRegion.mouseout((event: MouseEvent) => {
         if (!this._connectionInProgress) {
           return;
         }
@@ -792,7 +813,7 @@
         node.unhighlightReceiver();
         this._possibleDestination = null;
       });
-      node.receiverGroup.click((event: MouseEvent) => {
+      node.receiverRegion.click((event: MouseEvent) => {
         if (
           !this._connectionInProgress ||
           this._connectionExists(this._unconnectedSource, node)
@@ -803,21 +824,21 @@
         this._endConnection(node);
       });
 
-      node.transmitterGroup.mouseover((event: MouseEvent) => {
+      node.transmitterRegion.mouseover((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
         node.highlightTransmitter();
       });
-      node.transmitterGroup.mouseout((event: MouseEvent) => {
+      node.transmitterRegion.mouseout((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
         node.unhighlightTransmitter();
       });
-      node.transmitterGroup.click(() => {
+      node.transmitterRegion.click(() => {
         if (this._connectionInProgress) {
           return;
         }
@@ -895,6 +916,9 @@
       const start = node.transmitterCoordinate;
       this._unfinishedConnector = new WorkflowConnector(this._svg, start);
       this._unconnectedSource.selectTransmitter();
+      this._nodes.forEach(workflowNode => {
+        workflowNode.front();
+      });
     }
 
     private _endConnection(node: WorkflowNode) {
