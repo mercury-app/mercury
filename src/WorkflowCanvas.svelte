@@ -62,6 +62,8 @@
     private _transmitterGroup: G;
     private _receiverGroup: G;
     private _isSelected: boolean;
+    private _receiverIsSelected: boolean;
+    private _transmitterIsSelected: boolean;
 
     constructor(svg: Svg, position: Point) {
       super();
@@ -139,9 +141,11 @@
       this.add(this._mainBody);
       this.add(titleObject);
       this.add(this._titleSeparator);
-      this.move(position.x - padWidth, position.y);
+      this.move(position.x - padWidth * 1.5, position.y - padHeight / 2);
 
       this._isSelected = false;
+      this._receiverIsSelected = false;
+      this._transmitterIsSelected = false;
     }
 
     public select(): void {
@@ -157,10 +161,37 @@
       this._isSelected = false;
     }
 
-    public highlightReceiver(): void {
+    public highlight(): void {
+      this._outlineRect.stroke({ color: "darkgray" });
+      this._titleSeparator.stroke({ color: "darkgray" });
+      this.front();
+    }
+
+    public unhighlight(): void {
+      this._outlineRect.stroke({ color: "lightgray" });
+      this._titleSeparator.stroke({ color: "lightgray" });
+    }
+
+    public selectReceiver(): void {
       this._receiverGroup.children().forEach((element) => {
         element.fill("black");
         element.stroke({ color: "black" });
+      });
+      this._receiverIsSelected = true;
+    }
+
+    public unselectReceiver(): void {
+      this._receiverGroup.children().forEach((element) => {
+        element.fill("lightgray");
+        element.stroke({ color: "lightgray" });
+      });
+      this._receiverIsSelected = false;
+    }
+
+    public highlightReceiver(): void {
+      this._receiverGroup.children().forEach((element) => {
+        element.fill("darkgray");
+        element.stroke({ color: "darkgray" });
       });
     }
 
@@ -171,10 +202,26 @@
       });
     }
 
-    public highlightTransmitter(): void {
+    public selectTransmitter(): void {
       this._transmitterGroup.children().forEach((element) => {
         element.fill("black");
         element.stroke({ color: "black" });
+      });
+      this._transmitterIsSelected = true;
+    }
+
+    public unselectTransmitter(): void {
+      this._transmitterGroup.children().forEach((element) => {
+        element.fill("lightgray");
+        element.stroke({ color: "lightgray" });
+      });
+      this._transmitterIsSelected = false;
+    }
+
+    public highlightTransmitter(): void {
+      this._transmitterGroup.children().forEach((element) => {
+        element.fill("darkgray");
+        element.stroke({ color: "darkgray" });
       });
     }
 
@@ -203,6 +250,10 @@
       return { x, y };
     }
 
+    get receiverIsSelected(): boolean {
+      return this._receiverIsSelected;
+    }
+
     get transmitterGroup(): G {
       return this._transmitterGroup;
     }
@@ -211,6 +262,10 @@
       const x = this.x() + this.width() - padWidth / 2;
       const y = this.y() + this._transmitterGroup.height() / 2;
       return { x, y };
+    }
+
+    get transmitterIsSelected(): boolean {
+      return this._transmitterIsSelected;
     }
   }
 
@@ -372,6 +427,15 @@
     public unselect() {
       this._mainPath.stroke({ color: "lightgray" });
       this._isSelected = false;
+    }
+
+    public highlight() {
+      this._mainPath.stroke({ color: "darkgray" });
+      this.front();
+    }
+
+    public unhighlight() {
+      this._mainPath.stroke({ color: "lightgray" });
     }
 
     get isSelected(): boolean {
@@ -653,6 +717,23 @@
         this._showNodeSelectionMenu(node);
         this._selectConnector(null);
       });
+      node.mainBody.mouseover((event: MouseEvent) => {
+        if (node.isSelected || this._connectionInProgress) {
+          return;
+        }
+        event.preventDefault();
+        node.highlight();
+      });
+      node.mainBody.mouseout((event: MouseEvent) => {
+        if (node.isSelected || this._connectionInProgress) {
+          return;
+        }
+        event.preventDefault();
+        node.unhighlight();
+        if (this._selectedNode !== null) {
+          this._selectedNode.front();
+        }
+      });
 
       node.receiverGroup.mouseover((event: MouseEvent) => {
         event.preventDefault();
@@ -664,35 +745,36 @@
         }
       });
       node.receiverGroup.mouseout((event: MouseEvent) => {
-        event.preventDefault();
-        if (this._connectionInProgress) {
-          node.unhighlightReceiver();
+        if (!this._connectionInProgress) {
+          return;
         }
+        event.preventDefault();
+        node.unhighlightReceiver();
       });
-      node.receiverGroup.click(() => {
+      node.receiverGroup.click((event: MouseEvent) => {
         if (
           !this._connectionInProgress ||
           this._connectionExists(this._currentConnectionSource, node)
         ) {
           return;
         }
+        event.preventDefault();
         this._endConnection(node);
       });
 
       node.transmitterGroup.mouseover((event: MouseEvent) => {
-        event.preventDefault();
-        if (!this._connectionInProgress) {
-          node.highlightTransmitter();
+        if (this._connectionInProgress || node.transmitterIsSelected) {
+          return;
         }
+        event.preventDefault();
+        node.highlightTransmitter();
       });
       node.transmitterGroup.mouseout((event: MouseEvent) => {
-        event.preventDefault();
-        if (
-          !this._connectionInProgress &&
-          node !== this._currentConnectionSource
-        ) {
-          node.unhighlightTransmitter();
+        if (this._connectionInProgress || node.transmitterIsSelected) {
+          return;
         }
+        event.preventDefault();
+        node.unhighlightTransmitter();
       });
       node.transmitterGroup.click(() => {
         if (this._connectionInProgress) {
@@ -761,13 +843,14 @@
 
     private _beginConnection(node: WorkflowNode) {
       this._selectNode(null);
+      this._selectConnector(null);
       this._hideNodeSelectionMenu();
 
       this._connectionInProgress = true;
       this._currentConnectionSource = node;
       const start = node.transmitterCoordinate;
       this._currentConnector = new WorkflowConnector(this._svg, start);
-      this._currentConnectionSource.highlightTransmitter();
+      this._currentConnectionSource.selectTransmitter();
     }
 
     private _endConnection(node: WorkflowNode) {
@@ -786,14 +869,35 @@
       connector: WorkflowConnector
     ): void {
       this._updateConnection(src, dest, connector);
-      connector.click(() => {
+      connector.click((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
-
+        event.preventDefault();
         this._selectNode(null);
         this._hideNodeSelectionMenu();
         this._selectConnector(connector);
+      });
+      connector.mouseover((event: MouseEvent) => {
+        if (connector.isSelected || this._connectionInProgress) {
+          return;
+        }
+        event.preventDefault();
+        src.highlightTransmitter();
+        dest.highlightReceiver();
+        connector.highlight();
+      });
+      connector.mouseout((event: MouseEvent) => {
+        if (connector.isSelected || this._connectionInProgress) {
+          return;
+        }
+        event.preventDefault();
+        src.unhighlightTransmitter();
+        dest.unhighlightReceiver();
+        connector.unhighlight();
+        if (this._currentConnector !== null) {
+          this._currentConnector.front();
+        }
       });
 
       if (this._connectionsSrcToDest.has(src)) {
@@ -866,9 +970,9 @@
       let connectorSrc = null;
       let connectorDest = null;
       for (const [src, connections] of this._connectionsSrcToDest.entries()) {
-        src.unhighlightTransmitter();
+        src.unselectTransmitter();
         for (const [dest, conn] of connections) {
-          dest.unhighlightReceiver();
+          dest.unselectReceiver();
           conn.unselect();
           if (conn === connector) {
             connectorSrc = src;
@@ -882,8 +986,8 @@
         connectorDest !== null
       ) {
         connector.select();
-        connectorSrc.highlightTransmitter();
-        connectorDest.highlightReceiver();
+        connectorSrc.selectTransmitter();
+        connectorDest.selectReceiver();
       }
       this._currentConnector = connector;
       this._currentConnectionSource = connectorSrc;
