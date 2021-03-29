@@ -509,11 +509,10 @@
           this._selectConnector(null);
         }
       });
-      background.mousemove((event: SvgMouseMoveEvent) => {
+      this._svg.mousemove((event: SvgMouseMoveEvent) => {
         if (this._connectionInProgress && this._unfinishedConnector !== null) {
           const start = this._unconnectedSource.transmitterCoordinate;
-          const end = { x: event.layerX, y: event.layerY };
-          // @ts-ignore
+          const end = { x: event.layerX - 2, y: event.layerY };
           this._unfinishedConnector.redraw(start, end);
         }
       });
@@ -960,7 +959,6 @@
     ): void {
       const p1 = src.transmitterCoordinate;
       const p2 = dest.receiverCoordinate;
-      // @ts-ignore
       connector.redraw(p1, p2);
     }
 
