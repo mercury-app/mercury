@@ -136,10 +136,10 @@
       titleObject.add(this._titleElement);
 
       svg.add(this);
+      this.add(titleObject);
       this.add(this._receiverGroup);
       this.add(this._transmitterGroup);
       this.add(this._mainBody);
-      this.add(titleObject);
       this.add(this._titleSeparator);
       this.move(position.x - padWidth * 1.5, position.y - padHeight / 2);
 
