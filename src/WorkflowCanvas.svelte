@@ -490,9 +490,11 @@
 
   class WorkflowCanvas {
     private _svg: Svg;
+    private _divId: string;
     private _width: number;
     private _height: number;
     private _inPlacementMode: boolean;
+    private _placementMarker: Rect;
     private _nodes: Set<WorkflowNode>;
     private _selectedNode: WorkflowNode;
     private _nodeSelectionMenu: any;
@@ -512,9 +514,12 @@
     >;
 
     constructor(elementId: string, width: number, height: number) {
+      this._divId = elementId;
       this._width = width;
       this._height = height;
-      this._svg = SVG().addTo(elementId).size(this._width, this._height);
+      this._svg = SVG()
+        .addTo(`#${this._divId}`)
+        .size(this._width, this._height);
 
       // Draw dot-grid for position intuition
       const pattern = this._svg.pattern(cellSize * 2, cellSize * 2, (add) => {
@@ -525,12 +530,14 @@
         .fill(pattern);
       background.click((event: MouseEvent) => {
         event.preventDefault();
+        document.getElementById(this._divId).focus();
         this._selectNode(null);
         this._hideNodeSelectionMenu();
         if (!this._connectionInProgress) {
           this._selectConnector(null);
         }
       });
+
       this._svg.mousemove((event: SvgMouseMoveEvent) => {
         if (this._connectionInProgress && this._unfinishedConnector !== null) {
           const start = this._unconnectedSource.transmitterCoordinate;
@@ -541,6 +548,12 @@
           this._unfinishedConnector.redraw(start, end);
         }
       });
+
+      window.onkeydown = (event: KeyboardEvent) => {
+        if (document.activeElement.id == this._divId) {
+          this._handleKeyboardEvent(event);
+        }
+      };
 
       this._moveAnimationDuration = 100;
       this._inPlacementMode = false;
@@ -559,8 +572,24 @@
       this._connectionsDestToSrc = new Map();
     }
 
+    private _handleKeyboardEvent(event: KeyboardEvent) {
+      switch (event.key) {
+        case "Escape": {
+          if (this._inPlacementMode) this._exitPlacementMode();
+          if (this._connectionInProgress) this._cancelCurrentConnection();
+          break;
+        }
+        case "Delete": {
+          console.log("Deleting...");
+          break;
+        }
+        default:
+          return;
+      }
+    }
+
     private _setupPlacementMode() {
-      const placementMarker = this._svg
+      this._placementMarker = this._svg
         .rect(mainBodyWidth, mainBodyHeight)
         .radius(strokeWidth)
         .fill("none")
@@ -570,46 +599,50 @@
           linecap: "round",
           dasharray: "4, 8",
         });
-      placementMarker.hide();
+      this._placementMarker.hide();
 
       this._svg.node.onmousemove = (event: SvgMouseMoveEvent) => {
-        if (this._inPlacementMode) {
-          placementMarker.show();
-          this._setMoveCursor();
-        } else {
-          placementMarker.hide();
-          this._setNormalCursor();
-        }
-
         const { x, y } = this._adjustMoveCoordinates(
-          event.layerX - placementMarker.width() / 2.0,
-          event.layerY - placementMarker.height() / 2.0,
-          placementMarker.width(),
-          placementMarker.height(),
+          event.layerX - this._placementMarker.width() / 2.0,
+          event.layerY - this._placementMarker.height() / 2.0,
+          this._placementMarker.width(),
+          this._placementMarker.height(),
           false
         );
 
         // The svg.js library's `animate` method incomplete type information.
         // @ts-ignore
-        placementMarker
+        this._placementMarker
           .animate({ duration: this._moveAnimationDuration, when: "absolute" })
           .move(x, y);
       };
 
-      this._svg.node.onclick = (_event) => {
+      this._svg.node.onclick = (event) => {
+        event.preventDefault();
+        document.getElementById(this._divId).focus();
         if (this._inPlacementMode) {
           const node = this._addNode({
-            x: placementMarker.x(),
-            y: placementMarker.y(),
+            x: this._placementMarker.x(),
+            y: this._placementMarker.y(),
           });
           this._nodes.add(node);
 
-          this._inPlacementMode = false;
-          placementMarker.hide();
-          placementMarker.front();
-          this._setNormalCursor();
+          this._exitPlacementMode();
+          this._placementMarker.front();
         }
       };
+    }
+
+    private _enterPlacementMode() {
+      this._inPlacementMode = true;
+      this._placementMarker.show();
+      this._setMoveCursor();
+    }
+
+    private _exitPlacementMode() {
+      this._inPlacementMode = false;
+      this._placementMarker.hide();
+      this._setNormalCursor();
     }
 
     private _setupNodeSelectionMenu() {
@@ -637,6 +670,7 @@
       const deleteButton = createButton("Delete");
       deleteButton.onclick = (event: MouseEvent) => {
         event.preventDefault();
+        document.getElementById(this._divId).focus();
         this._deleteNode(this._selectedNode);
         this._selectedNode = null;
         this._hideNodeSelectionMenu();
@@ -763,6 +797,7 @@
       const node = new WorkflowNode(this._svg, position);
 
       node.mainBody.click((event: MouseEvent) => {
+        document.getElementById(this._divId).focus();
         if (this._connectionInProgress) {
           return;
         }
@@ -814,6 +849,7 @@
         this._possibleDestination = null;
       });
       node.receiverRegion.click((event: MouseEvent) => {
+        document.getElementById(this._divId).focus();
         if (
           !this._connectionInProgress ||
           this._connectionExists(this._unconnectedSource, node)
@@ -839,6 +875,7 @@
         node.unhighlightTransmitter();
       });
       node.transmitterRegion.click(() => {
+        document.getElementById(this._divId).focus();
         if (this._connectionInProgress) {
           return;
         }
@@ -916,7 +953,7 @@
       const start = node.transmitterCoordinate;
       this._unfinishedConnector = new WorkflowConnector(this._svg, start);
       this._unconnectedSource.selectTransmitter();
-      this._nodes.forEach(workflowNode => {
+      this._nodes.forEach((workflowNode) => {
         workflowNode.front();
       });
     }
@@ -940,6 +977,7 @@
     ): void {
       this._updateConnection(src, dest, connector);
       connector.click((event: MouseEvent) => {
+        document.getElementById(this._divId).focus();
         if (this._connectionInProgress) {
           return;
         }
@@ -1161,8 +1199,21 @@
       return false;
     }
 
+    private _cancelCurrentConnection() {
+      this._connectionInProgress = false;
+
+      this._unconnectedSource.unselectTransmitter();
+      this._unfinishedConnector.remove();
+      this._possibleDestination.unhighlightReceiver();
+
+      this._unconnectedSource = null;
+      this._unfinishedConnector = null;
+      this._possibleDestination = null;
+    }
+
     public placeNewNode() {
-      this._inPlacementMode = true;
+      document.getElementById(this._divId).focus();
+      this._enterPlacementMode();
     }
 
     get container(): HTMLElement {
@@ -1196,9 +1247,9 @@
   const canvasHeight = numRows * rowHeight;
 
   onMount(() => {
-    canvas = new WorkflowCanvas("#workflow-canvas", canvasWidth, canvasHeight);
+    canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
   });
 </script>
 
-<div id="workflow-canvas"></div>
+<div id="workflow-canvas" tabindex="-1"></div>
