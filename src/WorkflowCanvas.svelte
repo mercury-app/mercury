@@ -580,7 +580,14 @@
           break;
         }
         case "Delete": {
-          console.log("Deleting...");
+          if (this._selectedNode !== null) {
+            this._removeNode(this._selectedNode);
+            this._selectedNode = null;
+            this._hideNodeSelectionMenu();
+          }
+          this._selectedConnectors.forEach((connector) => {
+            this._removeConnector(connector);
+          });
           break;
         }
         default:
@@ -671,7 +678,7 @@
       deleteButton.onclick = (event: MouseEvent) => {
         event.preventDefault();
         document.getElementById(this._divId).focus();
-        this._deleteNode(this._selectedNode);
+        this._removeNode(this._selectedNode);
         this._selectedNode = null;
         this._hideNodeSelectionMenu();
       };
@@ -909,7 +916,7 @@
       return node;
     }
 
-    private _deleteNode(node: WorkflowNode): void {
+    private _removeNode(node: WorkflowNode): void {
       this._removeAllConnectionsForNode(node);
       this._nodes.delete(node);
       node.remove();
@@ -929,14 +936,12 @@
     }
 
     private _showNodeSelectionMenu(node: WorkflowNode): void {
-      setTimeout(() => {
-        this._nodeSelectionMenu.move(
-          node.cx() - this._nodeSelectionMenu.width() / 2,
-          node.y() + node.height() + 3
-        );
-        this._nodeSelectionMenu.show();
-        this._nodeSelectionMenu.front();
-      }, this._moveAnimationDuration + 20);
+      this._nodeSelectionMenu.move(
+        node.cx() - this._nodeSelectionMenu.width() / 2,
+        node.y() + node.height() + 3
+      );
+      this._nodeSelectionMenu.show();
+      this._nodeSelectionMenu.front();
     }
 
     private _hideNodeSelectionMenu(): void {
@@ -1068,6 +1073,29 @@
         }
         this._connectionsDestToSrc.delete(node);
       }
+    }
+
+    private _removeConnector(connector: WorkflowConnector): void {
+      for (const [src, connections] of this._connectionsSrcToDest.entries()) {
+        for (const [dest, conn] of connections.entries()) {
+          if (conn === connector) {
+            // Remove both src->dest and dest->src binding
+            this._connectionsSrcToDest.get(src).delete(dest);
+            this._connectionsDestToSrc.get(dest).delete(src);
+
+            if (this._selectedConnectors.has(connector)) {
+              this._selectedConnectors.delete(connector);
+            }
+
+            src.unhighlightTransmitter();
+            src.unselectTransmitter();
+            dest.unhighlightReceiver();
+            dest.unselectReceiver();
+            break;
+          }
+        }
+      }
+      connector.remove();
     }
 
     private _selectAllConnectionsForNode(node: WorkflowNode) {
