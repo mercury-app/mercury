@@ -13,11 +13,17 @@
 </script>
 
 <div id="workflow-actions" style="{workflowActionsStyle}">
-  <button style="{buttonStyle}"></button>
+  <button style="{buttonStyle}">
+    <img src="/icons/player-play.svg" alt="Run workflow icon" class="icon" />
+  </button>
   <div class="vertical-separator"></div>
-  <button style="{buttonStyle}"></button>
+  <button style="{buttonStyle}">
+    <img src="/icons/player-stop.svg" alt="Stop workflow icon" class="icon" />
+  </button>
   <div class="vertical-separator"></div>
-  <button style="{buttonStyle}"></button>
+  <button style="{buttonStyle}">
+    <img src="/icons/history.svg" alt="Show workflow logs icon" class="icon" />
+  </button>
 </div>
 
 <style>

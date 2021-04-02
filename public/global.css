@@ -61,6 +61,11 @@ button:focus {
   border-color: #666;
 }
 
+button .icon {
+  height: 0.9em;
+  width: 0.9em;
+}
+
 :root {
   --main-border-color: lightgray;
   --common-radius: 3px;

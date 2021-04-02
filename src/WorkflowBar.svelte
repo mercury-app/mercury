@@ -22,7 +22,7 @@
       style="{buttonStyle}"
       on:click="{() => dispatch('newNodeRequested')}"
     >
-      +
+      <img src="/icons/plus.svg" alt="Add node icon" class="icon" />
     </button>
   </div>
 </div>
