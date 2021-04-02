@@ -656,25 +656,33 @@
       const containerDiv = document.createElement("div");
       containerDiv.style.display = "flex";
       containerDiv.style.flexDirection = "row";
+      containerDiv.style.justifyContent = "space-evenly";
+      containerDiv.style.alignItems = "center";
+      containerDiv.style.border = "1px solid lightgray";
+      containerDiv.style.borderRadius = "3px";
+      containerDiv.style.background = "white";
 
-      const createButton = (buttonText: string): HTMLButtonElement => {
+      const createButton = (buttonIconName: string): HTMLButtonElement => {
         const button = document.createElement("button");
-        button.textContent = buttonText;
-        button.style.fontSize = "12px";
-        button.style.width = "100%";
-        button.style.height = "100%";
-        button.style.padding = "0";
+        button.style.width = "28px";
+        button.style.height = "28px";
+        button.style.padding = "4px";
         button.style.margin = "0";
         button.style.display = "flex";
         button.style.justifyContent = "center";
         button.style.alignItems = "center";
+
+        const buttonIcon = document.createElement("img");
+        buttonIcon.src = `/icons/${buttonIconName}.svg`;
+        buttonIcon.classList.add("icon");
+        button.appendChild(buttonIcon);
         return button;
       };
 
-      const editButton = createButton("Edit");
+      const editButton = createButton("pencil");
       containerDiv.appendChild(editButton);
 
-      const deleteButton = createButton("Delete");
+      const deleteButton = createButton("trash");
       deleteButton.onclick = (event: MouseEvent) => {
         event.preventDefault();
         document.getElementById(this._divId).focus();
@@ -684,12 +692,19 @@
       };
       containerDiv.appendChild(deleteButton);
 
-      const menuItemWidth = 48;
-      const menuItemHeight = 20;
+      const menuItemWidth = 28;
+      const menuItemHeight = 28;
+      const spacing = 6;
+
+      // The '- 2' below is to adjus for the 1px borders on the container.
+      containerDiv.style.height = `${menuItemHeight + 2 * spacing - 2}px`;
+
       // @ts-ignore
       const nodeSelectionMenu = this._svg.foreignObject(
-        menuItemWidth * containerDiv.childElementCount,
-        menuItemHeight
+        menuItemWidth * containerDiv.childElementCount +
+          spacing * (containerDiv.childElementCount + 1) -
+          1,
+        menuItemHeight + spacing * 2
       );
 
       nodeSelectionMenu.add(containerDiv);
@@ -938,7 +953,7 @@
     private _showNodeSelectionMenu(node: WorkflowNode): void {
       this._nodeSelectionMenu.move(
         node.cx() - this._nodeSelectionMenu.width() / 2,
-        node.y() + node.height() + 3
+        node.y() + node.height() - this._nodeSelectionMenu.height() / 2
       );
       this._nodeSelectionMenu.show();
       this._nodeSelectionMenu.front();
