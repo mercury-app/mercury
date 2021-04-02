@@ -1,6 +1,7 @@
 <script lang="ts">
   import WorkflowBar from "./WorkflowBar.svelte";
   import WorkflowCanvas, { placeNewNode } from "./WorkflowCanvas.svelte";
+  import WorkflowActions from "./WorkflowActions.svelte";
 
   const workflowBarWidth = 48;
 
@@ -11,19 +12,24 @@
 </script>
 
 <main>
-  <div class="container" id="workflow-bar-container">
-    <WorkflowBar
-      workflowBarWidth="{workflowBarWidth}"
-      on:newNodeRequested="{placeNewNode}"
-    />
-  </div>
-  <div class="container" id="workflow-canvas-container">
-    <WorkflowCanvas
-      numColumns="{numCanvasColumns}"
-      numRows="{numCanvasRows}"
-      colWidth="{canvasColWidth}"
-      rowHeight="{canvasRowHeight}"
-    />
+  <div id="workflow-builder-main">
+    <div class="container" id="workflow-bar-container">
+      <WorkflowBar
+        workflowBarWidth="{workflowBarWidth}"
+        on:newNodeRequested="{placeNewNode}"
+      />
+    </div>
+    <div class="container" id="workflow-canvas-container">
+      <WorkflowCanvas
+        numColumns="{numCanvasColumns}"
+        numRows="{numCanvasRows}"
+        colWidth="{canvasColWidth}"
+        rowHeight="{canvasRowHeight}"
+      />
+    </div>
+    <div class="container" id="workflow-actions-container">
+      <WorkflowActions />
+    </div>
   </div>
 </main>
 
@@ -31,6 +37,10 @@
   @media (min-width: 640px) {
     main {
       max-width: none;
+      height: 100%;
+    }
+
+    #workflow-builder-main {
       height: 100%;
       display: grid;
       grid-template-columns: 48px auto;
@@ -45,5 +55,17 @@
 
   #workflow-canvas-container {
     overflow: auto;
+  }
+
+  #workflow-actions-container {
+    max-width: max-content;
+
+    margin-left: auto;
+    margin-right: auto;
+
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
   }
 </style>
