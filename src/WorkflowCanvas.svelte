@@ -849,6 +849,9 @@
         if (this._selectedNode !== null) {
           this._selectedNode.front();
         }
+        if (this._nodeSelectionMenu.visible()) {
+          this._nodeSelectionMenu.front();
+        }
       });
 
       node.receiverRegion.mouseover((event: MouseEvent) => {
