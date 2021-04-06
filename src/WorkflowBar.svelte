@@ -38,11 +38,4 @@
     flex-direction: column;
     align-items: center;
   }
-
-  #workflow-bar button {
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
 </style>

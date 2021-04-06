@@ -512,11 +512,19 @@
       WorkflowNode,
       Map<WorkflowNode, WorkflowConnector>
     >;
+    private _nodeEditHandler: Function;
 
-    constructor(elementId: string, width: number, height: number) {
+    constructor(
+      elementId: string,
+      width: number,
+      height: number,
+      nodeEditHandler: Function
+    ) {
       this._divId = elementId;
       this._width = width;
       this._height = height;
+      this._nodeEditHandler = nodeEditHandler;
+
       this._svg = SVG()
         .addTo(`#${this._divId}`)
         .size(this._width, this._height);
@@ -667,10 +675,6 @@
         button.style.width = "28px";
         button.style.height = "28px";
         button.style.padding = "4px";
-        button.style.margin = "0";
-        button.style.display = "flex";
-        button.style.justifyContent = "center";
-        button.style.alignItems = "center";
 
         const buttonIcon = document.createElement("img");
         buttonIcon.src = `/icons/${buttonIconName}.svg`;
@@ -681,6 +685,10 @@
 
       const editButton = createButton("pencil");
       containerDiv.appendChild(editButton);
+      editButton.onclick = (event: MouseEvent) => {
+        event.preventDefault();
+        this._nodeEditHandler();
+      };
 
       const deleteButton = createButton("trash");
       deleteButton.onclick = (event: MouseEvent) => {
@@ -852,6 +860,10 @@
         if (this._nodeSelectionMenu.visible()) {
           this._nodeSelectionMenu.front();
         }
+      });
+      node.mainBody.dblclick((event: MouseEvent) => {
+        event.preventDefault();
+        this._nodeEditHandler();
       });
 
       node.receiverRegion.mouseover((event: MouseEvent) => {
@@ -1282,7 +1294,11 @@
 </script>
 
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   import { onMount } from "svelte";
+
+  const dispatch = createEventDispatcher();
+  const openNodeEditor = () => dispatch("editNodeRequested");
 
   export let numColumns: number = 20;
   export let numRows: number = 20;
@@ -1293,7 +1309,12 @@
   const canvasHeight = numRows * rowHeight;
 
   onMount(() => {
-    canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
+    canvas = new WorkflowCanvas(
+      "workflow-canvas",
+      canvasWidth,
+      canvasHeight,
+      openNodeEditor
+    );
     canvas.svgNode.style.display = "block";
   });
 </script>

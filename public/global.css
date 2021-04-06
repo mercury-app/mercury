@@ -47,6 +47,12 @@ button {
   color: #333;
   background-color: #f4f4f4;
   outline: none;
+
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 button:disabled {
@@ -69,4 +75,6 @@ button .icon {
 :root {
   --main-border-color: lightgray;
   --common-radius: 3px;
+  --default-button-width: 36px;
+  --default-button-height: 36px;
 }

@@ -36,12 +36,6 @@
   }
 
   #workflow-actions button {
-    padding: 0;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
     border: 0;
     border-radius: 0;
   }

@@ -1,7 +1,8 @@
 <script lang="ts">
+  import NotebookOverlay from "./NotebookOverlay.svelte";
+  import WorkflowActions from "./WorkflowActions.svelte";
   import WorkflowBar from "./WorkflowBar.svelte";
   import WorkflowCanvas, { placeNewNode } from "./WorkflowCanvas.svelte";
-  import WorkflowActions from "./WorkflowActions.svelte";
 
   const workflowBarWidth = 48;
 
@@ -9,6 +10,9 @@
   const numCanvasRows = 24;
   const canvasColWidth = 100;
   const canvasRowHeight = 100;
+
+  let notebookOverlayVisible = false;
+  const openNodeEditor = () => notebookOverlayVisible = true;
 </script>
 
 <main>
@@ -25,10 +29,14 @@
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"
         rowHeight="{canvasRowHeight}"
+        on:editNodeRequested="{openNodeEditor}"
       />
     </div>
     <div class="container" id="workflow-actions-container">
       <WorkflowActions />
+    </div>
+    <div>
+      <NotebookOverlay bind:visible="{notebookOverlayVisible}" />
     </div>
   </div>
 </main>
