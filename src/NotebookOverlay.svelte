@@ -1,34 +1,30 @@
 <script lang="ts">
-  import { cubicInOut } from "svelte/easing";
-
   export let visible = false;
 
-  const slideUp = (node: HTMLElement, params: any) => {
-    const existingTransform = getComputedStyle(node).transform.replace(
-      "none",
-      ""
-    );
-
-    return {
-      delay: params.delay || 0,
-      duration: params.duration || 400,
-      easing: params.easing || cubicInOut,
-      css: (_t: number, u: number) =>
-        `transform: ${existingTransform} translateY(${u * 100}%)`,
-    };
-  };
+  const hiddenClass = "hidden";
+  const visibleClass = "visible";
+  $: {
+    const notebookPanel = document.getElementById("notebook-panel");
+    if (notebookPanel !== null) {
+      if (visible) {
+        notebookPanel.classList.remove(hiddenClass);
+        notebookPanel.classList.add(visibleClass);
+      } else {
+        notebookPanel.classList.remove(visibleClass);
+        notebookPanel.classList.add(hiddenClass);
+      }
+    }
+  }
 </script>
 
-{#if visible}
-  <div id="notebook-panel" transition:slideUp="{{ duration: 500 }}">
-    <button on:click="{() => (visible = false)}">
-      <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
-    </button>
-    <iframe
-      src="http://localhost:8888/notebooks/work/scripts/Untitled.ipynb"
-      title="Jupyter notebook"></iframe>
-  </div>
-{/if}
+<div id="notebook-panel" class="{hiddenClass}">
+  <button on:click="{() => (visible = false)}">
+    <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
+  </button>
+  <iframe
+    src="http://localhost:8888/notebooks/work/scripts/Untitled.ipynb"
+    title="Jupyter notebook"></iframe>
+</div>
 
 <style>
   #notebook-panel {
@@ -37,6 +33,7 @@
     height: 100%;
     top: 0;
     background-color: #eee;
+    transition: all 0.5s ease-in-out;
   }
 
   #notebook-panel button {
@@ -51,5 +48,13 @@
     width: 100%;
     height: 100%;
     border: 0;
+  }
+
+  #notebook-panel.hidden {
+    transform: translateY(100%);
+  }
+
+  #notebook-panel.visible {
+    transform: translateY(0%);
   }
 </style>
