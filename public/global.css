@@ -75,6 +75,7 @@ button .icon {
 :root {
   --main-border-color: lightgray;
   --common-radius: 3px;
+  --common-spacing: 6px;
   --default-button-width: 36px;
   --default-button-height: 36px;
 }
