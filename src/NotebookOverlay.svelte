@@ -51,6 +51,7 @@
       <div id="input-title">
         <p class="input-text-item">Inputs</p>
       </div>
+
       <div id="input-param-list">
         {#each params as param}
           <div class="input-param">
@@ -60,6 +61,11 @@
             </button>
           </div>
         {/each}
+      </div>
+
+      <div id="input-new-param-container">
+        <input id="input-new-param-entry" type="text" />
+        <button id="input-new-param-button">Add</button>
       </div>
     </div>
 
@@ -107,7 +113,6 @@
     top: 30%;
     width: 20%;
     height: 40%;
-    padding: 0 8px;
 
     background-color: #fff;
 
@@ -121,16 +126,17 @@
     display: flex;
     flex-direction: column;
 
-    height: 100%;
-    width: calc(100% - (var(--default-button-width) / 2) - 8px);
+    max-height: 100%;
+    max-width: calc(100% - (var(--default-button-width) / 2) - (6px * 3));
+    padding: 6px;
+
+    background-color: #fafafa;
   }
 
   #input-title {
     display: flex;
     align-items: center;
-    min-height: var(--default-button-height);
-
-    margin: 8px 0;
+    height: var(--default-button-height);
 
     font-size: 0.8em;
     font-weight: bold;
@@ -138,12 +144,17 @@
 
   #input-param-list {
     flex: auto;
-    width: 100%;
+    width: calc(100% - 2px);
     margin: 0;
     padding: 0;
     overflow: auto;
 
+    margin: 6px 0;
+
     border: 1px solid var(--main-border-color);
+    border-radius: var(--common-radius);
+
+    background-color: #fff;
   }
 
   #input-param-list .input-param {
@@ -190,11 +201,42 @@
     font-size: 0.8em;
   }
 
-  #input-panel-divider {
-    height: 100%;
-    width: 1px;
+  #input-new-param-container {
+    display: flex;
+    flex-direction: row;
 
-    margin: 0 8px;
+    width: 100%;
+  }
+
+  #input-new-param-container #input-new-param-entry {
+    max-width: calc(100% - 64px);
+    margin: 0;
+
+    border-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+
+    font-size: 0.8em;
+  }
+
+  #input-new-param-container #input-new-param-button {
+    min-width: 64px;
+    margin: 0;
+    padding: 4px;
+
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    font-size: 0.8em;
+  }
+
+  #input-panel-divider {
+    position: absolute;
+
+    height: 100%;
+    width: 0;
+
+    right: calc((var(--default-button-width) / 2) + 6px);
 
     border-left: 1px solid var(--main-border-color);
   }
@@ -206,7 +248,7 @@
     width: var(--default-button-width);
     height: var(--default-button-height);
 
-    margin: 8px 0;
+    margin: 6px 0;
   }
 
   #input-panel-switch img {
