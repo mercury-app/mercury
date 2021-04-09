@@ -1,5 +1,6 @@
 <script lang="ts">
   import InputPanel from "./InputPanel.svelte";
+  import OutputPanel from "./OutputPanel.svelte";
 
   export let visible = false;
 
@@ -36,7 +37,8 @@
   >
   </iframe>
 
-  <InputPanel />
+  <div id="input-panel-container"><InputPanel /></div>
+  <div id="output-panel-container"><OutputPanel /></div>
 </div>
 
 <style>
@@ -69,5 +71,22 @@
 
   #notebook-panel.visible {
     transform: translateY(0%);
+  }
+
+  #input-panel-container {
+    position: absolute;
+    top: 30%;
+
+    width: 20%;
+    height: 40%;
+  }
+
+  #output-panel-container {
+    position: absolute;
+    top: 30%;
+    right: 0;
+
+    width: 20%;
+    height: 40%;
   }
 </style>
