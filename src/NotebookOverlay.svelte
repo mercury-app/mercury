@@ -74,12 +74,15 @@
         <input
           id="input-new-param-entry"
           type="text"
+          placeholder="Add new parameter"
           bind:value="{newParam}"
           on:keydown="{(event) => {
             if (event.key === 'Enter') addParam();
           }}"
         />
-        <button id="input-new-param-button" on:click="{addParam}"> Add </button>
+        <button id="input-new-param-button" on:click="{addParam}">
+          <img src="/icons/plus.svg" alt="add parameter" class="icon" />
+        </button>
       </div>
     </div>
 
@@ -223,7 +226,7 @@
   }
 
   #input-new-param-container #input-new-param-entry {
-    max-width: calc(100% - 64px);
+    max-width: calc(100% - var(--default-button-width));
     margin: 0;
 
     border-right: 0;
@@ -234,9 +237,10 @@
   }
 
   #input-new-param-container #input-new-param-button {
-    min-width: 64px;
+    min-width: var(--default-button-width);
+    min-height: var(--default-button-height);
+
     margin: 0;
-    padding: 4px;
 
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
@@ -250,14 +254,14 @@
     height: 100%;
     width: 0;
 
-    right: calc((var(--default-button-width) / 2) + 6px);
+    right: calc((var(--default-button-width) / 2) + 5px);
 
     border-left: 1px solid var(--main-border-color);
   }
 
   #input-panel-switch {
     position: absolute;
-    right: calc(-1 * var(--default-button-width) / 2);
+    right: calc((-1 * var(--default-button-width) / 2) - 1px);
 
     width: var(--default-button-width);
     height: var(--default-button-height);
