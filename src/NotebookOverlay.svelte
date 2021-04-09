@@ -9,6 +9,12 @@
       if (visible) {
         notebookPanel.classList.remove(hiddenClass);
         notebookPanel.classList.add(visibleClass);
+
+        // Halfway through the animation, we will grab focus. This prevents
+        // the canvas from still receiving keyboard inputs.
+        setTimeout(() => {
+          notebookPanel.focus();
+        }, 250);
       } else {
         notebookPanel.classList.remove(visibleClass);
         notebookPanel.classList.add(hiddenClass);
@@ -30,7 +36,7 @@
   ]
 </script>
 
-<div id="notebook-panel" class="{hiddenClass}">
+<div id="notebook-panel" class="{hiddenClass}" tabindex="-1">
   <button id="back-button" on:click="{() => (visible = false)}">
     <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
   </button>

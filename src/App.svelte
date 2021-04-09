@@ -12,7 +12,6 @@
   const canvasRowHeight = 100;
 
   let notebookOverlayVisible = false;
-  const openNodeEditor = () => notebookOverlayVisible = true;
 </script>
 
 <main>
@@ -29,7 +28,7 @@
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"
         rowHeight="{canvasRowHeight}"
-        on:editNodeRequested="{openNodeEditor}"
+        on:editNodeRequested="{() => (notebookOverlayVisible = true)}"
       />
     </div>
     <div class="container" id="workflow-actions-container">
