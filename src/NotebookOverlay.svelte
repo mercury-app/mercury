@@ -22,18 +22,19 @@
     }
   }
 
-  const params = [
-    "param_1",
-    "param_2",
-    "param_3",
-    "param_4",
-    "param_5",
-    "param_6",
-    "param_7",
-    "param_8",
-    "param_9",
-    "param_10_is_very_very_long"
-  ]
+  let params = [];
+  let newParam = "";
+
+  const addParam = () => {
+    if (newParam !== "") {
+      params = [...params, newParam];
+      newParam = "";
+    }
+  };
+
+  const removeParam = (param: string) => {
+    params = params.filter((item) => item !== param);
+  };
 </script>
 
 <div id="notebook-panel" class="{hiddenClass}" tabindex="-1">
@@ -62,7 +63,7 @@
         {#each params as param}
           <div class="input-param">
             <div><p class="input-text-item">{param}</p></div>
-            <button>
+            <button on:click="{() => removeParam(param)}">
               <img src="/icons/x.svg" alt="delete parameter" class="icon" />
             </button>
           </div>
@@ -70,8 +71,15 @@
       </div>
 
       <div id="input-new-param-container">
-        <input id="input-new-param-entry" type="text" />
-        <button id="input-new-param-button">Add</button>
+        <input
+          id="input-new-param-entry"
+          type="text"
+          bind:value="{newParam}"
+          on:keydown="{(event) => {
+            if (event.key === 'Enter') addParam();
+          }}"
+        />
+        <button id="input-new-param-button" on:click="{addParam}"> Add </button>
       </div>
     </div>
 
