@@ -1,9 +1,11 @@
 <script lang="ts">
   import MainIOPanel from "./MainIOPanel.svelte";
+
+  export let visible = false;
 </script>
 
 <div id="output-panel">
-  <button id="output-panel-switch">
+  <button id="output-panel-switch" on:click="{() => (visible = !visible)}">
     <img src="/icons/chevron-left.svg" alt="Hide panel" class="icon" />
     <img src="/icons/chevron-right.svg" alt="Show panel" class="icon" />
   </button>

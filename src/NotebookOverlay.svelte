@@ -24,6 +24,9 @@
       }
     }
   }
+
+  let inputPanelVisible = false;
+  let outputPanelVisible = false;
 </script>
 
 <div id="notebook-panel" class="{hiddenClass}" tabindex="-1">
@@ -37,8 +40,18 @@
   >
   </iframe>
 
-  <div id="input-panel-container"><InputPanel /></div>
-  <div id="output-panel-container"><OutputPanel /></div>
+  <div
+    id="input-panel-container"
+    class="{inputPanelVisible ? 'visible' : 'hidden'}"
+  >
+    <InputPanel bind:visible="{inputPanelVisible}" />
+  </div>
+  <div
+    id="output-panel-container"
+    class="{outputPanelVisible ? 'visible' : 'hidden'}"
+  >
+    <OutputPanel bind:visible="{outputPanelVisible}" />
+  </div>
 </div>
 
 <style>
@@ -79,6 +92,20 @@
 
     width: 20%;
     height: 40%;
+
+    transition: all 0.5s ease-in-out;
+  }
+
+  #input-panel-container.hidden {
+    transform: translateX(
+      calc(
+        -1 * 100% + (var(--default-button-width) / 2) + var(--common-spacing) - 1px
+      )
+    );
+  }
+
+  #input-panel-container.visible {
+    transform: translateX(0);
   }
 
   #output-panel-container {
@@ -88,5 +115,19 @@
 
     width: 20%;
     height: 40%;
+
+    transition: all 0.5s ease-in-out;
+  }
+
+  #output-panel-container.hidden {
+    transform: translateX(
+      calc(
+        100% - (var(--default-button-width) / 2) - var(--common-spacing) + 1px
+      )
+    );
+  }
+
+  #output-panel-container.visible {
+    transform: translateX(0);
   }
 </style>
