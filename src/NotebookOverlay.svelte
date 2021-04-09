@@ -15,6 +15,19 @@
       }
     }
   }
+
+  const params = [
+    "param_1",
+    "param_2",
+    "param_3",
+    "param_4",
+    "param_5",
+    "param_6",
+    "param_7",
+    "param_8",
+    "param_9",
+    "param_10_is_very_very_long"
+  ]
 </script>
 
 <div id="notebook-panel" class="{hiddenClass}">
@@ -35,70 +48,22 @@
     </button>
 
     <div id="input-panel-content">
-      <div id="input-title">Inputs</div>
+      <div id="input-title">
+        <p class="input-text-item">Inputs</p>
+      </div>
       <div id="input-param-list">
-        <div class="input-param">
-          <div>param_1</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_2</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_3</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_4</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_5</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_6</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_7</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_8</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_9</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
-        <div class="input-param">
-          <div>param_10</div>
-          <button>
-            <img src="/icons/x.svg" alt="delete parameter" class="icon" />
-          </button>
-        </div>
+        {#each params as param}
+          <div class="input-param">
+            <div><p class="input-text-item">{param}</p></div>
+            <button>
+              <img src="/icons/x.svg" alt="delete parameter" class="icon" />
+            </button>
+          </div>
+        {/each}
       </div>
     </div>
+
+    <div id="input-panel-divider"></div>
   </div>
 </div>
 
@@ -135,11 +100,14 @@
   }
 
   #input-panel {
+    display: flex;
+    flex-direction: row;
+
     position: absolute;
     top: 30%;
-    width: 25%;
+    width: 20%;
     height: 40%;
-    padding: 8px;
+    padding: 0 8px;
 
     background-color: #fff;
 
@@ -152,19 +120,26 @@
   #input-panel-content {
     display: flex;
     flex-direction: column;
+
     height: 100%;
+    width: calc(100% - (var(--default-button-width) / 2) - 8px);
   }
 
   #input-title {
     display: flex;
     align-items: center;
     min-height: var(--default-button-height);
+
+    margin: 8px 0;
+
+    font-size: 0.8em;
+    font-weight: bold;
   }
 
   #input-param-list {
     flex: auto;
     width: 100%;
-    margin: 8px 0;
+    margin: 0;
     padding: 0;
     overflow: auto;
 
@@ -177,23 +152,61 @@
     padding: 4px;
   }
 
+  #input-param-list .input-param:hover {
+    background-color: #f4f4f4;
+  }
+
   #input-param-list .input-param div {
     display: flex;
     align-items: center;
     flex: auto;
+    overflow: hidden;
   }
 
   #input-param-list .input-param button {
-    width: calc(var(--default-button-width) / 2);
-    height: calc(var(--default-button-height) / 2);
+    min-width: calc(var(--default-button-width) / 1.5);
+    min-height: calc(var(--default-button-height) / 1.5);
+    margin-left: 4px;
+
+    background-color: #fff0;
     border: 0;
+  }
+
+  #input-param-list .input-param button:hover {
+    border: 1px solid var(--main-border-color);
+  }
+
+  #input-param-list .input-param button:not(:disabled):active {
+    background-color: #ddd;
+  }
+
+  #input-param-list .input-text-item {
+    margin: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 0.8em;
+  }
+
+  #input-panel-divider {
+    height: 100%;
+    width: 1px;
+
+    margin: 0 8px;
+
+    border-left: 1px solid var(--main-border-color);
   }
 
   #input-panel-switch {
     position: absolute;
     right: calc(-1 * var(--default-button-width) / 2);
+
     width: var(--default-button-width);
     height: var(--default-button-height);
+
+    margin: 8px 0;
   }
 
   #input-panel-switch img {
