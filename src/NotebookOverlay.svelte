@@ -17,7 +17,7 @@
         // the canvas from still receiving keyboard inputs.
         setTimeout(() => {
           notebookPanel.focus();
-        }, 250);
+        }, 150);
       } else {
         notebookPanel.classList.remove(visibleClass);
         notebookPanel.classList.add(hiddenClass);
@@ -61,7 +61,7 @@
     height: 100%;
     top: 0;
     background-color: #eee;
-    transition: all 0.5s ease-in-out;
+    transition: all 0.3s ease-in-out;
   }
 
   #notebook-back-button {
@@ -93,7 +93,7 @@
     width: 20%;
     height: 40%;
 
-    transition: all 0.5s ease-in-out;
+    transition: all 0.3s ease-in-out;
   }
 
   #input-panel-container.hidden {
@@ -116,7 +116,7 @@
     width: 20%;
     height: 40%;
 
-    transition: all 0.5s ease-in-out;
+    transition: all 0.3s ease-in-out;
   }
 
   #output-panel-container.hidden {
