@@ -1323,7 +1323,9 @@
 
       this._unconnectedSource.unselectTransmitter();
       this._unfinishedConnector.remove();
-      this._possibleDestination.unhighlightReceiver();
+      if (this._possibleDestination !== null) {
+        this._possibleDestination.unhighlightReceiver();
+      }
 
       this._unconnectedSource = null;
       this._unfinishedConnector = null;
