@@ -52,6 +52,11 @@
     layerY: number;
   }
 
+  enum IOPortType {
+    Input,
+    Output,
+  }
+
   const cellSize = 24;
   const padWidth = cellSize / 2;
   const padHeight = cellSize;
@@ -64,15 +69,82 @@
     return Math.max(min, Math.min(num, max));
   };
 
+  class IOPort extends G {
+    private _workflowNode: WorkflowNode;
+    private _portType: IOPortType;
+    private _region: Circle;
+
+    constructor(
+      svg: Svg,
+      workflowNode: WorkflowNode,
+      portType: IOPortType,
+      yPosition: number
+    ) {
+      super();
+
+      this._workflowNode = workflowNode;
+      this._portType = portType;
+
+      const fill = "lightgray";
+      const mainRect = svg
+        .rect(padWidth, padHeight)
+        .radius(strokeWidth)
+        .fill(fill)
+        .stroke({ width: strokeWidth, color: fill });
+      const fillerRect = svg
+        .rect(padWidth / 2, padHeight)
+        .fill(fill)
+        .stroke({ width: strokeWidth, color: fill })
+        .move(padWidth / 2, 0);
+
+      svg.add(this);
+      this.add(mainRect);
+      this.add(fillerRect);
+
+      if (this._portType === IOPortType.Input) {
+        this.move(-padWidth, yPosition);
+        this._region = svg
+          .circle()
+          .radius(padRadius)
+          .opacity(0)
+          .center(this.cx(), this.cy());
+      } else if (this._portType === IOPortType.Output) {
+        this.flip().move(
+          -padWidth - this._workflowNode.mainBody.width(),
+          -padHeight - yPosition
+        );
+        this._region = svg
+          .circle()
+          .radius(padRadius)
+          .opacity(0)
+          .flip()
+          .center(this.cx(), this.cy());
+      }
+    }
+
+    get workflowNode(): WorkflowNode {
+      return this._workflowNode;
+    }
+
+    get portType(): IOPortType {
+      return this._portType;
+    }
+
+    get region(): Circle {
+      return this._region;
+    }
+  }
+
   class WorkflowNode extends G {
+    private _svg: Svg;
     private _innerRect: Rect;
     private _outlineRect: Rect;
     private _titleSeparator: Line;
     private _titleElement: HTMLParagraphElement;
     private _mainBody: G;
-    private _transmitterGroup: G;
+    private _transmitterGroup: IOPort;
     private _transmitterRegion: Circle;
-    private _receiverGroup: G;
+    private _receiverGroup: IOPort;
     private _receiverRegion: Circle;
     private _isSelected: boolean;
     private _isReceiverSelected: boolean;
@@ -81,60 +153,35 @@
     constructor(svg: Svg, position: Point) {
       super();
 
-      this._innerRect = svg
+      // TODO:
+      // 1. Create method to add new input and output ports
+      // 2. Maintain a list of input and output ports already added
+      // 3. On creation, a node automatically gets one pair of I/O ports
+      // 4. I/O ports allow a one-to-one mapping only
+      // 5. Reduce height of a node and increase its width
+      // 6. Continue with the remaining work in canvas and overlay
+      this._svg = svg;
+
+      this._innerRect = this._svg
         .rect(mainBodyWidth, mainBodyHeight)
         .radius(strokeWidth)
         .fill("lightgray")
         .opacity(0.2);
-      this._outlineRect = svg
+      this._outlineRect = this._svg
         .rect(this._innerRect.width(), this._innerRect.height())
         .radius(strokeWidth)
         .fill("none")
         .stroke({ width: strokeWidth, color: this._innerRect.fill() });
-      this._mainBody = svg.group();
+      this._mainBody = this._svg.group();
       this._mainBody.add(this._innerRect);
       this._mainBody.add(this._outlineRect);
 
-      const createEnvIORect = (): G => {
-        const mainRect = svg
-          .rect(padWidth, padHeight)
-          .radius(strokeWidth)
-          .fill(this._innerRect.fill())
-          .stroke({ width: strokeWidth, color: this._innerRect.fill() });
-        const fillerRect = svg
-          .rect(padWidth / 2, padHeight)
-          .fill(this._innerRect.fill())
-          .stroke({ width: strokeWidth, color: this._innerRect.fill() })
-          .move(padWidth / 2, 0);
-
-        const inputRect = svg.group();
-        inputRect.add(mainRect);
-        inputRect.add(fillerRect);
-        return inputRect;
-      };
-
-      this._receiverGroup = createEnvIORect().move(-padWidth, 0);
-      this._receiverRegion = svg
-        .circle()
-        .radius(padRadius)
-        .opacity(0)
-        .center(this._receiverGroup.cx(), this._receiverGroup.cy());
-      this._transmitterGroup = createEnvIORect()
-        .flip()
-        .move(-padWidth - this._innerRect.width(), -padHeight);
-      this._transmitterRegion = svg
-        .circle()
-        .radius(padRadius)
-        .opacity(0)
-        .flip()
-        .center(this._transmitterGroup.cx(), this._transmitterGroup.cy());
-
-      this._titleSeparator = svg
+      this._titleSeparator = this._svg
         .line(0, cellSize, this._innerRect.width(), cellSize)
         .stroke({ color: this._innerRect.fill(), width: strokeWidth });
 
       const titleOffset = 6;
-      const titleObject = svg
+      const titleObject = this._svg
         // @ts-ignore
         .foreignObject(this._innerRect.width(), cellSize)
         .move(titleOffset, 0);
@@ -151,7 +198,10 @@
       this._titleElement.style.whiteSpace = "nowrap";
       titleObject.add(this._titleElement);
 
-      svg.add(this);
+      this.addReceiver();
+      this.addTransmitter();
+
+      this._svg.add(this);
       this.add(titleObject);
       this.add(this._receiverGroup);
       this.add(this._transmitterGroup);
@@ -159,10 +209,7 @@
       this.add(this._titleSeparator);
       this.add(this._receiverRegion);
       this.add(this._transmitterRegion);
-      this.move(
-        position.x - padRadius - padWidth / 2,
-        position.y - padRadius + padHeight / 2
-      );
+      this.move(position.x - padRadius - padWidth / 2, position.y);
 
       this._isSelected = false;
       this._isReceiverSelected = false;
@@ -271,6 +318,26 @@
       });
     }
 
+    public addReceiver(): void {
+      this._receiverGroup = new IOPort(
+        this._svg,
+        this,
+        IOPortType.Input,
+        2 * cellSize
+      );
+      this._receiverRegion = this._receiverGroup.region;
+    }
+
+    public addTransmitter(): void {
+      this._transmitterGroup = new IOPort(
+        this._svg,
+        this,
+        IOPortType.Output,
+        2 * cellSize
+      );
+      this._transmitterRegion = this._transmitterGroup.region;
+    }
+
     get isSelected(): boolean {
       return this._isSelected;
     }
@@ -285,7 +352,7 @@
 
     get receiverCoordinate(): Point {
       const x = this.x() + padRadius - padWidth / 2;
-      const y = this.y() + padRadius;
+      const y = this.y() + 2 * cellSize + padHeight / 2;
       return { x, y };
     }
 
@@ -299,7 +366,7 @@
 
     get transmitterCoordinate(): Point {
       const x = this.x() + this.width() - padRadius + padWidth / 2;
-      const y = this.y() + padRadius;
+      const y = this.y() + 2 * cellSize + padHeight / 2;
       return { x, y };
     }
 
@@ -745,15 +812,10 @@
           cellSize - padRadius - padWidth / 2,
           this._width - elemWidth - cellSize + padRadius + 2 * padWidth
         );
-        y = clamp(
-          y,
-          cellSize - padRadius,
-          this._height - elemHeight - cellSize
-        );
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
-        y = clamp(y, cellSize, this._height - elemHeight - cellSize);
       }
+      y = clamp(y, cellSize, this._height - elemHeight - cellSize);
 
       const diffX = x % cellSize;
       if (diffX > cellSize / 2) {
@@ -772,7 +834,6 @@
       // Adjust for the input receiver/transmitter regions.
       if (adjustForPads) {
         x = x - padWidth / 2;
-        y = y + padHeight / 2;
       }
 
       return { x, y };
