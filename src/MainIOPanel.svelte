@@ -55,7 +55,7 @@
     flex-direction: column;
 
     max-height: 100%;
-    max-width: calc(
+    width: calc(
       100% - (var(--default-button-width) / 2) - (var(--common-spacing) * 3)
     );
     padding: var(--common-spacing);
@@ -139,7 +139,7 @@
   }
 
   #io-new-param-container #io-new-param-entry {
-    max-width: calc(100% - var(--default-button-width));
+    width: calc(100% - var(--default-button-width));
     margin: 0;
 
     border-right: 0;
