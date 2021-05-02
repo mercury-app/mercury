@@ -73,6 +73,7 @@
     private _workflowNode: WorkflowNode;
     private _portType: IOPortType;
     private _region: Circle;
+    private _isSelected: boolean;
 
     constructor(
       svg: Svg,
@@ -101,6 +102,7 @@
       this.add(mainRect);
       this.add(fillerRect);
 
+      this._region = null;
       if (this._portType === IOPortType.Input) {
         this.move(-padWidth, yPosition);
         this._region = svg
@@ -120,6 +122,44 @@
           .flip()
           .center(this.cx(), this.cy());
       }
+
+      this._isSelected = false;
+    }
+
+    public select(): void {
+      this.children().forEach((element) => {
+        element.fill("black");
+        element.stroke({ color: "black" });
+      });
+      this._isSelected = true;
+    }
+
+    public unselect(): void {
+      this.children().forEach((element) => {
+        element.fill("lightgray");
+        element.stroke({ color: "lightgray" });
+      });
+      this._isSelected = false;
+    }
+
+    public highlight(): void {
+      if (this._isSelected) {
+        return;
+      }
+      this.children().forEach((element) => {
+        element.fill("darkgray");
+        element.stroke({ color: "darkgray" });
+      });
+    }
+
+    public unhighlight(): void {
+      if (this._isSelected) {
+        return;
+      }
+      this.children().forEach((element) => {
+        element.fill("lightgray");
+        element.stroke({ color: "lightgray" });
+      });
     }
 
     get workflowNode(): WorkflowNode {
@@ -132,6 +172,10 @@
 
     get region(): Circle {
       return this._region;
+    }
+
+    get isSelected(): boolean {
+      return this._isSelected;
     }
   }
 
@@ -147,14 +191,12 @@
     private _receiverGroup: IOPort;
     private _receiverRegion: Circle;
     private _isSelected: boolean;
-    private _isReceiverSelected: boolean;
-    private _isTransmitterSelected: boolean;
 
     constructor(svg: Svg, position: Point) {
       super();
 
       // TODO:
-      // 1. Create method to add new input and output ports
+      // 1. DONE - Create method to add new input and output ports
       // 2. Maintain a list of input and output ports already added
       // 3. On creation, a node automatically gets one pair of I/O ports
       // 4. I/O ports allow a one-to-one mapping only
@@ -212,8 +254,6 @@
       this.move(position.x - padRadius - padWidth / 2, position.y);
 
       this._isSelected = false;
-      this._isReceiverSelected = false;
-      this._isTransmitterSelected = false;
     }
 
     public select(): void {
@@ -247,75 +287,35 @@
     }
 
     public selectReceiver(): void {
-      this._receiverGroup.children().forEach((element) => {
-        element.fill("black");
-        element.stroke({ color: "black" });
-      });
-      this._isReceiverSelected = true;
+      this._receiverGroup.select();
     }
 
     public unselectReceiver(): void {
-      this._receiverGroup.children().forEach((element) => {
-        element.fill("lightgray");
-        element.stroke({ color: "lightgray" });
-      });
-      this._isReceiverSelected = false;
+      this._receiverGroup.unselect();
     }
 
     public highlightReceiver(): void {
-      if (this._isReceiverSelected) {
-        return;
-      }
-      this._receiverGroup.children().forEach((element) => {
-        element.fill("darkgray");
-        element.stroke({ color: "darkgray" });
-      });
+      this._receiverGroup.highlight();
     }
 
     public unhighlightReceiver(): void {
-      if (this._isReceiverSelected) {
-        return;
-      }
-      this._receiverGroup.children().forEach((element) => {
-        element.fill("lightgray");
-        element.stroke({ color: "lightgray" });
-      });
+      this._receiverGroup.unhighlight();
     }
 
     public selectTransmitter(): void {
-      this._transmitterGroup.children().forEach((element) => {
-        element.fill("black");
-        element.stroke({ color: "black" });
-      });
-      this._isTransmitterSelected = true;
+      this._transmitterGroup.select();
     }
 
     public unselectTransmitter(): void {
-      this._transmitterGroup.children().forEach((element) => {
-        element.fill("lightgray");
-        element.stroke({ color: "lightgray" });
-      });
-      this._isTransmitterSelected = false;
+      this._transmitterGroup.unselect();
     }
 
     public highlightTransmitter(): void {
-      if (this._isTransmitterSelected) {
-        return;
-      }
-      this._transmitterGroup.children().forEach((element) => {
-        element.fill("darkgray");
-        element.stroke({ color: "darkgray" });
-      });
+      this._transmitterGroup.highlight();
     }
 
     public unhighlightTransmitter(): void {
-      if (this._isTransmitterSelected) {
-        return;
-      }
-      this._transmitterGroup.children().forEach((element) => {
-        element.fill("lightgray");
-        element.stroke({ color: "lightgray" });
-      });
+      this._transmitterGroup.unhighlight();
     }
 
     public addReceiver(): void {
@@ -357,7 +357,7 @@
     }
 
     get isReceiverSelected(): boolean {
-      return this._isReceiverSelected;
+      return this._receiverGroup.isSelected;
     }
 
     get transmitterRegion(): Circle {
@@ -371,7 +371,7 @@
     }
 
     get isTransmitterSelected(): boolean {
-      return this._isTransmitterSelected;
+      return this._transmitterGroup.isSelected;
     }
   }
 
