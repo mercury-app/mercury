@@ -92,34 +92,43 @@
         .radius(strokeWidth)
         .fill(fill)
         .stroke({ width: strokeWidth, color: fill });
-      const fillerRect = svg
-        .rect(padWidth / 2, padHeight)
-        .fill(fill)
-        .stroke({ width: strokeWidth, color: fill })
-        .move(padWidth / 2, 0);
 
       svg.add(this);
       this.add(mainRect);
-      this.add(fillerRect);
 
       this._region = null;
       if (this._portType === IOPortType.Input) {
-        this.move(-padWidth, yPosition);
+        const fillerRect = svg
+          .rect(padWidth / 2, padHeight)
+          .fill(fill)
+          .stroke({ width: strokeWidth, color: fill })
+          .move(padWidth / 2, 0);
+        this.add(fillerRect);
+
+        this.move(
+          this._workflowNode.mainBody.x() - padWidth,
+          this._workflowNode.mainBody.y() + yPosition
+        );
         this._region = svg
           .circle()
           .radius(padRadius)
           .opacity(0)
           .center(this.cx(), this.cy());
       } else if (this._portType === IOPortType.Output) {
-        this.flip().move(
-          -padWidth - this._workflowNode.mainBody.width(),
-          -padHeight - yPosition
+        const fillerRect = svg
+          .rect(padWidth / 2, padHeight)
+          .fill(fill)
+          .stroke({ width: strokeWidth, color: fill });
+        this.add(fillerRect);
+
+        this.move(
+          this._workflowNode.mainBody.x() + this._workflowNode.mainBody.width(),
+          this._workflowNode.mainBody.y() + yPosition
         );
         this._region = svg
           .circle()
           .radius(padRadius)
           .opacity(0)
-          .flip()
           .center(this.cx(), this.cy());
       }
 
@@ -177,6 +186,23 @@
     get isSelected(): boolean {
       return this._isSelected;
     }
+
+    get coordinate(): Point {
+      if (this._portType === IOPortType.Input) {
+        const x = this._workflowNode.mainBody.x() - padWidth / 2;
+        const y =
+          this._workflowNode.mainBody.y() + 2 * cellSize + padHeight / 2;
+        return { x, y };
+      } else if (this._portType === IOPortType.Output) {
+        const x =
+          this._workflowNode.mainBody.x() +
+          this._workflowNode.mainBody.width() +
+          padWidth / 2;
+        const y =
+          this._workflowNode.mainBody.y() + 2 * cellSize + padHeight / 2;
+        return { x, y };
+      }
+    }
   }
 
   class WorkflowNode extends G {
@@ -186,11 +212,9 @@
     private _titleSeparator: Line;
     private _titleElement: HTMLParagraphElement;
     private _mainBody: G;
-    private _transmitterGroup: IOPort;
-    private _transmitterRegion: Circle;
-    private _receiverGroup: IOPort;
-    private _receiverRegion: Circle;
     private _isSelected: boolean;
+    private _inputPorts: Array<IOPort>;
+    private _outputPorts: Array<IOPort>;
 
     constructor(svg: Svg, position: Point) {
       super();
@@ -240,20 +264,16 @@
       this._titleElement.style.whiteSpace = "nowrap";
       titleObject.add(this._titleElement);
 
-      this.addReceiver();
-      this.addTransmitter();
-
       this._svg.add(this);
       this.add(titleObject);
-      this.add(this._receiverGroup);
-      this.add(this._transmitterGroup);
       this.add(this._mainBody);
       this.add(this._titleSeparator);
-      this.add(this._receiverRegion);
-      this.add(this._transmitterRegion);
-      this.move(position.x - padRadius - padWidth / 2, position.y);
+      this.move(position.x, position.y);
 
       this._isSelected = false;
+
+      this._inputPorts = new Array<IOPort>();
+      this._outputPorts = new Array<IOPort>();
     }
 
     public select(): void {
@@ -286,56 +306,32 @@
       this._titleSeparator.stroke({ color: "lightgray" });
     }
 
-    public selectReceiver(): void {
-      this._receiverGroup.select();
-    }
-
-    public unselectReceiver(): void {
-      this._receiverGroup.unselect();
-    }
-
-    public highlightReceiver(): void {
-      this._receiverGroup.highlight();
-    }
-
-    public unhighlightReceiver(): void {
-      this._receiverGroup.unhighlight();
-    }
-
-    public selectTransmitter(): void {
-      this._transmitterGroup.select();
-    }
-
-    public unselectTransmitter(): void {
-      this._transmitterGroup.unselect();
-    }
-
-    public highlightTransmitter(): void {
-      this._transmitterGroup.highlight();
-    }
-
-    public unhighlightTransmitter(): void {
-      this._transmitterGroup.unhighlight();
-    }
-
-    public addReceiver(): void {
-      this._receiverGroup = new IOPort(
+    public addInput(): IOPort {
+      const inputPort = new IOPort(
         this._svg,
         this,
         IOPortType.Input,
         2 * cellSize
       );
-      this._receiverRegion = this._receiverGroup.region;
+      this.add(inputPort);
+      this.add(inputPort.region);
+      this._inputPorts.push(inputPort);
+
+      return inputPort;
     }
 
-    public addTransmitter(): void {
-      this._transmitterGroup = new IOPort(
+    public addOutput(): IOPort {
+      const outputPort = new IOPort(
         this._svg,
         this,
         IOPortType.Output,
         2 * cellSize
       );
-      this._transmitterRegion = this._transmitterGroup.region;
+      this.add(outputPort);
+      this.add(outputPort.region);
+      this._outputPorts.push(outputPort);
+
+      return outputPort;
     }
 
     get isSelected(): boolean {
@@ -346,32 +342,12 @@
       return this._mainBody;
     }
 
-    get receiverRegion(): Circle {
-      return this._receiverRegion;
+    get inputPorts(): Array<IOPort> {
+      return this._inputPorts;
     }
 
-    get receiverCoordinate(): Point {
-      const x = this.x() + padRadius - padWidth / 2;
-      const y = this.y() + 2 * cellSize + padHeight / 2;
-      return { x, y };
-    }
-
-    get isReceiverSelected(): boolean {
-      return this._receiverGroup.isSelected;
-    }
-
-    get transmitterRegion(): Circle {
-      return this._transmitterRegion;
-    }
-
-    get transmitterCoordinate(): Point {
-      const x = this.x() + this.width() - padRadius + padWidth / 2;
-      const y = this.y() + 2 * cellSize + padHeight / 2;
-      return { x, y };
-    }
-
-    get isTransmitterSelected(): boolean {
-      return this._transmitterGroup.isSelected;
+    get outputPorts(): Array<IOPort> {
+      return this._outputPorts;
     }
   }
 
@@ -568,17 +544,11 @@
     private _moveAnimationDuration: number;
     private _connectionInProgress: boolean;
     private _unfinishedConnector: WorkflowConnector;
-    private _unconnectedSource: WorkflowNode;
-    private _possibleDestination: WorkflowNode;
+    private _unconnectedSource: IOPort;
+    private _possibleDestination: IOPort;
     private _selectedConnectors: Set<WorkflowConnector>;
-    private _connectionsSrcToDest: Map<
-      WorkflowNode,
-      Map<WorkflowNode, WorkflowConnector>
-    >;
-    private _connectionsDestToSrc: Map<
-      WorkflowNode,
-      Map<WorkflowNode, WorkflowConnector>
-    >;
+    private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
+    private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
     private _nodeEditHandler: Function;
 
     constructor(
@@ -615,17 +585,17 @@
 
       this._svg.mousemove((event: SvgMouseMoveEvent) => {
         if (this._connectionInProgress && this._unfinishedConnector !== null) {
-          const start = this._unconnectedSource.transmitterCoordinate;
+          const start = this._unconnectedSource.coordinate;
           let end = { x: event.layerX - 2, y: event.layerY };
           if (this._possibleDestination !== null) {
-            end = this._possibleDestination.receiverCoordinate;
+            end = this._possibleDestination.coordinate;
           }
           this._unfinishedConnector.redraw(start, end);
         }
       });
 
       window.onkeydown = (event: KeyboardEvent) => {
-        if (document.activeElement.id == this._divId) {
+        if (document.activeElement.id === this._divId) {
           this._handleKeyboardEvent(event);
         }
       };
@@ -644,7 +614,7 @@
       this._possibleDestination = null;
       this._selectedConnectors = new Set();
       this._connectionsSrcToDest = new Map();
-      this._connectionsDestToSrc = new Map();
+      this._connectionsDestForSrc = new Map();
     }
 
     private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -806,7 +776,7 @@
     ): { x: number; y: number } {
       // Use the `container` to clamp the object's coords in the view.
       if (adjustForPads) {
-        // Adjust for the input receiver/transmitter regions.
+        // Adjust for the input/output ports.
         x = clamp(
           x,
           cellSize - padRadius - padWidth / 2,
@@ -831,7 +801,7 @@
         y = y - diffY;
       }
 
-      // Adjust for the input receiver/transmitter regions.
+      // Adjust for the input/ouptut ports.
       if (adjustForPads) {
         x = x - padWidth / 2;
       }
@@ -927,57 +897,59 @@
         this._nodeEditHandler();
       });
 
-      node.receiverRegion.mouseover((event: MouseEvent) => {
+      const inputPort = node.addInput();
+      inputPort.region.mouseover((event: MouseEvent) => {
         if (
           !this._connectionInProgress ||
-          this._connectionExists(this._unconnectedSource, node)
+          this._connectionsDestForSrc.has(inputPort)
         ) {
           return;
         }
         event.preventDefault();
-        node.highlightReceiver();
-        this._possibleDestination = node;
+        inputPort.highlight();
+        this._possibleDestination = inputPort;
       });
-      node.receiverRegion.mouseout((event: MouseEvent) => {
+      inputPort.region.mouseout((event: MouseEvent) => {
         if (!this._connectionInProgress) {
           return;
         }
         event.preventDefault();
-        node.unhighlightReceiver();
+        inputPort.unhighlight();
         this._possibleDestination = null;
       });
-      node.receiverRegion.click((event: MouseEvent) => {
+      inputPort.region.click((event: MouseEvent) => {
         document.getElementById(this._divId).focus();
         if (
           !this._connectionInProgress ||
-          this._connectionExists(this._unconnectedSource, node)
+          this._connectionsDestForSrc.has(inputPort)
         ) {
           return;
         }
         event.preventDefault();
-        this._endConnection(node);
+        this._endConnection(inputPort);
       });
 
-      node.transmitterRegion.mouseover((event: MouseEvent) => {
+      const outputPort = node.addOutput();
+      outputPort.region.mouseover((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
-        node.highlightTransmitter();
+        outputPort.highlight();
       });
-      node.transmitterRegion.mouseout((event: MouseEvent) => {
+      outputPort.region.mouseout((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
-        node.unhighlightTransmitter();
+        outputPort.unhighlight();
       });
-      node.transmitterRegion.click(() => {
+      outputPort.region.click(() => {
         document.getElementById(this._divId).focus();
         if (this._connectionInProgress) {
           return;
         }
-        this._beginConnection(node);
+        this._beginConnection(outputPort);
       });
 
       node.draggable();
@@ -1039,26 +1011,26 @@
       this._nodeSelectionMenu.hide();
     }
 
-    private _beginConnection(node: WorkflowNode) {
+    private _beginConnection(output: IOPort) {
       this._selectNode(null);
       this._selectConnector(null);
       this._hideNodeSelectionMenu();
 
       this._connectionInProgress = true;
-      this._unconnectedSource = node;
-      const start = node.transmitterCoordinate;
+      this._unconnectedSource = output;
+      const start = output.coordinate;
       this._unfinishedConnector = new WorkflowConnector(this._svg, start);
-      this._unconnectedSource.selectTransmitter();
+      this._unconnectedSource.select();
       this._nodes.forEach((workflowNode) => {
         workflowNode.front();
       });
     }
 
-    private _endConnection(node: WorkflowNode) {
+    private _endConnection(input: IOPort) {
       this._connectionInProgress = false;
       this._addConnection(
         this._unconnectedSource,
-        node,
+        input,
         this._unfinishedConnector
       );
       this._unconnectedSource = null;
@@ -1067,8 +1039,8 @@
     }
 
     private _addConnection(
-      src: WorkflowNode,
-      dest: WorkflowNode,
+      src: IOPort,
+      dest: IOPort,
       connector: WorkflowConnector
     ): void {
       this._updateConnection(src, dest, connector);
@@ -1088,8 +1060,8 @@
           return;
         }
         event.preventDefault();
-        src.highlightTransmitter();
-        dest.highlightReceiver();
+        src.highlight();
+        dest.highlight();
         connector.highlight();
         if (this._nodeSelectionMenu.visible()) {
           this._nodeSelectionMenu.front();
@@ -1100,8 +1072,8 @@
           return;
         }
         event.preventDefault();
-        src.unhighlightTransmitter();
-        dest.unhighlightReceiver();
+        src.unhighlight();
+        dest.unhighlight();
         connector.unhighlight();
         this._selectedConnectors.forEach((connector) => {
           this._selectConnector(connector);
@@ -1113,21 +1085,17 @@
       } else {
         this._connectionsSrcToDest.set(src, new Map([[dest, connector]]));
       }
-      if (this._connectionsDestToSrc.has(dest)) {
-        this._connectionsDestToSrc.get(dest).set(src, connector);
-      } else {
-        this._connectionsDestToSrc.set(dest, new Map([[src, connector]]));
-      }
+      this._connectionsDestForSrc.set(dest, [src, connector]);
       this._selectConnector(connector);
     }
 
     private _updateConnection(
-      src: WorkflowNode,
-      dest: WorkflowNode,
+      src: IOPort,
+      dest: IOPort,
       connector: WorkflowConnector
     ): void {
-      const p1 = src.transmitterCoordinate;
-      const p2 = dest.receiverCoordinate;
+      const p1 = src.coordinate;
+      const p2 = dest.coordinate;
       connector.redraw(p1, p2);
     }
 
@@ -1136,33 +1104,42 @@
     }
 
     private _removeAllConnectionsForNode(node: WorkflowNode): void {
-      if (this._connectionsSrcToDest.has(node)) {
-        const connections = this._connectionsSrcToDest.get(node);
-        for (const [dest, connector] of connections.entries()) {
-          // Remove the dest->src binding
-          this._connectionsDestToSrc.get(dest).delete(node);
+      for (const inputPort of node.inputPorts) {
+        if (this._connectionsDestForSrc.has(inputPort)) {
+          const [src, connector] = this._connectionsDestForSrc.get(inputPort);
+
+          // Remove the output->input binding
+          this._connectionsSrcToDest.get(src).delete(inputPort);
 
           // Delete the connector itself
           if (this._selectedConnectors.has(connector)) {
             this._selectedConnectors.delete(connector);
           }
           connector.remove();
+
+          // Delete the input<-output binding
+          this._connectionsDestForSrc.delete(inputPort);
         }
-        this._connectionsSrcToDest.delete(node);
       }
-      if (this._connectionsDestToSrc.has(node)) {
-        const connections = this._connectionsDestToSrc.get(node);
-        for (const [src, connector] of connections.entries()) {
-          // Remove the src->dest binding
-          this._connectionsSrcToDest.get(src).delete(node);
 
-          // Delete the connector itself
-          connector.remove();
-          if (this._selectedConnectors.has(connector)) {
-            this._selectedConnectors.delete(connector);
+      for (const outputPort of node.outputPorts) {
+        if (this._connectionsSrcToDest.has(outputPort)) {
+          for (const [dest, connector] of this._connectionsSrcToDest
+            .get(outputPort)
+            .entries()) {
+            // Remove the input<-output binding
+            this._connectionsDestForSrc.delete(dest);
+
+            // Delete the connector itself
+            if (this._selectedConnectors.has(connector)) {
+              this._selectedConnectors.delete(connector);
+            }
+            connector.remove();
           }
+
+          // Delete all output->input bindings
+          this._connectionsSrcToDest.delete(outputPort);
         }
-        this._connectionsDestToSrc.delete(node);
       }
     }
 
@@ -1170,18 +1147,18 @@
       for (const [src, connections] of this._connectionsSrcToDest.entries()) {
         for (const [dest, conn] of connections.entries()) {
           if (conn === connector) {
-            // Remove both src->dest and dest->src binding
+            // Remove both output->input and input<-output binding
             this._connectionsSrcToDest.get(src).delete(dest);
-            this._connectionsDestToSrc.get(dest).delete(src);
+            this._connectionsDestForSrc.delete(dest);
 
             if (this._selectedConnectors.has(connector)) {
               this._selectedConnectors.delete(connector);
             }
 
-            src.unhighlightTransmitter();
-            src.unselectTransmitter();
-            dest.unhighlightReceiver();
-            dest.unselectReceiver();
+            src.unhighlight();
+            src.unselect();
+            dest.unhighlight();
+            dest.unselect();
             break;
           }
         }
@@ -1193,13 +1170,9 @@
       this._selectedConnectors.clear();
       this._forAllNodeConnections(
         node,
-        (
-          src: WorkflowNode,
-          dest: WorkflowNode,
-          connector: WorkflowConnector
-        ) => {
-          src.selectTransmitter();
-          dest.selectReceiver();
+        (src: IOPort, dest: IOPort, connector: WorkflowConnector) => {
+          src.select();
+          dest.select();
           connector.select();
           this._selectedConnectors.add(connector);
         }
@@ -1209,13 +1182,9 @@
     private _unselectAllConnectionsForNode(node: WorkflowNode) {
       this._forAllNodeConnections(
         node,
-        (
-          src: WorkflowNode,
-          dest: WorkflowNode,
-          connector: WorkflowConnector
-        ) => {
-          src.unselectTransmitter();
-          dest.unselectReceiver();
+        (src: IOPort, dest: IOPort, connector: WorkflowConnector) => {
+          src.unselect();
+          dest.unselect();
           connector.unselect();
         }
       );
@@ -1224,13 +1193,9 @@
     private _highlightAllConnectionsForNode(node: WorkflowNode) {
       this._forAllNodeConnections(
         node,
-        (
-          src: WorkflowNode,
-          dest: WorkflowNode,
-          connector: WorkflowConnector
-        ) => {
-          src.highlightTransmitter();
-          dest.highlightReceiver();
+        (src: IOPort, dest: IOPort, connector: WorkflowConnector) => {
+          src.highlight();
+          dest.highlight();
           connector.highlight();
         }
       );
@@ -1239,13 +1204,9 @@
     private _unhighlightAllConnectionsForNode(node: WorkflowNode) {
       this._forAllNodeConnections(
         node,
-        (
-          src: WorkflowNode,
-          dest: WorkflowNode,
-          connector: WorkflowConnector
-        ) => {
-          src.unhighlightTransmitter();
-          dest.unhighlightReceiver();
+        (src: IOPort, dest: IOPort, connector: WorkflowConnector) => {
+          src.unhighlight();
+          dest.unhighlight();
           connector.unhighlight();
         }
       );
@@ -1255,25 +1216,35 @@
     }
 
     private _forAllNodeConnections(node: WorkflowNode, fn: Function): void {
-      if (this._connectionsSrcToDest.has(node)) {
-        for (const [dest, connector] of this._connectionsSrcToDest
-          .get(node)
-          .entries()) {
-          fn(node, dest, connector);
+      for (const inputPort of node.inputPorts) {
+        if (this._connectionsDestForSrc.has(inputPort)) {
+          const [src, connector] = this._connectionsDestForSrc.get(inputPort);
+          fn(src, inputPort, connector);
         }
       }
-      if (this._connectionsDestToSrc.has(node)) {
-        for (const [src, connector] of this._connectionsDestToSrc
-          .get(node)
-          .entries()) {
-          fn(src, node, connector);
+      for (const outputPort of node.outputPorts) {
+        if (this._connectionsSrcToDest.has(outputPort)) {
+          for (const [dest, connector] of this._connectionsSrcToDest
+            .get(outputPort)
+            .entries()) {
+            fn(outputPort, dest, connector);
+          }
         }
       }
     }
 
     private _selectConnector(connector: WorkflowConnector): void {
-      const unselectedTransmitters = new Set(this._connectionsSrcToDest.keys());
-      const unselectedReceivers = new Set(this._connectionsDestToSrc.keys());
+      const unselectedInputPorts = new Set<IOPort>();
+      const unselectedOutputPorts = new Set<IOPort>();
+      for (const node of this._nodes) {
+        for (const inputPort of node.inputPorts) {
+          unselectedInputPorts.add(inputPort);
+        }
+        for (const outputPort of node.outputPorts) {
+          unselectedOutputPorts.add(outputPort);
+        }
+      }
+
       let connectorSrc = null;
       let connectorDest = null;
       for (const [src, connections] of this._connectionsSrcToDest.entries()) {
@@ -1284,15 +1255,15 @@
           }
 
           if (this._selectedConnectors.has(conn)) {
-            unselectedTransmitters.delete(src);
-            unselectedReceivers.delete(dest);
+            unselectedOutputPorts.delete(src);
+            unselectedInputPorts.delete(dest);
           } else {
             conn.unselect();
           }
         }
       }
-      unselectedTransmitters.forEach((src) => src.unselectTransmitter());
-      unselectedReceivers.forEach((dest) => dest.unselectReceiver());
+      unselectedOutputPorts.forEach((port) => port.unselect());
+      unselectedInputPorts.forEach((port) => port.unselect());
 
       if (
         connector !== null &&
@@ -1300,20 +1271,20 @@
         connectorDest !== null
       ) {
         connector.select();
-        connectorSrc.selectTransmitter();
-        connectorDest.selectReceiver();
+        connectorSrc.select();
+        connectorDest.select();
         this._selectedConnectors.add(connector);
       } else {
         this._selectedConnectors.clear();
       }
     }
 
-    private _connectionExists(src: WorkflowNode, dest: WorkflowNode): boolean {
-      if (this._connectionsSrcToDest.has(src)) {
-        const existingConnections = this._connectionsSrcToDest.get(src);
-        if (existingConnections.has(dest)) {
-          return true;
-        }
+    private _connectionExists(src: IOPort, dest: IOPort): boolean {
+      if (
+        this._connectionsDestForSrc.has(dest) &&
+        this._connectionsDestForSrc.get(dest)[0] === src
+      ) {
+        return true;
       }
       return false;
     }
@@ -1321,10 +1292,10 @@
     private _cancelCurrentConnection() {
       this._connectionInProgress = false;
 
-      this._unconnectedSource.unselectTransmitter();
+      this._unconnectedSource.unselect();
       this._unfinishedConnector.remove();
       if (this._possibleDestination !== null) {
-        this._possibleDestination.unhighlightReceiver();
+        this._possibleDestination.unhighlight();
       }
 
       this._unconnectedSource = null;
