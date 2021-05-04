@@ -189,7 +189,7 @@
 
     get coordinate(): Point {
       if (this._portType === IOPortType.Input) {
-        const x = this._workflowNode.mainBody.x() - padWidth / 2;
+        const x = this._workflowNode.mainBody.x() - padWidth - strokeWidth / 2;
         const y =
           this._workflowNode.mainBody.y() + 2 * cellSize + padHeight / 2;
         return { x, y };
@@ -197,7 +197,8 @@
         const x =
           this._workflowNode.mainBody.x() +
           this._workflowNode.mainBody.width() +
-          padWidth / 2;
+          padWidth +
+          strokeWidth / 2;
         const y =
           this._workflowNode.mainBody.y() + 2 * cellSize + padHeight / 2;
         return { x, y };
@@ -363,7 +364,6 @@
       this._mainPath.stroke({
         color: "black",
         width: strokeWidth,
-        linecap: "round",
       });
       this.add(this._mainPath);
 
@@ -580,6 +580,8 @@
         this._hideNodeSelectionMenu();
         if (!this._connectionInProgress) {
           this._selectConnector(null);
+        } else {
+          this._unconnectedSource.select();
         }
       });
 
