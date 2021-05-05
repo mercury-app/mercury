@@ -60,10 +60,10 @@
   const cellSize = 24;
   const padWidth = cellSize / 2;
   const padHeight = cellSize;
-  const padRadius = cellSize * 2;
-  const mainBodyWidth = cellSize * 6;
-  const mainBodyHeight = cellSize * 6;
-  const strokeWidth = 2;
+  const padRadius = cellSize;
+  const mainBodyWidth = cellSize * 8;
+  const mainBodyHeight = cellSize * 4;
+  const strokeWidth = 1;
 
   const clamp = (num: number, min: number, max: number): number => {
     return Math.max(min, Math.min(num, max));
@@ -221,12 +221,9 @@
       super();
 
       // TODO:
-      // 1. DONE - Create method to add new input and output ports
-      // 2. Maintain a list of input and output ports already added
-      // 3. On creation, a node automatically gets one pair of I/O ports
-      // 4. I/O ports allow a one-to-one mapping only
-      // 5. Reduce height of a node and increase its width
-      // 6. Continue with the remaining work in canvas and overlay
+      // - On creation, a node starts with no I/O ports
+      // - Reduce height of a node and increase its width
+      // - Continue with the remaining work in canvas and overlay
       this._svg = svg;
 
       this._innerRect = this._svg
@@ -308,11 +305,20 @@
     }
 
     public addInput(): IOPort {
+      if (
+        this._inputPorts.length > 0 &&
+        this._inputPorts.length >= this._outputPorts.length
+      ) {
+        this._innerRect.height(this._innerRect.height() + cellSize);
+        this._outlineRect.height(this._outlineRect.height() + cellSize);
+      }
+
+      const gapSize = 2 * cellSize;
       const inputPort = new IOPort(
         this._svg,
         this,
         IOPortType.Input,
-        2 * cellSize
+        gapSize * (1 + this._inputPorts.length)
       );
       this.add(inputPort);
       this.add(inputPort.region);
@@ -322,11 +328,20 @@
     }
 
     public addOutput(): IOPort {
+      if (
+        this._outputPorts.length > 0 &&
+        this._outputPorts.length >= this._outputPorts.length
+      ) {
+        this._innerRect.height(this._innerRect.height() + cellSize);
+        this._outlineRect.height(this._outlineRect.height() + cellSize);
+      }
+
+      const gapSize = 2 * cellSize;
       const outputPort = new IOPort(
         this._svg,
         this,
         IOPortType.Output,
-        2 * cellSize
+        gapSize * (1 + this._outputPorts.length)
       );
       this.add(outputPort);
       this.add(outputPort.region);
@@ -1003,7 +1018,7 @@
     private _showNodeSelectionMenu(node: WorkflowNode): void {
       this._nodeSelectionMenu.move(
         node.cx() - this._nodeSelectionMenu.width() / 2,
-        node.y() + node.height() - this._nodeSelectionMenu.height() / 2
+        node.y() + node.height() + 6
       );
       this._nodeSelectionMenu.show();
       this._nodeSelectionMenu.front();
