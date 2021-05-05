@@ -399,7 +399,11 @@
       startX: number,
       startY: number,
       endX: number,
-      endY: number
+      endY: number,
+      startTopOffset: number = 0,
+      startBottomOffset: number = 0,
+      endTopOffset: number = 0,
+      endBottomOffset: number = 0
     ) {
       const deltaX = endX - startX;
       const deltaY = endY - startY;
@@ -429,20 +433,20 @@
         );
       } else if (
         endX < startX &&
-        (startY + mainBodyHeight + padHeight <= endY ||
-          startY - mainBodyHeight - padHeight >= endY)
+        (startY + startBottomOffset + cellSize * 2 <= endY ||
+          startY - startTopOffset - cellSize * 2 >= endY)
       ) {
         const curveDelta = cellSize / 2;
         let midPoint = (startY + endY) / 2;
-        if (startY + mainBodyHeight + padHeight <= endY) {
-          // Category IIa  => four-bend connector going below
-          const top = endY - padHeight / 2;
-          const bottom = startY + (mainBodyHeight - padHeight / 2);
+        if (startY + startBottomOffset + cellSize * 2 <= endY) {
+          // Category IIa => four-bend connector going below
+          const top = endY - endTopOffset;
+          const bottom = startY + startBottomOffset;
           midPoint = (top + bottom) / 2;
         } else {
-          // Category IIb  => four-bend connector going above
-          const top = startY - padHeight / 2;
-          const bottom = endY + (mainBodyHeight - padHeight / 2);
+          // Category IIb => four-bend connector going above
+          const top = startY - startTopOffset;
+          const bottom = endY + endBottomOffset;
           midPoint = (top + bottom) / 2;
         }
 
@@ -475,8 +479,8 @@
         );
       } else {
         const curveDelta = cellSize / 2;
-        const startTop = startY - padHeight / 2;
-        const endTop = endY - padHeight / 2;
+        const startTop = startY - startTopOffset;
+        const endTop = endY - endTopOffset;
         const top = Math.min(startTop, endTop);
 
         // Category III => four-bend loop-over connector
@@ -510,9 +514,36 @@
       }
     }
 
-    public redraw(start: Point, end: Point) {
-      this._drawPath(this._mainPath, start.x, start.y, end.x, end.y);
-      this._drawPath(this._overlayPath, start.x, start.y, end.x, end.y);
+    public redraw(
+      start: Point,
+      end: Point,
+      startTopOffset: number = 0,
+      startBottomOffset: number = 0,
+      endTopOffset: number = 0,
+      endBottomOffset: number = 0
+    ) {
+      this._drawPath(
+        this._mainPath,
+        start.x,
+        start.y,
+        end.x,
+        end.y,
+        startTopOffset,
+        startBottomOffset,
+        endTopOffset,
+        endBottomOffset
+      );
+      this._drawPath(
+        this._overlayPath,
+        start.x,
+        start.y,
+        end.x,
+        end.y,
+        startTopOffset,
+        startBottomOffset,
+        endTopOffset,
+        endBottomOffset
+      );
     }
 
     public select() {
@@ -607,7 +638,19 @@
           if (this._possibleDestination !== null) {
             end = this._possibleDestination.coordinate;
           }
-          this._unfinishedConnector.redraw(start, end);
+
+          const startTopOffset = cellSize * 2 + padHeight / 2;
+          const startBottomOffset = cellSize + padHeight / 2;
+          const endTopOffset = 0;
+          const endBottomOffset = 0;
+          this._unfinishedConnector.redraw(
+            start,
+            end,
+            startTopOffset,
+            startBottomOffset,
+            endTopOffset,
+            endBottomOffset
+          );
         }
       });
 
@@ -1113,7 +1156,19 @@
     ): void {
       const p1 = src.coordinate;
       const p2 = dest.coordinate;
-      connector.redraw(p1, p2);
+
+      const startTopOffset = cellSize * 2 + padHeight / 2;
+      const startBottomOffset = cellSize + padHeight / 2;
+      const endTopOffset = startTopOffset;
+      const endBottomOffset = startBottomOffset;
+      connector.redraw(
+        p1,
+        p2,
+        startTopOffset,
+        startBottomOffset,
+        endTopOffset,
+        endBottomOffset
+      );
     }
 
     private _updateAllConnectionsForNode(node: WorkflowNode): void {
