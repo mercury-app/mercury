@@ -842,8 +842,8 @@
         // Adjust for the input/output ports.
         x = clamp(
           x,
-          cellSize - padRadius - portWidth / 2,
-          this._width - elemWidth - cellSize + padRadius + 2 * portWidth
+          cellSize,
+          this._width - elemWidth - cellSize + 2 * portWidth
         );
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
@@ -866,7 +866,7 @@
 
       // Adjust for the input/ouptut ports.
       if (adjustForPads) {
-        x = x - portWidth / 2;
+        x = x - portWidth;
       }
 
       return { x, y };
