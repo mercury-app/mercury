@@ -222,10 +222,6 @@
     constructor(svg: Svg, position: Point) {
       super();
 
-      // TODO:
-      // - On creation, a node starts with no I/O ports
-      // - Reduce height of a node and increase its width
-      // - Continue with the remaining work in canvas and overlay
       this._svg = svg;
 
       this._innerRect = this._svg
