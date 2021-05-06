@@ -58,8 +58,8 @@
   }
 
   const cellSize = 24;
-  const padWidth = cellSize / 2;
-  const padHeight = cellSize;
+  const portWidth = cellSize / 2;
+  const portHeight = cellSize;
   const padRadius = cellSize;
   const mainBodyWidth = cellSize * 8;
   const mainBodyHeight = cellSize * 4;
@@ -72,13 +72,16 @@
   class IOPort extends G {
     private _workflowNode: WorkflowNode;
     private _portType: IOPortType;
-    private _region: Circle;
+    private _mainRect: Rect;
     private _isSelected: boolean;
+    private _nameElement: HTMLParagraphElement;
+    private _name: string;
 
     constructor(
       svg: Svg,
       workflowNode: WorkflowNode,
       portType: IOPortType,
+      name: string,
       yPosition: number
     ) {
       super();
@@ -87,49 +90,55 @@
       this._portType = portType;
 
       const fill = "lightgray";
-      const mainRect = svg
-        .rect(padWidth, padHeight)
+      this._mainRect = svg
+        .rect(portWidth + mainBodyWidth * 0.4, portHeight)
         .radius(strokeWidth)
-        .fill(fill)
+        .fill("white")
         .stroke({ width: strokeWidth, color: fill });
 
+      this._name = name;
+      const nameOffset = 6;
+      const nameObjectSize = this._mainRect.width() - nameOffset * 2;
+      const nameObject = svg
+        // @ts-ignore
+        .foreignObject(this._mainRect.width(), cellSize)
+        .move(nameOffset, 0);
+      nameObject.width(nameObjectSize);
+      this._nameElement = document.createElement("p");
+      this._nameElement.textContent = this._name;
+      this._nameElement.style.display = "table-cell"; // For some reason this works
+      this._nameElement.style.width = `${nameObjectSize}px`;
+      this._nameElement.style.maxWidth = `${nameObjectSize}px`;
+      this._nameElement.style.fontSize = "12px";
+      this._nameElement.style.lineHeight = `${cellSize}px`;
+      this._nameElement.style.overflow = "hidden";
+      this._nameElement.style.textOverflow = "ellipsis";
+      this._nameElement.style.whiteSpace = "nowrap";
+      nameObject.add(this._nameElement);
+
+      const layerRect = svg
+        .rect(portWidth + mainBodyWidth * 0.4, portHeight)
+        .opacity(0.0);
+
       svg.add(this);
-      this.add(mainRect);
+      this.add(this._mainRect);
+      this.add(nameObject);
+      this.add(layerRect);
 
-      this._region = null;
       if (this._portType === IOPortType.Input) {
-        const fillerRect = svg
-          .rect(padWidth / 2, padHeight)
-          .fill(fill)
-          .stroke({ width: strokeWidth, color: fill })
-          .move(padWidth / 2, 0);
-        this.add(fillerRect);
-
         this.move(
-          this._workflowNode.mainBody.x() - padWidth,
+          this._workflowNode.mainBody.x() - portWidth,
           this._workflowNode.mainBody.y() + yPosition
         );
-        this._region = svg
-          .circle()
-          .radius(padRadius)
-          .opacity(0)
-          .center(this.cx(), this.cy());
       } else if (this._portType === IOPortType.Output) {
-        const fillerRect = svg
-          .rect(padWidth / 2, padHeight)
-          .fill(fill)
-          .stroke({ width: strokeWidth, color: fill });
-        this.add(fillerRect);
-
+        this._nameElement.style.textAlign = "right";
         this.move(
-          this._workflowNode.mainBody.x() + this._workflowNode.mainBody.width(),
+          this._workflowNode.mainBody.x() +
+            this._workflowNode.mainBody.width() -
+            this._mainRect.width() +
+            portWidth,
           this._workflowNode.mainBody.y() + yPosition
         );
-        this._region = svg
-          .circle()
-          .radius(padRadius)
-          .opacity(0)
-          .center(this.cx(), this.cy());
       }
 
       this._isSelected = false;
@@ -137,7 +146,6 @@
 
     public select(): void {
       this.children().forEach((element) => {
-        element.fill("black");
         element.stroke({ color: "black" });
       });
       this._isSelected = true;
@@ -145,7 +153,6 @@
 
     public unselect(): void {
       this.children().forEach((element) => {
-        element.fill("lightgray");
         element.stroke({ color: "lightgray" });
       });
       this._isSelected = false;
@@ -156,7 +163,6 @@
         return;
       }
       this.children().forEach((element) => {
-        element.fill("darkgray");
         element.stroke({ color: "darkgray" });
       });
     }
@@ -166,7 +172,6 @@
         return;
       }
       this.children().forEach((element) => {
-        element.fill("lightgray");
         element.stroke({ color: "lightgray" });
       });
     }
@@ -177,10 +182,6 @@
 
     get portType(): IOPortType {
       return this._portType;
-    }
-
-    get region(): Circle {
-      return this._region;
     }
 
     get isSelected(): boolean {
@@ -302,7 +303,7 @@
       this._titleSeparator.stroke({ color: "lightgray" });
     }
 
-    public addInput(): IOPort {
+    public addInput(name: string): IOPort {
       if (
         this._inputPorts.length > 0 &&
         this._inputPorts.length >= this._outputPorts.length
@@ -316,16 +317,16 @@
         this._svg,
         this,
         IOPortType.Input,
+        name,
         gapSize * (1 + this._inputPorts.length)
       );
       this.add(inputPort);
-      this.add(inputPort.region);
       this._inputPorts.push(inputPort);
 
       return inputPort;
     }
 
-    public addOutput(): IOPort {
+    public addOutput(name: string): IOPort {
       if (
         this._outputPorts.length > 0 &&
         this._outputPorts.length >= this._outputPorts.length
@@ -339,10 +340,10 @@
         this._svg,
         this,
         IOPortType.Output,
+        name,
         gapSize * (1 + this._outputPorts.length)
       );
       this.add(outputPort);
-      this.add(outputPort.region);
       this._outputPorts.push(outputPort);
 
       return outputPort;
@@ -841,8 +842,8 @@
         // Adjust for the input/output ports.
         x = clamp(
           x,
-          cellSize - padRadius - padWidth / 2,
-          this._width - elemWidth - cellSize + padRadius + 2 * padWidth
+          cellSize - padRadius - portWidth / 2,
+          this._width - elemWidth - cellSize + padRadius + 2 * portWidth
         );
       } else {
         x = clamp(x, cellSize, this._width - elemWidth - cellSize);
@@ -865,7 +866,7 @@
 
       // Adjust for the input/ouptut ports.
       if (adjustForPads) {
-        x = x - padWidth / 2;
+        x = x - portWidth / 2;
       }
 
       return { x, y };
@@ -959,15 +960,15 @@
         this._nodeEditHandler();
       });
 
-      this._addInput(node);
-      this._addOutput(node);
+      this._addInput(node, "input");
+      this._addOutput(node, "output");
 
       return node;
     }
 
-    private _addInput(node: WorkflowNode) {
-      const inputPort = node.addInput();
-      inputPort.region.mouseover((event: MouseEvent) => {
+    private _addInput(node: WorkflowNode, name: string) {
+      const inputPort = node.addInput(name);
+      inputPort.mouseover((event: MouseEvent) => {
         if (
           !this._connectionInProgress ||
           this._connectionsDestForSrc.has(inputPort)
@@ -978,7 +979,7 @@
         inputPort.highlight();
         this._possibleDestination = inputPort;
       });
-      inputPort.region.mouseout((event: MouseEvent) => {
+      inputPort.mouseout((event: MouseEvent) => {
         if (!this._connectionInProgress) {
           return;
         }
@@ -986,7 +987,7 @@
         inputPort.unhighlight();
         this._possibleDestination = null;
       });
-      inputPort.region.click((event: MouseEvent) => {
+      inputPort.click((event: MouseEvent) => {
         document.getElementById(this._divId).focus();
         if (
           !this._connectionInProgress ||
@@ -999,23 +1000,23 @@
       });
     }
 
-    private _addOutput(node: WorkflowNode) {
-      const outputPort = node.addOutput();
-      outputPort.region.mouseover((event: MouseEvent) => {
+    private _addOutput(node: WorkflowNode, name: string) {
+      const outputPort = node.addOutput(name);
+      outputPort.mouseover((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
         outputPort.highlight();
       });
-      outputPort.region.mouseout((event: MouseEvent) => {
+      outputPort.mouseout((event: MouseEvent) => {
         if (this._connectionInProgress) {
           return;
         }
         event.preventDefault();
         outputPort.unhighlight();
       });
-      outputPort.region.click(() => {
+      outputPort.click(() => {
         document.getElementById(this._divId).focus();
         if (this._connectionInProgress) {
           return;
