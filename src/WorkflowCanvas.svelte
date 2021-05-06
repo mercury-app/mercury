@@ -204,6 +204,18 @@
         return { x, y };
       }
     }
+
+    get topOffset(): number {
+      return this.coordinate.y - this._workflowNode.mainBody.y();
+    }
+
+    get bottomOffset(): number {
+      return (
+        this._workflowNode.mainBody.y() +
+        this._workflowNode.mainBody.height() -
+        this.coordinate.y
+      );
+    }
   }
 
   class WorkflowNode extends G {
@@ -433,8 +445,10 @@
         );
       } else if (
         endX < startX &&
-        (startY + startBottomOffset + cellSize * 2 <= endY ||
-          startY - startTopOffset - cellSize * 2 >= endY)
+        (startY + startBottomOffset + cellSize <=
+          endY - endTopOffset - cellSize ||
+          startY - startTopOffset - cellSize >=
+            endY + endBottomOffset + cellSize)
       ) {
         const curveDelta = cellSize / 2;
         let midPoint = (startY + endY) / 2;
@@ -634,15 +648,17 @@
       this._svg.mousemove((event: SvgMouseMoveEvent) => {
         if (this._connectionInProgress && this._unfinishedConnector !== null) {
           const start = this._unconnectedSource.coordinate;
+          const startTopOffset = this._unconnectedSource.topOffset;
+          const startBottomOffset = this._unconnectedSource.bottomOffset;
           let end = { x: event.layerX - 2, y: event.layerY };
+          let endTopOffset = 0;
+          let endBottomOffset = 0;
           if (this._possibleDestination !== null) {
             end = this._possibleDestination.coordinate;
+            endTopOffset = this._possibleDestination.topOffset;
+            endBottomOffset = this._possibleDestination.bottomOffset;
           }
 
-          const startTopOffset = cellSize * 2 + padHeight / 2;
-          const startBottomOffset = cellSize + padHeight / 2;
-          const endTopOffset = 0;
-          const endBottomOffset = 0;
           this._unfinishedConnector.redraw(
             start,
             end,
@@ -1156,11 +1172,10 @@
     ): void {
       const p1 = src.coordinate;
       const p2 = dest.coordinate;
-
-      const startTopOffset = cellSize * 2 + padHeight / 2;
-      const startBottomOffset = cellSize + padHeight / 2;
-      const endTopOffset = startTopOffset;
-      const endBottomOffset = startBottomOffset;
+      const startTopOffset = src.topOffset;
+      const startBottomOffset = src.bottomOffset;
+      const endTopOffset = dest.topOffset;
+      const endBottomOffset = dest.bottomOffset;
       connector.redraw(
         p1,
         p2,
