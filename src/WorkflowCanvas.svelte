@@ -189,19 +189,9 @@
 
     get coordinate(): Point {
       if (this._portType === IOPortType.Input) {
-        const x = this._workflowNode.mainBody.x() - padWidth - strokeWidth / 2;
-        const y =
-          this._workflowNode.mainBody.y() + 2 * cellSize + padHeight / 2;
-        return { x, y };
+        return { x: this.x(), y: this.y() + this.height() / 2 };
       } else if (this._portType === IOPortType.Output) {
-        const x =
-          this._workflowNode.mainBody.x() +
-          this._workflowNode.mainBody.width() +
-          padWidth +
-          strokeWidth / 2;
-        const y =
-          this._workflowNode.mainBody.y() + 2 * cellSize + padHeight / 2;
-        return { x, y };
+        return { x: this.x() + this.width(), y: this.y() + this.height() / 2 };
       }
     }
 
@@ -973,6 +963,13 @@
         this._nodeEditHandler();
       });
 
+      this._addInput(node);
+      this._addOutput(node);
+
+      return node;
+    }
+
+    private _addInput(node: WorkflowNode) {
       const inputPort = node.addInput();
       inputPort.region.mouseover((event: MouseEvent) => {
         if (
@@ -1004,7 +1001,9 @@
         event.preventDefault();
         this._endConnection(inputPort);
       });
+    }
 
+    private _addOutput(node: WorkflowNode) {
       const outputPort = node.addOutput();
       outputPort.region.mouseover((event: MouseEvent) => {
         if (this._connectionInProgress) {
@@ -1051,8 +1050,6 @@
           this._showNodeSelectionMenu(node);
         }
       });
-
-      return node;
     }
 
     private _removeNode(node: WorkflowNode): void {
