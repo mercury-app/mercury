@@ -722,6 +722,7 @@
           event.layerY - this._placementMarker.height() / 2.0,
           this._placementMarker.width(),
           this._placementMarker.height(),
+          false,
           false
         );
 
@@ -835,11 +836,11 @@
       y: number,
       elemWidth: number,
       elemHeight: number,
-      adjustForPads: boolean = true
+      adjustForInputPorts: boolean = true,
+      adjustForOutputPorts: boolean = true
     ): { x: number; y: number } {
       // Use the `container` to clamp the object's coords in the view.
-      if (adjustForPads) {
-        // Adjust for the input/output ports.
+      if (adjustForOutputPorts || adjustForInputPorts) {
         x = clamp(
           x,
           cellSize,
@@ -864,15 +865,18 @@
         y = y - diffY;
       }
 
-      // Adjust for the input/ouptut ports.
-      if (adjustForPads) {
+      if (adjustForInputPorts) {
         x = x - portWidth;
       }
 
       return { x, y };
     }
 
-    private _performDrag(event: SvgDragEvent): void {
+    private _performDrag(
+      event: SvgDragEvent,
+      adjustForInputPorts: boolean,
+      adjustForOutputPorts: boolean
+    ): void {
       const { handler, box } = event.detail;
       event.preventDefault();
       if (
@@ -886,7 +890,9 @@
         box.x,
         box.y,
         box.width,
-        box.height
+        box.height,
+        adjustForInputPorts,
+        adjustForOutputPorts
       );
       handler.move(x, y);
       this._setMoveCursor();
@@ -974,7 +980,11 @@
           this._hideNodeSelectionMenu();
           this._selectNode(node);
         }
-        this._performDrag(event);
+
+        const adjustForInputPorts = node.inputPorts.length > 0;
+        const adjustForOutputPorts = node.outputPorts.length > 0;
+        this._performDrag(event, adjustForInputPorts, adjustForOutputPorts);
+
         this._updateAllConnectionsForNode(node);
       });
       node.on("dragend.namespace", () => {
