@@ -229,13 +229,14 @@
         .radius(strokeWidth)
         .fill("none")
         .stroke({ width: strokeWidth, color: this._innerRect.fill() });
-      this._mainBody = this._svg.group();
-      this._mainBody.add(this._innerRect);
-      this._mainBody.add(this._outlineRect);
-
       this._titleSeparator = this._svg
         .line(0, cellSize, this._innerRect.width(), cellSize)
         .stroke({ color: this._innerRect.fill(), width: strokeWidth });
+
+      this._mainBody = this._svg.group();
+      this._mainBody.add(this._innerRect);
+      this._mainBody.add(this._outlineRect);
+      this._mainBody.add(this._titleSeparator);
 
       const titleOffset = 6;
       const titleObject = this._svg
@@ -258,7 +259,6 @@
       this._svg.add(this);
       this.add(titleObject);
       this.add(this._mainBody);
-      this.add(this._titleSeparator);
       this.move(position.x, position.y);
 
       this._isSelected = false;
