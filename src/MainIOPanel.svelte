@@ -22,6 +22,10 @@
 
   const removeParam = (param: string) => {
     params = params.filter((item) => item !== param);
+
+    dispatch("ioRemoved", {
+      ioName: param,
+    });
   };
 </script>
 

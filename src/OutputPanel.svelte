@@ -13,6 +13,11 @@
       outputName: event.detail.ioName,
     });
   };
+  const dispatchOutputRemovedEvent = (event: CustomEvent) => {
+    dispatch("outputRemoved", {
+      outputName: event.detail.ioName,
+    });
+  };
 </script>
 
 <div id="output-panel">
@@ -26,6 +31,7 @@
     newEntryPlaceholder="Export a value"
     bind:params="{outputs}"
     on:ioAdded="{dispatchOutputAddedEvent}"
+    on:ioRemoved="{dispatchOutputRemovedEvent}"
   />
 </div>
 

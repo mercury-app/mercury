@@ -6,6 +6,8 @@
     placeNewNode,
     addInputOnSelectedNode,
     addOutputOnSelectedNode,
+    removeInputOnSelectedNode,
+    removeOutputOnSelectedNode,
   } from "./WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
@@ -54,6 +56,10 @@
           addInputOnSelectedNode(event.detail.inputName)}"
         on:outputAdded="{(event) =>
           addOutputOnSelectedNode(event.detail.outputName)}"
+        on:inputRemoved="{(event) =>
+          removeInputOnSelectedNode(event.detail.inputName)}"
+        on:outputRemoved="{(event) =>
+          removeOutputOnSelectedNode(event.detail.outputName)}"
       />
     </div>
   </div>

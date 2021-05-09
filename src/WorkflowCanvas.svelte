@@ -343,6 +343,46 @@
       return outputPort;
     }
 
+    public removeInput(inputPort: IOPort) {
+      this._inputPorts = this._inputPorts.filter((port) => port !== inputPort);
+      inputPort.remove();
+
+      const gapSize = 2 * cellSize;
+      let pos = gapSize;
+      this._inputPorts.forEach((port) => {
+        port.move(port.x(), this._mainBody.y() + pos);
+        pos += gapSize;
+      });
+      if (
+        this._mainBody.height() > pos + 1 &&
+        this._inputPorts.length >= this._outputPorts.length
+      ) {
+        this._innerRect.height(pos);
+        this._outlineRect.height(pos);
+      }
+    }
+
+    public removeOutput(outputPort: IOPort) {
+      this._outputPorts = this._outputPorts.filter(
+        (port) => port !== outputPort
+      );
+      outputPort.remove();
+
+      const gapSize = 2 * cellSize;
+      let pos = gapSize;
+      this._outputPorts.forEach((port) => {
+        port.move(port.x(), this._mainBody.y() + pos);
+        pos += gapSize;
+      });
+      if (
+        this._mainBody.height() > pos + 1 &&
+        this._outputPorts.length >= this._inputPorts.length
+      ) {
+        this._innerRect.height(pos);
+        this._outlineRect.height(pos);
+      }
+    }
+
     get isSelected(): boolean {
       return this._isSelected;
     }
@@ -977,7 +1017,7 @@
         const adjustForOutputPorts = node.outputPorts.length > 0;
         this._performDrag(event, adjustForInputPorts, adjustForOutputPorts);
 
-        this._updateAllConnectionsForNode(node);
+        this._redrawAllConnectionsForNode(node);
       });
       node.on("dragend.namespace", () => {
         this._setNormalCursor();
@@ -1055,6 +1095,36 @@
       this._selectConnector(null);
     }
 
+    private _removeInput(node: WorkflowNode, name: string): void {
+      const inputPort = node.inputPorts.find(
+        (port: IOPort) => port.name === name
+      );
+      if (inputPort !== undefined) {
+        if (this._connectionsDestForSrc.has(inputPort)) {
+          const connector = this._connectionsDestForSrc.get(inputPort)[1];
+          this._removeConnector(connector);
+        }
+        node.removeInput(inputPort);
+        this._redrawAllConnectionsForNode(node);
+      }
+    }
+
+    private _removeOutput(node: WorkflowNode, name: string): void {
+      const outputPort = node.outputPorts.find(
+        (port: IOPort) => port.name === name
+      );
+      if (outputPort !== undefined) {
+        if (this._connectionsSrcToDest.has(outputPort)) {
+          const connections = this._connectionsSrcToDest.get(outputPort);
+          for (const connector of connections.values()) {
+            this._removeConnector(connector);
+          }
+        }
+        node.removeOutput(outputPort);
+        this._redrawAllConnectionsForNode(node);
+      }
+    }
+
     private _selectNode(node: WorkflowNode): void {
       this._nodes.forEach((workflowNode) => {
         workflowNode.unselect();
@@ -1124,7 +1194,7 @@
       dest: IOPort,
       connector: WorkflowConnector
     ): void {
-      this._updateConnection(src, dest, connector);
+      this._redrawConnection(src, dest, connector);
       connector.click((event: MouseEvent) => {
         document.getElementById(this._divId).focus();
         if (this._connectionInProgress) {
@@ -1170,7 +1240,7 @@
       this._selectConnector(connector);
     }
 
-    private _updateConnection(
+    private _redrawConnection(
       src: IOPort,
       dest: IOPort,
       connector: WorkflowConnector
@@ -1191,8 +1261,8 @@
       );
     }
 
-    private _updateAllConnectionsForNode(node: WorkflowNode): void {
-      this._forAllNodeConnections(node, this._updateConnection.bind(this));
+    private _redrawAllConnectionsForNode(node: WorkflowNode): void {
+      this._forAllNodeConnections(node, this._redrawConnection.bind(this));
     }
 
     private _removeAllConnectionsForNode(node: WorkflowNode): void {
@@ -1414,6 +1484,20 @@
       }
     }
 
+    public removeInputOnSelectedNode(name: string) {
+      if (this._selectedNode !== null) {
+        this._removeInput(this._selectedNode, name);
+        this._showNodeSelectionMenu(this._selectedNode);
+      }
+    }
+
+    public removeOutputOnSelectedNode(name: string) {
+      if (this._selectedNode !== null) {
+        this._removeOutput(this._selectedNode, name);
+        this._showNodeSelectionMenu(this._selectedNode);
+      }
+    }
+
     get container(): HTMLElement {
       return this._svg.node.parentElement.parentElement;
     }
@@ -1449,6 +1533,18 @@
   export const addOutputOnSelectedNode = (name: string) => {
     if (canvas !== null) {
       canvas.addOutputOnSelectedNode(name);
+    }
+  };
+
+  export const removeInputOnSelectedNode = (name: string) => {
+    if (canvas !== null) {
+      canvas.removeInputOnSelectedNode(name);
+    }
+  };
+
+  export const removeOutputOnSelectedNode = (name: string) => {
+    if (canvas !== null) {
+      canvas.removeOutputOnSelectedNode(name);
     }
   };
 </script>

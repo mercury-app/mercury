@@ -13,6 +13,11 @@
       inputName: event.detail.ioName,
     });
   };
+  const dispatchInputRemovedEvent = (event: CustomEvent) => {
+    dispatch("inputRemoved", {
+      inputName: event.detail.ioName,
+    });
+  };
 </script>
 
 <div id="input-panel">
@@ -25,6 +30,7 @@
     newEntryPlaceholder="Add a parameter"
     bind:params="{inputs}"
     on:ioAdded="{dispatchInputAddedEvent}"
+    on:ioRemoved="{dispatchInputRemovedEvent}"
   />
   <div id="input-panel-divider"></div>
 </div>

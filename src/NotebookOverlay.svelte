@@ -50,6 +50,7 @@
       bind:visible="{inputPanelVisible}"
       bind:inputs
       on:inputAdded
+      on:inputRemoved
     />
   </div>
   <div
@@ -60,6 +61,7 @@
       bind:visible="{outputPanelVisible}"
       bind:outputs
       on:outputAdded
+      on:outputRemoved
     />
   </div>
 </div>
