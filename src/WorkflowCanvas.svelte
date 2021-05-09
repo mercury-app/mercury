@@ -960,6 +960,30 @@
         this._nodeEditHandler();
       });
 
+      node.draggable();
+      node.on("dragmove.namespace", (event: SvgDragEvent) => {
+        if (this._connectionInProgress) {
+          event.preventDefault();
+          return;
+        }
+        if (
+          event.detail.event.movementX !== 0 ||
+          event.detail.event.movementY !== 0
+        ) {
+          this._selectConnector(null);
+          this._hideNodeSelectionMenu();
+          this._selectNode(node);
+        }
+        this._performDrag(event);
+        this._updateAllConnectionsForNode(node);
+      });
+      node.on("dragend.namespace", () => {
+        this._setNormalCursor();
+        if (node.isSelected) {
+          this._showNodeSelectionMenu(node);
+        }
+      });
+
       return node;
     }
 
@@ -1019,30 +1043,6 @@
           return;
         }
         this._beginConnection(outputPort);
-      });
-
-      node.draggable();
-      node.on("dragmove.namespace", (event: SvgDragEvent) => {
-        if (this._connectionInProgress) {
-          event.preventDefault();
-          return;
-        }
-        if (
-          event.detail.event.movementX !== 0 ||
-          event.detail.event.movementY !== 0
-        ) {
-          this._selectConnector(null);
-          this._hideNodeSelectionMenu();
-          this._selectNode(node);
-        }
-        this._performDrag(event);
-        this._updateAllConnectionsForNode(node);
-      });
-      node.on("dragend.namespace", () => {
-        this._setNormalCursor();
-        if (node.isSelected) {
-          this._showNodeSelectionMenu(node);
-        }
       });
     }
 
