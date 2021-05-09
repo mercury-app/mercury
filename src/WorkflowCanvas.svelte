@@ -1067,7 +1067,7 @@
 
     private _showNodeSelectionMenu(node: WorkflowNode): void {
       this._nodeSelectionMenu.move(
-        node.cx() - this._nodeSelectionMenu.width() / 2,
+        node.mainBody.cx() - this._nodeSelectionMenu.width() / 2,
         node.y() + node.height() + 6
       );
       this._nodeSelectionMenu.show();
