@@ -355,7 +355,8 @@
       });
       if (
         this._mainBody.height() > pos + 1 &&
-        this._inputPorts.length >= this._outputPorts.length
+        this._inputPorts.length >= this._outputPorts.length &&
+        this._inputPorts.length !== 0
       ) {
         this._innerRect.height(pos);
         this._outlineRect.height(pos);
@@ -376,7 +377,8 @@
       });
       if (
         this._mainBody.height() > pos + 1 &&
-        this._outputPorts.length >= this._inputPorts.length
+        this._outputPorts.length >= this._inputPorts.length &&
+        this._outputPorts.length !== 0
       ) {
         this._innerRect.height(pos);
         this._outlineRect.height(pos);
