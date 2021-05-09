@@ -3,10 +3,10 @@
 
   export let title = "";
   export let newEntryPlaceholder = "";
+  export let params: Array<string> = [];
 
   const dispatch = createEventDispatcher();
 
-  let params = [];
   let newParam = "";
 
   const addParam = () => {

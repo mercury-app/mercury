@@ -5,6 +5,8 @@
   import OutputPanel from "./OutputPanel.svelte";
 
   export let visible = false;
+  export let inputs: Array<string> = [];
+  export let outputs: Array<string> = [];
 
   const dispatch = createEventDispatcher();
 
@@ -62,6 +64,7 @@
   >
     <InputPanel
       bind:visible="{inputPanelVisible}"
+      bind:inputs
       on:ioAdded="{dispatchInputAddedEvent}"
     />
   </div>
@@ -71,6 +74,7 @@
   >
     <OutputPanel
       bind:visible="{outputPanelVisible}"
+      bind:outputs
       on:ioAdded="{dispatchOutputAddedEvent}"
     />
   </div>

@@ -2,6 +2,7 @@
   import MainIOPanel from "./MainIOPanel.svelte";
 
   export let visible = false;
+  export let outputs: Array<string> = [];
 </script>
 
 <div id="output-panel">
@@ -13,6 +14,7 @@
   <MainIOPanel
     title="Outputs"
     newEntryPlaceholder="Export a value"
+    bind:params="{outputs}"
     on:ioAdded
   />
 </div>

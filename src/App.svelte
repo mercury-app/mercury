@@ -16,6 +16,12 @@
   const canvasRowHeight = 100;
 
   let notebookOverlayVisible = false;
+  let selectedNotebookInputs: Array<string> = [];
+  let selectedNotebookOutputs: Array<string> = [];
+  const updateNotebookIO = (event: CustomEvent) => {
+    selectedNotebookInputs = event.detail.inputs;
+    selectedNotebookOutputs = event.detail.outputs;
+  };
 </script>
 
 <main>
@@ -33,6 +39,7 @@
         colWidth="{canvasColWidth}"
         rowHeight="{canvasRowHeight}"
         on:editNodeRequested="{() => (notebookOverlayVisible = true)}"
+        on:nodeSelected="{updateNotebookIO}"
       />
     </div>
     <div class="container" id="workflow-actions-container">
@@ -41,6 +48,8 @@
     <div>
       <NotebookOverlay
         bind:visible="{notebookOverlayVisible}"
+        bind:inputs="{selectedNotebookInputs}"
+        bind:outputs="{selectedNotebookOutputs}"
         on:inputAdded="{(event) =>
           addInputOnSelectedNode(event.detail.inputName)}"
         on:outputAdded="{(event) =>

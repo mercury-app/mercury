@@ -2,6 +2,7 @@
   import MainIOPanel from "./MainIOPanel.svelte";
 
   export let visible = false;
+  export let inputs: Array<string> = [];
 </script>
 
 <div id="input-panel">
@@ -12,6 +13,7 @@
   <MainIOPanel
     title="Inputs"
     newEntryPlaceholder="Add a parameter"
+    bind:params="{inputs}"
     on:ioAdded
   />
   <div id="input-panel-divider"></div>

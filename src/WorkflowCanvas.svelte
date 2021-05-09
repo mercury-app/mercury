@@ -1,15 +1,5 @@
 <script lang="ts" context="module">
-  import {
-    Box,
-    Circle,
-    G,
-    Line,
-    Path,
-    SVG,
-    Svg,
-    Rect,
-    Runner,
-  } from "@svgdotjs/svg.js";
+  import { Box, G, Line, Path, SVG, Svg, Rect, Runner } from "@svgdotjs/svg.js";
   import "@svgdotjs/svg.draggable.js";
 
   type Delta = Point;
@@ -206,6 +196,10 @@
         this._workflowNode.mainBody.height() -
         this.coordinate.y
       );
+    }
+
+    get name(): string {
+      return this._name;
     }
   }
 
@@ -597,17 +591,12 @@
     private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
     private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
     private _nodeEditHandler: Function;
+    private _nodeSelectionHandler: Function;
 
-    constructor(
-      elementId: string,
-      width: number,
-      height: number,
-      nodeEditHandler: Function
-    ) {
+    constructor(elementId: string, width: number, height: number) {
       this._divId = elementId;
       this._width = width;
       this._height = height;
-      this._nodeEditHandler = nodeEditHandler;
 
       this._svg = SVG()
         .addTo(`#${this._divId}`)
@@ -678,6 +667,9 @@
       this._selectedConnectors = new Set();
       this._connectionsSrcToDest = new Map();
       this._connectionsDestForSrc = new Map();
+
+      this._nodeEditHandler = null;
+      this._nodeSelectionHandler = null;
     }
 
     private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -788,7 +780,7 @@
       containerDiv.appendChild(editButton);
       editButton.onclick = (event: MouseEvent) => {
         event.preventDefault();
-        this._nodeEditHandler();
+        if (this._nodeEditHandler !== null) this._nodeEditHandler();
       };
 
       const deleteButton = createButton("trash");
@@ -963,7 +955,7 @@
       });
       node.mainBody.dblclick((event: MouseEvent) => {
         event.preventDefault();
-        this._nodeEditHandler();
+        if (this._nodeEditHandler !== null) this._nodeEditHandler();
       });
 
       node.draggable();
@@ -1073,6 +1065,18 @@
         this._selectAllConnectionsForNode(node);
       }
       this._selectedNode = node;
+
+      if (this._selectedNode !== null && this._nodeSelectionHandler !== null) {
+        const inputNames = this._selectedNode.inputPorts.map((port: IOPort) => {
+          return port.name;
+        });
+        const outputNames = this._selectedNode.outputPorts.map(
+          (port: IOPort) => {
+            return port.name;
+          }
+        );
+        this._nodeSelectionHandler(inputNames, outputNames);
+      }
     }
 
     private _showNodeSelectionMenu(node: WorkflowNode): void {
@@ -1417,6 +1421,14 @@
     get svgNode(): SVGElement {
       return this._svg.node;
     }
+
+    set nodeEditHandler(fn: Function) {
+      this._nodeEditHandler = fn;
+    }
+
+    set nodeSelectHandler(fn: Function) {
+      this._nodeSelectionHandler = fn;
+    }
   }
 
   // All node events are handled by the global canvas instance.
@@ -1446,7 +1458,6 @@
   import { onMount } from "svelte";
 
   const dispatch = createEventDispatcher();
-  const openNodeEditor = () => dispatch("editNodeRequested");
 
   export let numColumns: number = 20;
   export let numRows: number = 20;
@@ -1457,13 +1468,13 @@
   const canvasHeight = numRows * rowHeight;
 
   onMount(() => {
-    canvas = new WorkflowCanvas(
-      "workflow-canvas",
-      canvasWidth,
-      canvasHeight,
-      openNodeEditor
-    );
+    canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
+    canvas.nodeEditHandler = () => dispatch("editNodeRequested");
+    canvas.nodeSelectHandler = (
+      inputs: Array<string>,
+      outputs: Array<string>
+    ) => dispatch("nodeSelected", { inputs, outputs });
   });
 </script>
 
