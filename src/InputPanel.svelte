@@ -1,8 +1,18 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   import MainIOPanel from "./MainIOPanel.svelte";
 
   export let visible = false;
   export let inputs: Array<string> = [];
+
+  const dispatch = createEventDispatcher();
+
+  const dispatchInputAddedEvent = (event: CustomEvent) => {
+    dispatch("inputAdded", {
+      inputName: event.detail.ioName,
+    });
+  };
 </script>
 
 <div id="input-panel">
@@ -14,7 +24,7 @@
     title="Inputs"
     newEntryPlaceholder="Add a parameter"
     bind:params="{inputs}"
-    on:ioAdded
+    on:ioAdded="{dispatchInputAddedEvent}"
   />
   <div id="input-panel-divider"></div>
 </div>

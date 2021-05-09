@@ -1,8 +1,18 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   import MainIOPanel from "./MainIOPanel.svelte";
 
   export let visible = false;
   export let outputs: Array<string> = [];
+
+  const dispatch = createEventDispatcher();
+
+  const dispatchOutputAddedEvent = (event: CustomEvent) => {
+    dispatch("outputAdded", {
+      outputName: event.detail.ioName,
+    });
+  };
 </script>
 
 <div id="output-panel">
@@ -15,7 +25,7 @@
     title="Outputs"
     newEntryPlaceholder="Export a value"
     bind:params="{outputs}"
-    on:ioAdded
+    on:ioAdded="{dispatchOutputAddedEvent}"
   />
 </div>
 

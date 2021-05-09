@@ -1,26 +1,10 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-
   import InputPanel from "./InputPanel.svelte";
   import OutputPanel from "./OutputPanel.svelte";
 
   export let visible = false;
   export let inputs: Array<string> = [];
   export let outputs: Array<string> = [];
-
-  const dispatch = createEventDispatcher();
-
-  const dispatchInputAddedEvent = (event: CustomEvent) => {
-    dispatch("inputAdded", {
-      inputName: event.detail.ioName,
-    });
-  };
-
-  const dispatchOutputAddedEvent = (event: CustomEvent) => {
-    dispatch("outputAdded", {
-      outputName: event.detail.ioName,
-    });
-  };
 
   const hiddenClass = "hidden";
   const visibleClass = "visible";
@@ -65,7 +49,7 @@
     <InputPanel
       bind:visible="{inputPanelVisible}"
       bind:inputs
-      on:ioAdded="{dispatchInputAddedEvent}"
+      on:inputAdded
     />
   </div>
   <div
@@ -75,7 +59,7 @@
     <OutputPanel
       bind:visible="{outputPanelVisible}"
       bind:outputs
-      on:ioAdded="{dispatchOutputAddedEvent}"
+      on:outputAdded
     />
   </div>
 </div>
