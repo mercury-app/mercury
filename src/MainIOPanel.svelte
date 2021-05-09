@@ -1,12 +1,20 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   export let title = "";
   export let newEntryPlaceholder = "";
+
+  const dispatch = createEventDispatcher();
 
   let params = [];
   let newParam = "";
 
   const addParam = () => {
     if (newParam !== "") {
+      dispatch("ioAdded", {
+        ioName: newParam,
+      });
+
       params = [...params, newParam];
       newParam = "";
     }

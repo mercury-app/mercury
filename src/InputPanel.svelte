@@ -9,7 +9,11 @@
     <img src="/icons/chevron-left.svg" alt="Hide panel" class="icon" />
     <img src="/icons/chevron-right.svg" alt="Show panel" class="icon" />
   </button>
-  <MainIOPanel title="Inputs" newEntryPlaceholder="Add a parameter" />
+  <MainIOPanel
+    title="Inputs"
+    newEntryPlaceholder="Add a parameter"
+    on:ioAdded
+  />
   <div id="input-panel-divider"></div>
 </div>
 

@@ -10,7 +10,11 @@
     <img src="/icons/chevron-right.svg" alt="Show panel" class="icon" />
   </button>
   <div id="output-panel-divider"></div>
-  <MainIOPanel title="Outputs" newEntryPlaceholder="Export a value" />
+  <MainIOPanel
+    title="Outputs"
+    newEntryPlaceholder="Export a value"
+    on:ioAdded
+  />
 </div>
 
 <style>

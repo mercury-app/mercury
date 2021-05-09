@@ -2,7 +2,11 @@
   import NotebookOverlay from "./NotebookOverlay.svelte";
   import WorkflowActions from "./WorkflowActions.svelte";
   import WorkflowBar from "./WorkflowBar.svelte";
-  import WorkflowCanvas, { placeNewNode } from "./WorkflowCanvas.svelte";
+  import WorkflowCanvas, {
+    placeNewNode,
+    addInputOnSelectedNode,
+    addOutputOnSelectedNode,
+  } from "./WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
 
@@ -35,7 +39,13 @@
       <WorkflowActions />
     </div>
     <div>
-      <NotebookOverlay bind:visible="{notebookOverlayVisible}" />
+      <NotebookOverlay
+        bind:visible="{notebookOverlayVisible}"
+        on:inputAdded="{(event) =>
+          addInputOnSelectedNode(event.detail.inputName)}"
+        on:outputAdded="{(event) =>
+          addOutputOnSelectedNode(event.detail.outputName)}"
+      />
     </div>
   </div>
 </main>

@@ -304,14 +304,6 @@
     }
 
     public addInput(name: string): IOPort {
-      if (
-        this._inputPorts.length > 0 &&
-        this._inputPorts.length >= this._outputPorts.length
-      ) {
-        this._innerRect.height(this._innerRect.height() + cellSize);
-        this._outlineRect.height(this._outlineRect.height() + cellSize);
-      }
-
       const gapSize = 2 * cellSize;
       const inputPort = new IOPort(
         this._svg,
@@ -323,18 +315,18 @@
       this.add(inputPort);
       this._inputPorts.push(inputPort);
 
+      if (
+        this._inputPorts.length > 1 &&
+        this._inputPorts.length > this._outputPorts.length
+      ) {
+        this._innerRect.height(this._innerRect.height() + cellSize * 2);
+        this._outlineRect.height(this._outlineRect.height() + cellSize * 2);
+      }
+
       return inputPort;
     }
 
     public addOutput(name: string): IOPort {
-      if (
-        this._outputPorts.length > 0 &&
-        this._outputPorts.length >= this._outputPorts.length
-      ) {
-        this._innerRect.height(this._innerRect.height() + cellSize);
-        this._outlineRect.height(this._outlineRect.height() + cellSize);
-      }
-
       const gapSize = 2 * cellSize;
       const outputPort = new IOPort(
         this._svg,
@@ -345,6 +337,14 @@
       );
       this.add(outputPort);
       this._outputPorts.push(outputPort);
+
+      if (
+        this._outputPorts.length > 1 &&
+        this._outputPorts.length > this._inputPorts.length
+      ) {
+        this._innerRect.height(this._innerRect.height() + cellSize * 2);
+        this._outlineRect.height(this._outlineRect.height() + cellSize * 2);
+      }
 
       return outputPort;
     }
@@ -960,9 +960,6 @@
         this._nodeEditHandler();
       });
 
-      this._addInput(node, "input");
-      this._addOutput(node, "output");
-
       return node;
     }
 
@@ -1389,6 +1386,20 @@
       this._enterPlacementMode();
     }
 
+    public addInputOnSelectedNode(name: string) {
+      if (this._selectedNode !== null) {
+        this._addInput(this._selectedNode, name);
+        this._showNodeSelectionMenu(this._selectedNode);
+      }
+    }
+
+    public addOutputOnSelectedNode(name: string) {
+      if (this._selectedNode !== null) {
+        this._addOutput(this._selectedNode, name);
+        this._showNodeSelectionMenu(this._selectedNode);
+      }
+    }
+
     get container(): HTMLElement {
       return this._svg.node.parentElement.parentElement;
     }
@@ -1404,6 +1415,18 @@
   export const placeNewNode = () => {
     if (canvas !== null) {
       canvas.placeNewNode();
+    }
+  };
+
+  export const addInputOnSelectedNode = (name: string) => {
+    if (canvas !== null) {
+      canvas.addInputOnSelectedNode(name);
+    }
+  };
+
+  export const addOutputOnSelectedNode = (name: string) => {
+    if (canvas !== null) {
+      canvas.addOutputOnSelectedNode(name);
     }
   };
 </script>
