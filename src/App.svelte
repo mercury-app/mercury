@@ -8,7 +8,7 @@
     addOutputOnSelectedNode,
     removeInputOnSelectedNode,
     removeOutputOnSelectedNode,
-  } from "./WorkflowCanvas.svelte";
+  } from "./workflowcanvas/WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
 
@@ -27,12 +27,16 @@
 </script>
 
 <main>
+  <!-- variables set in script above can be accessed here   -->
   <div id="workflow-builder-main">
     <div class="container" id="workflow-bar-container">
+      <!-- workflowbarwidth is a prop passed to the component that can be accessed inside the component -->
+      <!-- The newnoderequested is an event dispatched from the child component(workflowbar) -->
       <WorkflowBar
         workflowBarWidth="{workflowBarWidth}"
         on:newNodeRequested="{placeNewNode}"
       />
+
     </div>
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
