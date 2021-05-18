@@ -33,8 +33,11 @@ export class WorkflowCanvas {
   private _selectedConnectors: Set<WorkflowConnector>;
   private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
   private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
-  private _nodeEditHandler: Function;
-  private _nodeSelectionHandler: Function;
+  private _nodeEditHandler: () => void;
+  private _nodeSelectionHandler: (
+    inputs: Array<string>,
+    outputs: Array<string>
+  ) => void;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -267,8 +270,8 @@ export class WorkflowCanvas {
     y: number,
     elemWidth: number,
     elemHeight: number,
-    adjustForInputPorts: boolean = true,
-    adjustForOutputPorts: boolean = true
+    adjustForInputPorts = true,
+    adjustForOutputPorts = true
   ): { x: number; y: number } {
     // Use the `container` to clamp the object's coords in the view.
     if (adjustForOutputPorts || adjustForInputPorts) {
@@ -328,7 +331,7 @@ export class WorkflowCanvas {
     handler.move(x, y);
     this._setMoveCursor();
 
-    let scrollDelta: Delta = { x: 0, y: 0 };
+    const scrollDelta: Delta = { x: 0, y: 0 };
     if (
       x + box.width + cellSize >
       this.container.scrollLeft + this.container.clientWidth
@@ -515,9 +518,9 @@ export class WorkflowCanvas {
     if (outputPort !== undefined) {
       if (this._connectionsSrcToDest.has(outputPort)) {
         const connections = this._connectionsSrcToDest.get(outputPort);
-        for (const connector of connections.values()) {
+        Array.from(connections.values()).forEach((connector) => {
           this._removeConnector(connector);
-        }
+        });
       }
       node.removeOutput(outputPort);
       this._redrawAllConnectionsForNode(node);
@@ -663,7 +666,7 @@ export class WorkflowCanvas {
   }
 
   private _removeAllConnectionsForNode(node: WorkflowNode): void {
-    for (const inputPort of node.inputPorts) {
+    node.inputPorts.forEach((inputPort) => {
       if (this._connectionsDestForSrc.has(inputPort)) {
         const [src, connector] = this._connectionsDestForSrc.get(inputPort);
 
@@ -679,13 +682,12 @@ export class WorkflowCanvas {
         // Delete the input<-output binding
         this._connectionsDestForSrc.delete(inputPort);
       }
-    }
+    });
 
-    for (const outputPort of node.outputPorts) {
+    node.outputPorts.forEach((outputPort) => {
       if (this._connectionsSrcToDest.has(outputPort)) {
-        for (const [dest, connector] of this._connectionsSrcToDest
-          .get(outputPort)
-          .entries()) {
+        const connections = this._connectionsSrcToDest.get(outputPort);
+        Array.from(connections.entries()).forEach(([dest, connector]) => {
           // Remove the input<-output binding
           this._connectionsDestForSrc.delete(dest);
 
@@ -694,34 +696,39 @@ export class WorkflowCanvas {
             this._selectedConnectors.delete(connector);
           }
           connector.remove();
-        }
+        });
 
         // Delete all output->input bindings
         this._connectionsSrcToDest.delete(outputPort);
       }
-    }
+    });
   }
 
   private _removeConnector(connector: WorkflowConnector): void {
-    for (const [src, connections] of this._connectionsSrcToDest.entries()) {
-      for (const [dest, conn] of connections.entries()) {
-        if (conn === connector) {
-          // Remove both output->input and input<-output binding
-          this._connectionsSrcToDest.get(src).delete(dest);
-          this._connectionsDestForSrc.delete(dest);
+    Array.from(this._connectionsSrcToDest.entries()).forEach(
+      ([src, connections]) => {
+        Array.from(connections.entries()).every(([dest, conn]) => {
+          if (conn === connector) {
+            // Remove both output->input and input<-output binding
+            this._connectionsSrcToDest.get(src).delete(dest);
+            this._connectionsDestForSrc.delete(dest);
 
-          if (this._selectedConnectors.has(connector)) {
-            this._selectedConnectors.delete(connector);
+            if (this._selectedConnectors.has(connector)) {
+              this._selectedConnectors.delete(connector);
+            }
+
+            src.unhighlight();
+            src.unselect();
+            dest.unhighlight();
+            dest.unselect();
+
+            return false;
           }
 
-          src.unhighlight();
-          src.unselect();
-          dest.unhighlight();
-          dest.unselect();
-          break;
-        }
+          return true;
+        });
       }
-    }
+    );
     connector.remove();
   }
 
@@ -774,53 +781,53 @@ export class WorkflowCanvas {
     });
   }
 
-  private _forAllNodeConnections(node: WorkflowNode, fn: Function): void {
-    for (const inputPort of node.inputPorts) {
+  private _forAllNodeConnections(
+    node: WorkflowNode,
+    fn: (src: IOPort, dest: IOPort, connector: WorkflowConnector) => void
+  ): void {
+    node.inputPorts.forEach((inputPort) => {
       if (this._connectionsDestForSrc.has(inputPort)) {
         const [src, connector] = this._connectionsDestForSrc.get(inputPort);
         fn(src, inputPort, connector);
       }
-    }
-    for (const outputPort of node.outputPorts) {
+    });
+    node.outputPorts.forEach((outputPort) => {
       if (this._connectionsSrcToDest.has(outputPort)) {
-        for (const [dest, connector] of this._connectionsSrcToDest
-          .get(outputPort)
-          .entries()) {
+        const connections = this._connectionsSrcToDest.get(outputPort);
+        Array.from(connections.entries()).forEach(([dest, connector]) => {
           fn(outputPort, dest, connector);
-        }
+        });
       }
-    }
+    });
   }
 
   private _selectConnector(connector: WorkflowConnector): void {
     const unselectedInputPorts = new Set<IOPort>();
     const unselectedOutputPorts = new Set<IOPort>();
-    for (const node of this._nodes) {
-      for (const inputPort of node.inputPorts) {
-        unselectedInputPorts.add(inputPort);
-      }
-      for (const outputPort of node.outputPorts) {
-        unselectedOutputPorts.add(outputPort);
-      }
-    }
+    this._nodes.forEach((node) => {
+      node.inputPorts.forEach((port) => unselectedInputPorts.add(port));
+      node.outputPorts.forEach((port) => unselectedOutputPorts.add(port));
+    });
 
     let connectorSrc = null;
     let connectorDest = null;
-    for (const [src, connections] of this._connectionsSrcToDest.entries()) {
-      for (const [dest, conn] of connections) {
-        if (conn === connector) {
-          connectorSrc = src;
-          connectorDest = dest;
-        }
+    Array.from(this._connectionsSrcToDest.entries()).forEach(
+      ([src, connections]) => {
+        Array.from(connections.entries()).forEach(([dest, conn]) => {
+          if (conn === connector) {
+            connectorSrc = src;
+            connectorDest = dest;
+          }
 
-        if (this._selectedConnectors.has(conn)) {
-          unselectedOutputPorts.delete(src);
-          unselectedInputPorts.delete(dest);
-        } else {
-          conn.unselect();
-        }
+          if (this._selectedConnectors.has(conn)) {
+            unselectedOutputPorts.delete(src);
+            unselectedInputPorts.delete(dest);
+          } else {
+            conn.unselect();
+          }
+        });
       }
-    }
+    );
     unselectedOutputPorts.forEach((port) => port.unselect());
     unselectedInputPorts.forEach((port) => port.unselect());
 
@@ -858,33 +865,33 @@ export class WorkflowCanvas {
     this._possibleDestination = null;
   }
 
-  public placeNewNode() {
+  public placeNewNode(): void {
     document.getElementById(this._divId).focus();
     this._enterPlacementMode();
   }
 
-  public addInputOnSelectedNode(name: string) {
+  public addInputOnSelectedNode(name: string): void {
     if (this._selectedNode !== null) {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
     }
   }
 
-  public addOutputOnSelectedNode(name: string) {
+  public addOutputOnSelectedNode(name: string): void {
     if (this._selectedNode !== null) {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
     }
   }
 
-  public removeInputOnSelectedNode(name: string) {
+  public removeInputOnSelectedNode(name: string): void {
     if (this._selectedNode !== null) {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
     }
   }
 
-  public removeOutputOnSelectedNode(name: string) {
+  public removeOutputOnSelectedNode(name: string): void {
     if (this._selectedNode !== null) {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
@@ -899,11 +906,13 @@ export class WorkflowCanvas {
     return this._svg.node;
   }
 
-  set nodeEditHandler(fn: Function) {
+  set nodeEditHandler(fn: () => void) {
     this._nodeEditHandler = fn;
   }
 
-  set nodeSelectHandler(fn: Function) {
+  set nodeSelectHandler(
+    fn: (inputs: Array<string>, outputs: Array<string>) => void
+  ) {
     this._nodeSelectionHandler = fn;
   }
 }

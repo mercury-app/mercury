@@ -153,7 +153,7 @@ export class WorkflowNode extends G {
     return outputPort;
   }
 
-  public removeInput(inputPort: IOPort) {
+  public removeInput(inputPort: IOPort): void {
     this._inputPorts = this._inputPorts.filter((port) => port !== inputPort);
     inputPort.remove();
 
@@ -173,7 +173,7 @@ export class WorkflowNode extends G {
     }
   }
 
-  public removeOutput(outputPort: IOPort) {
+  public removeOutput(outputPort: IOPort): void {
     this._outputPorts = this._outputPorts.filter((port) => port !== outputPort);
     outputPort.remove();
 

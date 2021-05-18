@@ -37,10 +37,10 @@ export class WorkflowConnector extends G {
     startY: number,
     endX: number,
     endY: number,
-    startTopOffset: number = 0,
-    startBottomOffset: number = 0,
-    endTopOffset: number = 0,
-    endBottomOffset: number = 0
+    startTopOffset = 0,
+    startBottomOffset = 0,
+    endTopOffset = 0,
+    endBottomOffset = 0
   ) {
     const deltaX = endX - startX;
     const deltaY = endY - startY;
@@ -157,11 +157,11 @@ export class WorkflowConnector extends G {
   public redraw(
     start: Point,
     end: Point,
-    startTopOffset: number = 0,
-    startBottomOffset: number = 0,
-    endTopOffset: number = 0,
-    endBottomOffset: number = 0
-  ) {
+    startTopOffset = 0,
+    startBottomOffset = 0,
+    endTopOffset = 0,
+    endBottomOffset = 0
+  ): void {
     this._drawPath(
       this._mainPath,
       start.x,
@@ -186,18 +186,18 @@ export class WorkflowConnector extends G {
     );
   }
 
-  public select() {
+  public select(): void {
     this._mainPath.stroke({ color: "black" });
     this._isSelected = true;
     this.front();
   }
 
-  public unselect() {
+  public unselect(): void {
     this._mainPath.stroke({ color: "lightgray" });
     this._isSelected = false;
   }
 
-  public highlight() {
+  public highlight(): void {
     if (this._isSelected) {
       return;
     }
@@ -205,7 +205,7 @@ export class WorkflowConnector extends G {
     this.front();
   }
 
-  public unhighlight() {
+  public unhighlight(): void {
     if (this._isSelected) {
       return;
     }
