@@ -8,7 +8,7 @@
 
   const hiddenClass = "hidden";
   const visibleClass = "visible";
-  $: { // reactive statement (watching whatever values used inside it)
+  $: {
     const notebookPanel = document.getElementById("notebook-panel");
     if (notebookPanel !== null) {
       if (visible) {

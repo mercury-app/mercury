@@ -30,7 +30,6 @@
 <style>
   #workflow-bar-container {
     height: 100%;
-    /* main-border-color is global css property defined in public/global.css */
     border-right: 1px solid var(--main-border-color); 
   }
 
