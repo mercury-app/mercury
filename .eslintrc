@@ -16,7 +16,8 @@
     }
   ],
   "rules": {
-    "no-console": 1, // Warn when using console.log statements
-    "no-loops/no-loops": 2 // Error when using traditional loops
+    "no-console": "warn",
+    "no-loops/no-loops": "error",
+    "@typescript-eslint/ban-ts-comment": "off"
   }
 }

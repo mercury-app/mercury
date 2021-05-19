@@ -8,7 +8,7 @@
     addOutputOnSelectedNode,
     removeInputOnSelectedNode,
     removeOutputOnSelectedNode,
-  } from "./WorkflowCanvas.svelte";
+  } from "./workflowcanvas/WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
 
@@ -33,6 +33,7 @@
         workflowBarWidth="{workflowBarWidth}"
         on:newNodeRequested="{placeNewNode}"
       />
+
     </div>
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
