@@ -88,9 +88,6 @@ export class IOPort extends G {
     this._isSelected = false;
   }
 
-  // methods
-  // turns edge color black when selected
-  // can't select the input iopanel on mouse click for some reasson
   public select(): void {
     this.children().forEach((element) => {
       element.stroke({ color: "black" });
