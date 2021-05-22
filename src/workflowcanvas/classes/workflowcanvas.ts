@@ -436,6 +436,7 @@ export class WorkflowCanvas {
     inputPort.mouseover((event: MouseEvent) => {
       if (
         !this._connectionInProgress ||
+        this._unconnectedSource.workflowNode == inputPort.workflowNode ||
         this._connectionsDestForSrc.has(inputPort)
       ) {
         return;
@@ -456,6 +457,7 @@ export class WorkflowCanvas {
       document.getElementById(this._divId).focus();
       if (
         !this._connectionInProgress ||
+        this._unconnectedSource.workflowNode == inputPort.workflowNode ||
         this._connectionsDestForSrc.has(inputPort)
       ) {
         return;
