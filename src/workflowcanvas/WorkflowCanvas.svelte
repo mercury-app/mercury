@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+  import axios from "axios";
   import "@svgdotjs/svg.draggable.js";
 
   import { WorkflowCanvas } from "./classes/workflowcanvas.js";
@@ -38,7 +39,6 @@
 </script>
 
 <script lang="ts">
-  import axios from "axios";
   import { createEventDispatcher } from "svelte";
   import { onMount } from "svelte";
 
@@ -57,9 +57,8 @@
 
   // For high-latency testing purposes
   function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-
 
   onMount(() => {
     canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
@@ -90,6 +89,34 @@
         return port.name;
       });
       dispatch("ioNamesChanged", { inputNames, outputNames });
+    };
+
+    canvas.nodeIOChangedHandler = async (node: WorkflowNode) => {
+      const inputNames = node.inputPorts.map((port: IOPort) => {
+        return port.name;
+      });
+      const outputNames = node.outputPorts.map((port: IOPort) => {
+        return port.name;
+      });
+
+      const nodeId = node.nodeId;
+      const url: string = `http://localhost:3000/v1/caduceus/nodes/${nodeId}`;
+      try {
+        const inputArgs = inputNames.reduce(
+          (o, key) => ({ ...o, [key]: "" }),
+          {}
+        );
+        const outputArgs = outputNames.reduce(
+          (o, key) => ({ ...o, [key]: "" }),
+          {}
+        );
+        await axios.put(url, {
+          input: inputArgs,
+          output: outputArgs,
+        });
+      } catch (exception) {
+        console.log(`error received from ${url}: ${exception}`);
+      }
     };
   });
 </script>

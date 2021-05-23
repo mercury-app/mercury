@@ -37,6 +37,7 @@ export class WorkflowCanvas {
   private _nodeEditRequestedHandler: () => void;
   private _nodeSelectedHandler: (node: WorkflowNode) => void;
   private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
+  private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -112,6 +113,7 @@ export class WorkflowCanvas {
     this._nodeEditRequestedHandler = null;
     this._nodeSelectedHandler = null;
     this._nodePlacedHandler = null;
+    this._nodeIOChangedHandler = null;
   }
 
   private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -880,6 +882,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -887,6 +890,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -894,6 +898,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -901,6 +906,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -922,5 +928,9 @@ export class WorkflowCanvas {
 
   set nodeSelectedHandler(fn: (node: WorkflowNode) => void) {
     this._nodeSelectedHandler = fn;
+  }
+
+  set nodeIOChangedHandler(fn: (node: WorkflowNode) => Promise<void>) {
+    this._nodeIOChangedHandler = fn;
   }
 }
