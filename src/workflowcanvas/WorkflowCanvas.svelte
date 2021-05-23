@@ -84,8 +84,10 @@
             },
           }
         );
-        node.nodeId = response.data.data.id;
-        node.attributes = response.data.data.attributes;
+        if (response.status === 201) {
+          node.nodeId = response.data.data.id;
+          node.attributes = response.data.data.attributes;
+        }
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }
@@ -133,7 +135,9 @@
             },
           }
         );
-        node.attributes = response.data.data.attributes;
+        if (response.status === 200) {
+          node.attributes = response.data.data.attributes;
+        }
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }
