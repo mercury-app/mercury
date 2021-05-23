@@ -5,6 +5,7 @@
   export let visible = false;
   export let inputs: Array<string> = [];
   export let outputs: Array<string> = [];
+  export let notebookUrl = "about:blank";
 
   const hiddenClass = "hidden";
   const visibleClass = "visible";
@@ -36,10 +37,7 @@
     <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
   </button>
 
-  <iframe
-    src="http://localhost:8888/notebooks/work/scripts/Untitled.ipynb"
-    title="Jupyter notebook"
-  >
+  <iframe id="notebook-iframe" src="{notebookUrl}" title="Jupyter notebook">
   </iframe>
 
   <div

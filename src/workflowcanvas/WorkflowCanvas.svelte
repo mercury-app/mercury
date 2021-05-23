@@ -93,7 +93,10 @@
       }
     };
 
-    canvas.nodeEditRequestedHandler = () => dispatch("nodeEditRequested");
+    canvas.nodeEditRequestedHandler = (node: WorkflowNode) => {
+      const notebookUrl = node.attributes.notebook_url;
+      dispatch("nodeEditRequested", { notebookUrl });
+    };
 
     canvas.nodeSelectedHandler = (node: WorkflowNode) => {
       const inputNames = node.inputPorts.map((port: IOPort) => {

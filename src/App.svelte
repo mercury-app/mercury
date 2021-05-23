@@ -24,6 +24,12 @@
     selectedNotebookInputs = event.detail.inputNames;
     selectedNotebookOutputs = event.detail.outputNames;
   };
+
+  let notebookUrl = "about:blank";
+  const editNotebook = (event: CustomEvent) => {
+    notebookUrl = event.detail.notebookUrl;
+    notebookOverlayVisible = true;
+  };
 </script>
 
 <main>
@@ -33,7 +39,6 @@
         workflowBarWidth="{workflowBarWidth}"
         on:newNodeRequested="{placeNewNode}"
       />
-
     </div>
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
@@ -41,8 +46,8 @@
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"
         rowHeight="{canvasRowHeight}"
-        on:nodeEditRequested="{() => (notebookOverlayVisible = true)}"
         on:ioNamesChanged="{updateNotebookIO}"
+        on:nodeEditRequested="{editNotebook}"
       />
     </div>
     <div class="container" id="workflow-actions-container">
@@ -53,6 +58,7 @@
         bind:visible="{notebookOverlayVisible}"
         bind:inputs="{selectedNotebookInputs}"
         bind:outputs="{selectedNotebookOutputs}"
+        bind:notebookUrl
         on:inputAdded="{(event) =>
           addInputOnSelectedNode(event.detail.inputName)}"
         on:outputAdded="{(event) =>

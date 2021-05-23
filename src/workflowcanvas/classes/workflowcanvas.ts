@@ -34,7 +34,7 @@ export class WorkflowCanvas {
   private _selectedConnectors: Set<WorkflowConnector>;
   private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
   private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
-  private _nodeEditRequestedHandler: () => void;
+  private _nodeEditRequestedHandler: (node: WorkflowNode) => void;
   private _nodeSelectedHandler: (node: WorkflowNode) => void;
   private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
   private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
@@ -229,7 +229,7 @@ export class WorkflowCanvas {
     editButton.onclick = (event: MouseEvent) => {
       event.preventDefault();
       if (this._nodeEditRequestedHandler !== null)
-        this._nodeEditRequestedHandler();
+        this._nodeEditRequestedHandler(this._selectedNode);
     };
 
     const deleteButton = createButton("trash");
@@ -409,7 +409,7 @@ export class WorkflowCanvas {
 
       event.preventDefault();
       if (this._nodeEditRequestedHandler !== null)
-        this._nodeEditRequestedHandler();
+        this._nodeEditRequestedHandler(this._selectedNode);
     });
 
     node.draggable();
@@ -922,7 +922,7 @@ export class WorkflowCanvas {
     this._nodePlacedHandler = fn;
   }
 
-  set nodeEditRequestedHandler(fn: () => void) {
+  set nodeEditRequestedHandler(fn: (node: WorkflowNode) => void) {
     this._nodeEditRequestedHandler = fn;
   }
 
