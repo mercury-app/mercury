@@ -24,6 +24,7 @@ export class WorkflowCanvas {
   private _placementMarker: Rect;
   private _nodes: Set<WorkflowNode>;
   private _selectedNode: WorkflowNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _nodeSelectionMenu: any;
   private _moveAnimationDuration: number;
   private _connectionInProgress: boolean;
