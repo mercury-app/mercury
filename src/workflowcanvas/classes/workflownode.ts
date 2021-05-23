@@ -24,6 +24,7 @@ export class WorkflowNode extends G {
   private _nodeId: string;
   private _containerId: string;
   private _notebookUrl: string;
+  private _ready: boolean;
 
   constructor(svg: Svg, position: Point) {
     super();
@@ -81,6 +82,8 @@ export class WorkflowNode extends G {
     this._nodeId = "";
     this._containerId = "";
     this._notebookUrl = "";
+
+    this._ready = false;
   }
 
   public select(): void {
@@ -223,27 +226,41 @@ export class WorkflowNode extends G {
     this._titleElement.textContent = title;
   }
 
-  set nodeId(nodeId: string) {
-    this._nodeId = nodeId;
-  }
-
   get nodeId(): string {
     return this._nodeId;
   }
 
-  set containerId(containerId: string) {
-    this._containerId = containerId;
+  set nodeId(nodeId: string) {
+    this._nodeId = nodeId;
   }
 
   get containerId(): string {
     return this._containerId ;
   }
 
-  set notebookUrl(notebookUrl: string) {
-    this._notebookUrl = notebookUrl;
+  set containerId(containerId: string) {
+    this._containerId = containerId;
   }
 
   get notebookUrl(): string {
     return this._notebookUrl;
+  }
+
+  set notebookUrl(notebookUrl: string) {
+    this._notebookUrl = notebookUrl;
+  }
+
+  get ready(): boolean {
+    return this._ready;
+  }
+
+  set ready(ready: boolean) {
+    const notReadyTitle = "Preparing…";
+    if (ready && this.title === notReadyTitle) {
+      this.title = "Untitled";
+    } else if (!ready) {
+      this.title = notReadyTitle;
+    }
+    this._ready = ready;
   }
 }

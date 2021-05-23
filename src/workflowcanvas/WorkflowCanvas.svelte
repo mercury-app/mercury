@@ -55,6 +55,12 @@
   const canvasWidth = numColumns * colWidth;
   const canvasHeight = numRows * rowHeight;
 
+  // For high-latency testing purposes
+  function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+
   onMount(() => {
     canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
@@ -62,15 +68,13 @@
     canvas.nodePlacedHandler = async (node: WorkflowNode) => {
       const url: string = "http://localhost:3000/v1/caduceus/nodes";
       try {
+        // TODO: remove this
+        await sleep(2000);
+
         const response = await axios.post(url, {});
-        const nodeId: string = response.data.response.id;
-        const containerId: string = response.data.response.container_id;
-        const notebookUrl: string = response.data.response.nodebook_url;
-        setTimeout(function () {
-          node.nodeId = nodeId;
-          node.containerId = containerId;
-          node.notebookUrl = notebookUrl;
-        }, 1000);
+        node.nodeId = response.data.response.id;
+        node.containerId = response.data.response.container_id;
+        node.notebookUrl = response.data.response.nodebook_url;
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }

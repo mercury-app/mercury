@@ -177,12 +177,12 @@ export class WorkflowCanvas {
         });
         this._nodes.add(node);
 
-        node.title = "Creating…";
-        await this._nodePlacedHandler(node);
-        node.title = "Untitled";
-
         this._exitPlacementMode();
         this._placementMarker.front();
+
+        node.ready = false;
+        await this._nodePlacedHandler(node);
+        node.ready = true;
       }
     };
   }
@@ -367,7 +367,7 @@ export class WorkflowCanvas {
 
     node.mainBody.click((event: MouseEvent) => {
       document.getElementById(this._divId).focus();
-      if (this._connectionInProgress) {
+      if (this._connectionInProgress || !node.ready) {
         return;
       }
       event.preventDefault();
@@ -376,7 +376,7 @@ export class WorkflowCanvas {
       this._showNodeSelectionMenu(node);
     });
     node.mainBody.mouseover((event: MouseEvent) => {
-      if (node.isSelected || this._connectionInProgress) {
+      if (node.isSelected || this._connectionInProgress || !node.ready) {
         return;
       }
       event.preventDefault();
@@ -387,7 +387,7 @@ export class WorkflowCanvas {
       }
     });
     node.mainBody.mouseout((event: MouseEvent) => {
-      if (node.isSelected || this._connectionInProgress) {
+      if (node.isSelected || this._connectionInProgress || !node.ready) {
         return;
       }
       event.preventDefault();
@@ -401,6 +401,10 @@ export class WorkflowCanvas {
       }
     });
     node.mainBody.dblclick((event: MouseEvent) => {
+      if (!node.ready) {
+        return;
+      }
+
       event.preventDefault();
       if (this._nodeEditRequestedHandler !== null)
         this._nodeEditRequestedHandler();
@@ -408,7 +412,7 @@ export class WorkflowCanvas {
 
     node.draggable();
     node.on("dragmove.namespace", (event: SvgDragEvent) => {
-      if (this._connectionInProgress) {
+      if (this._connectionInProgress || !node.ready) {
         event.preventDefault();
         return;
       }
