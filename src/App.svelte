@@ -21,8 +21,8 @@
   let selectedNotebookInputs: Array<string> = [];
   let selectedNotebookOutputs: Array<string> = [];
   const updateNotebookIO = (event: CustomEvent) => {
-    selectedNotebookInputs = event.detail.inputs;
-    selectedNotebookOutputs = event.detail.outputs;
+    selectedNotebookInputs = event.detail.inputNames;
+    selectedNotebookOutputs = event.detail.outputNames;
   };
 </script>
 
