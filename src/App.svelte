@@ -41,8 +41,8 @@
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"
         rowHeight="{canvasRowHeight}"
-        on:editNodeRequested="{() => (notebookOverlayVisible = true)}"
-        on:nodeSelected="{updateNotebookIO}"
+        on:nodeEditRequested="{() => (notebookOverlayVisible = true)}"
+        on:ioNamesChanged="{updateNotebookIO}"
       />
     </div>
     <div class="container" id="workflow-actions-container">

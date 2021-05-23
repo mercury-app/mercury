@@ -21,6 +21,9 @@ export class WorkflowNode extends G {
   private _isSelected: boolean;
   private _inputPorts: Array<IOPort>;
   private _outputPorts: Array<IOPort>;
+  private _nodeId: string;
+  private _containerId: string;
+  private _notebookUrl: string;
 
   constructor(svg: Svg, position: Point) {
     super();
@@ -53,7 +56,7 @@ export class WorkflowNode extends G {
       .foreignObject(this._innerRect.width(), cellSize)
       .move(titleOffset, 0);
     this._titleElement = document.createElement("p");
-    this._titleElement.textContent = "Untitled";
+    this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
     this._titleElement.style.maxWidth = `${
       this._innerRect.width() - titleOffset * 2
@@ -72,9 +75,12 @@ export class WorkflowNode extends G {
 
     this._isSelected = false;
 
-    // array containing type ioport
     this._inputPorts = new Array<IOPort>();
     this._outputPorts = new Array<IOPort>();
+
+    this._nodeId = "";
+    this._containerId = "";
+    this._notebookUrl = "";
   }
 
   public select(): void {
@@ -207,5 +213,37 @@ export class WorkflowNode extends G {
 
   get outputPorts(): Array<IOPort> {
     return this._outputPorts;
+  }
+
+  get title(): string {
+    return this._titleElement.textContent;
+  }
+
+  set title(title: string) {
+    this._titleElement.textContent = title;
+  }
+
+  set nodeId(nodeId: string) {
+    this._nodeId = nodeId;
+  }
+
+  get nodeId(): string {
+    return this._nodeId;
+  }
+
+  set containerId(containerId: string) {
+    this._containerId = containerId;
+  }
+
+  get containerId(): string {
+    return this._containerId ;
+  }
+
+  set notebookUrl(notebookUrl: string) {
+    this._notebookUrl = notebookUrl;
+  }
+
+  get notebookUrl(): string {
+    return this._notebookUrl;
   }
 }

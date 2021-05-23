@@ -33,11 +33,9 @@ export class WorkflowCanvas {
   private _selectedConnectors: Set<WorkflowConnector>;
   private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
   private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
-  private _nodeEditHandler: () => void;
-  private _nodeSelectionHandler: (
-    inputs: Array<string>,
-    outputs: Array<string>
-  ) => void;
+  private _nodeEditRequestedHandler: () => void;
+  private _nodeSelectedHandler: (node: WorkflowNode) => void;
+  private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -110,8 +108,9 @@ export class WorkflowCanvas {
     this._connectionsSrcToDest = new Map();
     this._connectionsDestForSrc = new Map();
 
-    this._nodeEditHandler = null;
-    this._nodeSelectionHandler = null;
+    this._nodeEditRequestedHandler = null;
+    this._nodeSelectedHandler = null;
+    this._nodePlacedHandler = null;
   }
 
   private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -167,7 +166,7 @@ export class WorkflowCanvas {
         .move(x, y);
     };
 
-    this._svg.node.onclick = (event) => {
+    this._svg.node.onclick = async (event) => {
       event.preventDefault();
       document.getElementById(this._divId).focus();
       if (this._inPlacementMode) {
@@ -176,6 +175,10 @@ export class WorkflowCanvas {
           y: this._placementMarker.y(),
         });
         this._nodes.add(node);
+
+        node.title = "Creating…";
+        await this._nodePlacedHandler(node);
+        node.title = "Untitled";
 
         this._exitPlacementMode();
         this._placementMarker.front();
@@ -222,7 +225,8 @@ export class WorkflowCanvas {
     containerDiv.appendChild(editButton);
     editButton.onclick = (event: MouseEvent) => {
       event.preventDefault();
-      if (this._nodeEditHandler !== null) this._nodeEditHandler();
+      if (this._nodeEditRequestedHandler !== null)
+        this._nodeEditRequestedHandler();
     };
 
     const deleteButton = createButton("trash");
@@ -239,7 +243,7 @@ export class WorkflowCanvas {
     const menuItemHeight = 28;
     const spacing = 6;
 
-    // The '- 2' below is to adjus for the 1px borders on the container.
+    // The '- 2' below is to adjust for the 1px borders on the container.
     containerDiv.style.height = `${menuItemHeight + 2 * spacing - 2}px`;
 
     // @ts-ignore
@@ -397,7 +401,8 @@ export class WorkflowCanvas {
     });
     node.mainBody.dblclick((event: MouseEvent) => {
       event.preventDefault();
-      if (this._nodeEditHandler !== null) this._nodeEditHandler();
+      if (this._nodeEditRequestedHandler !== null)
+        this._nodeEditRequestedHandler();
     });
 
     node.draggable();
@@ -540,14 +545,8 @@ export class WorkflowCanvas {
     }
     this._selectedNode = node;
 
-    if (this._selectedNode !== null && this._nodeSelectionHandler !== null) {
-      const inputNames = this._selectedNode.inputPorts.map((port: IOPort) => {
-        return port.name;
-      });
-      const outputNames = this._selectedNode.outputPorts.map((port: IOPort) => {
-        return port.name;
-      });
-      this._nodeSelectionHandler(inputNames, outputNames);
+    if (this._selectedNode !== null && this._nodeSelectedHandler !== null) {
+      this._nodeSelectedHandler(this._selectedNode);
     }
   }
 
@@ -908,13 +907,15 @@ export class WorkflowCanvas {
     return this._svg.node;
   }
 
-  set nodeEditHandler(fn: () => void) {
-    this._nodeEditHandler = fn;
+  set nodePlacedHandler(fn: (node: WorkflowNode) => Promise<void>) {
+    this._nodePlacedHandler = fn;
   }
 
-  set nodeSelectHandler(
-    fn: (inputs: Array<string>, outputs: Array<string>) => void
-  ) {
-    this._nodeSelectionHandler = fn;
+  set nodeEditRequestedHandler(fn: () => void) {
+    this._nodeEditRequestedHandler = fn;
+  }
+
+  set nodeSelectedHandler(fn: (node: WorkflowNode) => void) {
+    this._nodeSelectedHandler = fn;
   }
 }

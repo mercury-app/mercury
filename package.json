@@ -13,6 +13,7 @@
     "@rollup/plugin-node-resolve": "^11.0.0",
     "@rollup/plugin-typescript": "^6.0.0",
     "@tsconfig/svelte": "^1.0.0",
+    "@types/axios": "^0.14.0",
     "@types/simplebar": "^5.1.1",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
@@ -37,6 +38,7 @@
   "dependencies": {
     "@svgdotjs/svg.draggable.js": "^3.0.2",
     "@svgdotjs/svg.js": "^3.0.16",
+    "axios": "^0.21.1",
     "sirv-cli": "^1.0.0"
   }
 }
