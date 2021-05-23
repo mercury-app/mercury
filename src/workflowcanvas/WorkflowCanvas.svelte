@@ -68,12 +68,24 @@
       const url: string = "http://localhost:3000/v1/caduceus/nodes";
       try {
         // TODO: remove this
-        await sleep(2000);
+        await sleep(1000);
 
-        const response = await axios.post(url, {});
-        node.nodeId = response.data.response.id;
-        node.containerId = response.data.response.container_id;
-        node.notebookUrl = response.data.response.nodebook_url;
+        const response = await axios.post(
+          url,
+          {
+            data: {
+              type: "nodes",
+            },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
+        );
+        node.nodeId = response.data.data.id;
+        node.attributes = response.data.data.attributes;
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }
@@ -102,18 +114,26 @@
       const nodeId = node.nodeId;
       const url: string = `http://localhost:3000/v1/caduceus/nodes/${nodeId}`;
       try {
-        const inputArgs = inputNames.reduce(
-          (o, key) => ({ ...o, [key]: "" }),
-          {}
+        const response = await axios.patch(
+          url,
+          {
+            data: {
+              type: "nodes",
+              id: nodeId,
+              attributes: {
+                input: inputNames,
+                output: outputNames,
+              },
+            },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
         );
-        const outputArgs = outputNames.reduce(
-          (o, key) => ({ ...o, [key]: "" }),
-          {}
-        );
-        await axios.put(url, {
-          input: inputArgs,
-          output: outputArgs,
-        });
+        node.attributes = response.data.data.attributes;
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }

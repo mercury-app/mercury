@@ -6,7 +6,7 @@ import {
   strokeWidth,
   cellSize,
 } from "../constants.js";
-import { Point } from "../interfaces.js";
+import { Point, WorkflowNodeAttributes } from "../interfaces.js";
 import { IOPortType } from "../types.js";
 
 import { IOPort } from "./ioport.js";
@@ -22,8 +22,7 @@ export class WorkflowNode extends G {
   private _inputPorts: Array<IOPort>;
   private _outputPorts: Array<IOPort>;
   private _nodeId: string;
-  private _containerId: string;
-  private _notebookUrl: string;
+  private _attributes: WorkflowNodeAttributes | null;
   private _ready: boolean;
 
   constructor(svg: Svg, position: Point) {
@@ -80,8 +79,7 @@ export class WorkflowNode extends G {
     this._outputPorts = new Array<IOPort>();
 
     this._nodeId = "";
-    this._containerId = "";
-    this._notebookUrl = "";
+    this._attributes = null;
 
     this._ready = false;
   }
@@ -227,27 +225,20 @@ export class WorkflowNode extends G {
   }
 
   get nodeId(): string {
-    return this._nodeId;
+    const nodeId: string = this._nodeId;
+    return nodeId;
   }
 
   set nodeId(nodeId: string) {
     this._nodeId = nodeId;
   }
 
-  get containerId(): string {
-    return this._containerId ;
+  get attributes(): WorkflowNodeAttributes {
+    return this._attributes;
   }
 
-  set containerId(containerId: string) {
-    this._containerId = containerId;
-  }
-
-  get notebookUrl(): string {
-    return this._notebookUrl;
-  }
-
-  set notebookUrl(notebookUrl: string) {
-    this._notebookUrl = notebookUrl;
+  set attributes(nodeAttributes: WorkflowNodeAttributes) {
+    this._attributes = nodeAttributes;
   }
 
   get ready(): boolean {
