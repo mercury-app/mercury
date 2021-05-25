@@ -28,6 +28,19 @@
     }
   }
 
+  const iframeSandboxPermissions = [
+    "allow-scripts",
+    "allow-forms",
+    "allow-pointer-lock",
+    "allow-same-origin",
+    "allow-downloads",
+    "allow-orientation-lock",
+    "allow-presentation",
+    "allow-storage-access-by-user-activation",
+    "allow-top-navigation-by-user-activation"
+  ]
+  const iframeSandboxValue = iframeSandboxPermissions.join(" ");
+
   let inputPanelVisible = false;
   let outputPanelVisible = false;
 </script>
@@ -37,7 +50,12 @@
     <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
   </button>
 
-  <iframe id="notebook-iframe" src="{notebookUrl}" title="Jupyter notebook">
+  <iframe
+    id="notebook-iframe"
+    sandbox= "{iframeSandboxValue}"
+    src="{notebookUrl}"
+    title="Jupyter notebook"
+  >
   </iframe>
 
   <div
