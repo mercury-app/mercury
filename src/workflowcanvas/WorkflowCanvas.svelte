@@ -60,6 +60,24 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  const updateValidConnections = async () => {
+    const workflowUrl: string = "http://localhost:3000/v1/caduceus/workflows";
+    try {
+      const workflowResponse = await axios.get(workflowUrl, {
+        headers: {
+          Accept: "application/vnd.api+json",
+          "Content-Type": "application/vnd.api+json",
+        },
+      });
+      const workflowData = workflowResponse.data.data[0];
+      canvas.validSrcToDestMap = new Map(
+        Object.entries(workflowData.attributes.valid_connections)
+      );
+    } catch (exception) {
+      console.log(`error received from ${workflowUrl}: ${exception}`);
+    }
+  };
+
   onMount(() => {
     canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
@@ -67,9 +85,6 @@
     canvas.nodePlacedHandler = async (node: WorkflowNode) => {
       const url: string = "http://localhost:3000/v1/caduceus/nodes";
       try {
-        // TODO: remove this
-        await sleep(1000);
-
         const response = await axios.post(
           url,
           {
@@ -91,6 +106,7 @@
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }
+      updateValidConnections();
     };
 
     canvas.nodeEditRequestedHandler = (node: WorkflowNode) => {
@@ -138,12 +154,48 @@
             },
           }
         );
-        if (response.status === 200) {
-          node.attributes = response.data.data.attributes;
-        }
+        node.attributes = response.data.data.attributes;
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }
+    };
+
+    canvas.connectorAddedHandler = async (src: IOPort, dest: IOPort) => {
+      const srcNodeId = src.workflowNode.nodeId;
+      const outputName = src.name;
+      const destNodeId = dest.workflowNode.nodeId;
+      const inputName = dest.name;
+
+      const url = "http://localhost:3000/v1/caduceus/connectors";
+      try {
+        await axios.post(
+          url,
+          {
+            data: {
+              type: "connectors",
+              attributes: {
+                source: {
+                  node_id: srcNodeId,
+                  output: outputName,
+                },
+                destination: {
+                  node_id: destNodeId,
+                  input: inputName,
+                },
+              },
+            },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
+        );
+      } catch (exception) {
+        console.log(`error received from ${url}: ${exception}`);
+      }
+      updateValidConnections();
     };
   });
 </script>

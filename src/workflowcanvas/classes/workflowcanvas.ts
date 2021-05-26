@@ -34,10 +34,12 @@ export class WorkflowCanvas {
   private _selectedConnectors: Set<WorkflowConnector>;
   private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
   private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
+  private _validSrcToDestMap: Map<string, Set<string>>;
   private _nodeEditRequestedHandler: (node: WorkflowNode) => void;
   private _nodeSelectedHandler: (node: WorkflowNode) => void;
   private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
   private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
+  private _connectorAddedHandler: (src: IOPort, dest: IOPort) => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -109,6 +111,7 @@ export class WorkflowCanvas {
     this._selectedConnectors = new Set();
     this._connectionsSrcToDest = new Map();
     this._connectionsDestForSrc = new Map();
+    this._validSrcToDestMap = new Map();
 
     this._nodeEditRequestedHandler = null;
     this._nodeSelectedHandler = null;
@@ -448,7 +451,7 @@ export class WorkflowCanvas {
     inputPort.mouseover((event: MouseEvent) => {
       if (
         !this._connectionInProgress ||
-        this._unconnectedSource.workflowNode == inputPort.workflowNode ||
+        !this._connectionValid(this._unconnectedSource, inputPort) ||
         this._connectionsDestForSrc.has(inputPort)
       ) {
         return;
@@ -469,7 +472,7 @@ export class WorkflowCanvas {
       document.getElementById(this._divId).focus();
       if (
         !this._connectionInProgress ||
-        this._unconnectedSource.workflowNode == inputPort.workflowNode ||
+        !this._connectionValid(this._unconnectedSource, inputPort) ||
         this._connectionsDestForSrc.has(inputPort)
       ) {
         return;
@@ -592,6 +595,8 @@ export class WorkflowCanvas {
       input,
       this._unfinishedConnector
     );
+    this._connectorAddedHandler(this._unconnectedSource, input);
+
     this._unconnectedSource = null;
     this._unfinishedConnector = null;
     this._possibleDestination = null;
@@ -859,6 +864,18 @@ export class WorkflowCanvas {
     return false;
   }
 
+  private _connectionValid(src: IOPort, dest: IOPort): boolean {
+    const srcId = src.workflowNode.nodeId;
+    const destId = dest.workflowNode.nodeId;
+    if (this._validSrcToDestMap.has(srcId)) {
+      const validDestinations = this._validSrcToDestMap.get(srcId);
+      if (validDestinations.has(destId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private _cancelCurrentConnection() {
     this._connectionInProgress = false;
 
@@ -918,6 +935,12 @@ export class WorkflowCanvas {
     return this._svg.node;
   }
 
+  set validSrcToDestMap(connections: Map<string, Array<string>>) {
+    this._validSrcToDestMap = new Map(
+      Array.from(connections, ([k, v]) => [k, new Set(v)])
+    );
+  }
+
   set nodePlacedHandler(fn: (node: WorkflowNode) => Promise<void>) {
     this._nodePlacedHandler = fn;
   }
@@ -932,5 +955,9 @@ export class WorkflowCanvas {
 
   set nodeIOChangedHandler(fn: (node: WorkflowNode) => Promise<void>) {
     this._nodeIOChangedHandler = fn;
+  }
+
+  set connectorAddedHandler(fn: (src: IOPort, dest: IOPort) => Promise<void>) {
+    this._connectorAddedHandler = fn;
   }
 }
