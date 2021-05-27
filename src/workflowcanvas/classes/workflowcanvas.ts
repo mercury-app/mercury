@@ -39,7 +39,11 @@ export class WorkflowCanvas {
   private _nodeSelectedHandler: (node: WorkflowNode) => void;
   private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
   private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
-  private _connectorAddedHandler: (src: IOPort, dest: IOPort) => Promise<void>;
+  private _connectorAddedHandler: (
+    src: IOPort,
+    dest: IOPort,
+    connector: WorkflowConnector
+  ) => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -117,6 +121,7 @@ export class WorkflowCanvas {
     this._nodeSelectedHandler = null;
     this._nodePlacedHandler = null;
     this._nodeIOChangedHandler = null;
+    this._connectorAddedHandler = null;
   }
 
   private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -595,7 +600,11 @@ export class WorkflowCanvas {
       input,
       this._unfinishedConnector
     );
-    this._connectorAddedHandler(this._unconnectedSource, input);
+    this._connectorAddedHandler(
+      this._unconnectedSource,
+      input,
+      this._unfinishedConnector
+    );
 
     this._unconnectedSource = null;
     this._unfinishedConnector = null;
@@ -957,7 +966,13 @@ export class WorkflowCanvas {
     this._nodeIOChangedHandler = fn;
   }
 
-  set connectorAddedHandler(fn: (src: IOPort, dest: IOPort) => Promise<void>) {
+  set connectorAddedHandler(
+    fn: (
+      src: IOPort,
+      dest: IOPort,
+      connector: WorkflowConnector
+    ) => Promise<void>
+  ) {
     this._connectorAddedHandler = fn;
   }
 }

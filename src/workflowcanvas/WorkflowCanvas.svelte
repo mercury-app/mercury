@@ -44,6 +44,7 @@
 
   import { WorkflowNode } from "./classes/workflownode";
   import { IOPort } from "./classes/ioport";
+  import { WorkflowConnector } from "./classes/workflowconnector.js";
 
   const dispatch = createEventDispatcher();
 
@@ -160,7 +161,11 @@
       }
     };
 
-    canvas.connectorAddedHandler = async (src: IOPort, dest: IOPort) => {
+    canvas.connectorAddedHandler = async (
+      src: IOPort,
+      dest: IOPort,
+      connector: WorkflowConnector
+    ) => {
       const srcNodeId = src.workflowNode.nodeId;
       const outputName = src.name;
       const destNodeId = dest.workflowNode.nodeId;
@@ -168,7 +173,7 @@
 
       const url = "http://localhost:3000/v1/caduceus/connectors";
       try {
-        await axios.post(
+        const response = await axios.post(
           url,
           {
             data: {
@@ -192,6 +197,7 @@
             },
           }
         );
+        connector.connectorId = response.data.data.id;
       } catch (exception) {
         console.log(`error received from ${url}: ${exception}`);
       }
