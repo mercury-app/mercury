@@ -74,8 +74,9 @@
       canvas.validSrcToDestMap = new Map(
         Object.entries(workflowData.attributes.valid_connections)
       );
+      console.log(workflowData);
     } catch (exception) {
-      console.log(`error received from ${workflowUrl}: ${exception}`);
+      console.log(`error received from GET ${workflowUrl}: ${exception}`);
     }
   };
 
@@ -105,7 +106,22 @@
           node.attributes = response.data.data.attributes;
         }
       } catch (exception) {
-        console.log(`error received from ${url}: ${exception}`);
+        console.log(`error received from POST ${url}: ${exception}`);
+      }
+      updateValidConnections();
+    };
+
+    canvas.nodeDeletedHandler = async (nodeId: string) => {
+      const url: string = `http://localhost:3000/v1/caduceus/nodes/${nodeId}`;
+      try {
+        await axios.delete(url, {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        });
+      } catch (exception) {
+        console.log(`error received from DELETE ${url}: ${exception}`);
       }
       updateValidConnections();
     };
@@ -157,7 +173,7 @@
         );
         node.attributes = response.data.data.attributes;
       } catch (exception) {
-        console.log(`error received from ${url}: ${exception}`);
+        console.log(`error received from PATCH ${url}: ${exception}`);
       }
     };
 
@@ -199,7 +215,22 @@
         );
         connector.connectorId = response.data.data.id;
       } catch (exception) {
-        console.log(`error received from ${url}: ${exception}`);
+        console.log(`error received from POST ${url}: ${exception}`);
+      }
+      updateValidConnections();
+    };
+
+    canvas.connectorDeletedHandler = async (connectorId: string) => {
+      const url = `http://localhost:3000/v1/caduceus/connectors/${connectorId}`;
+      try {
+        await axios.delete(url, {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        });
+      } catch (exception) {
+        console.log(`error received from DELETE ${url}: ${exception}`);
       }
       updateValidConnections();
     };

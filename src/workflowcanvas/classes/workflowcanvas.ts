@@ -38,12 +38,14 @@ export class WorkflowCanvas {
   private _nodeEditRequestedHandler: (node: WorkflowNode) => void;
   private _nodeSelectedHandler: (node: WorkflowNode) => void;
   private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
+  private _nodeDeletedHandler: (nodeId: string) => Promise<void>;
   private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
   private _connectorAddedHandler: (
     src: IOPort,
     dest: IOPort,
     connector: WorkflowConnector
   ) => Promise<void>;
+  private _connectorDeletedHandler: (connectorId: string) => Promise<void>
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -120,8 +122,10 @@ export class WorkflowCanvas {
     this._nodeEditRequestedHandler = null;
     this._nodeSelectedHandler = null;
     this._nodePlacedHandler = null;
+    this._nodeDeletedHandler = null;
     this._nodeIOChangedHandler = null;
     this._connectorAddedHandler = null;
+    this._connectorDeletedHandler = null;
   }
 
   private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -513,6 +517,7 @@ export class WorkflowCanvas {
   }
 
   private _removeNode(node: WorkflowNode): void {
+    this._nodeDeletedHandler(node.nodeId);
     this._removeAllConnectionsForNode(node);
     this._nodes.delete(node);
     node.remove();
@@ -691,6 +696,7 @@ export class WorkflowCanvas {
     node.inputPorts.forEach((inputPort) => {
       if (this._connectionsDestForSrc.has(inputPort)) {
         const [src, connector] = this._connectionsDestForSrc.get(inputPort);
+        this._connectorDeletedHandler(connector.connectorId);
 
         // Remove the output->input binding
         this._connectionsSrcToDest.get(src).delete(inputPort);
@@ -710,6 +716,8 @@ export class WorkflowCanvas {
       if (this._connectionsSrcToDest.has(outputPort)) {
         const connections = this._connectionsSrcToDest.get(outputPort);
         Array.from(connections.entries()).forEach(([dest, connector]) => {
+          this._connectorDeletedHandler(connector.connectorId);
+
           // Remove the input<-output binding
           this._connectionsDestForSrc.delete(dest);
 
@@ -731,6 +739,8 @@ export class WorkflowCanvas {
       ([src, connections]) => {
         Array.from(connections.entries()).every(([dest, conn]) => {
           if (conn === connector) {
+            this._connectorDeletedHandler(connector.connectorId);
+
             // Remove both output->input and input<-output binding
             this._connectionsSrcToDest.get(src).delete(dest);
             this._connectionsDestForSrc.delete(dest);
@@ -954,6 +964,10 @@ export class WorkflowCanvas {
     this._nodePlacedHandler = fn;
   }
 
+  set nodeDeletedHandler(fn: (nodeId: string) => Promise<void>) {
+    this._nodeDeletedHandler = fn;
+  }
+
   set nodeEditRequestedHandler(fn: (node: WorkflowNode) => void) {
     this._nodeEditRequestedHandler = fn;
   }
@@ -974,5 +988,9 @@ export class WorkflowCanvas {
     ) => Promise<void>
   ) {
     this._connectorAddedHandler = fn;
+  }
+
+  set connectorDeletedHandler(fn: (conenctorId: string) => Promise<void>) {
+    this._connectorDeletedHandler = fn;
   }
 }
