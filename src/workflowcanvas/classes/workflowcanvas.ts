@@ -696,8 +696,6 @@ export class WorkflowCanvas {
     node.inputPorts.forEach((inputPort) => {
       if (this._connectionsDestForSrc.has(inputPort)) {
         const [src, connector] = this._connectionsDestForSrc.get(inputPort);
-        this._connectorDeletedHandler(connector.connectorId);
-
         // Remove the output->input binding
         this._connectionsSrcToDest.get(src).delete(inputPort);
 
@@ -716,8 +714,6 @@ export class WorkflowCanvas {
       if (this._connectionsSrcToDest.has(outputPort)) {
         const connections = this._connectionsSrcToDest.get(outputPort);
         Array.from(connections.entries()).forEach(([dest, connector]) => {
-          this._connectorDeletedHandler(connector.connectorId);
-
           // Remove the input<-output binding
           this._connectionsDestForSrc.delete(dest);
 
