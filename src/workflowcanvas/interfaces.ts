@@ -56,7 +56,7 @@ export interface WorkflowNodeAttributes extends Object {
   };
   docker_img_name: string;
   docker_img_tag: string;
-  input: Array<string>
+  input: Array<string>;
   notebook_url: string;
-  output: Array<string>
+  output: Array<string>;
 }

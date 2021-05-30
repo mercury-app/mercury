@@ -45,7 +45,7 @@ export class WorkflowCanvas {
     dest: IOPort,
     connector: WorkflowConnector
   ) => Promise<void>;
-  private _connectorDeletedHandler: (connectorId: string) => Promise<void>
+  private _connectorDeletedHandler: (connectorId: string) => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;

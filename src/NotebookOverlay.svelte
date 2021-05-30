@@ -37,8 +37,8 @@
     "allow-orientation-lock",
     "allow-presentation",
     "allow-storage-access-by-user-activation",
-    "allow-top-navigation-by-user-activation"
-  ]
+    "allow-top-navigation-by-user-activation",
+  ];
   const iframeSandboxValue = iframeSandboxPermissions.join(" ");
 
   let inputPanelVisible = false;
@@ -52,7 +52,7 @@
 
   <iframe
     id="notebook-iframe"
-    sandbox= "{iframeSandboxValue}"
+    sandbox="{iframeSandboxValue}"
     src="{notebookUrl}"
     title="Jupyter notebook"
   >

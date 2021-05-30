@@ -20,7 +20,7 @@
   <div id="workflow-bar" style="{workflowBarStyle}">
     <button
       style="{buttonStyle}"
-      on:click="{() => dispatch('newNodeRequested')}" 
+      on:click="{() => dispatch('newNodeRequested')}"
     >
       <img src="/icons/plus.svg" alt="Add node icon" class="icon" />
     </button>
@@ -30,7 +30,7 @@
 <style>
   #workflow-bar-container {
     height: 100%;
-    border-right: 1px solid var(--main-border-color); 
+    border-right: 1px solid var(--main-border-color);
   }
 
   #workflow-bar {
