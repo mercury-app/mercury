@@ -62,7 +62,8 @@
   }
 
   const updateValidConnections = async () => {
-    const workflowUrl: string = "http://localhost:3000/v1/caduceus/workflows";
+    const workflowUrl: string =
+      "http://localhost:3000/v1/orchestration/workflows";
     try {
       const workflowResponse = await axios.get(workflowUrl, {
         headers: {
@@ -85,7 +86,7 @@
     canvas.svgNode.style.display = "block";
 
     canvas.nodePlacedHandler = async (node: WorkflowNode) => {
-      const url: string = "http://localhost:3000/v1/caduceus/nodes";
+      const url: string = "http://localhost:3000/v1/orchestration/nodes";
       try {
         const response = await axios.post(
           url,
@@ -112,7 +113,7 @@
     };
 
     canvas.nodeDeletedHandler = async (nodeId: string) => {
-      const url: string = `http://localhost:3000/v1/caduceus/nodes/${nodeId}`;
+      const url: string = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
       try {
         await axios.delete(url, {
           headers: {
@@ -150,7 +151,7 @@
       });
 
       const nodeId = node.nodeId;
-      const url: string = `http://localhost:3000/v1/caduceus/nodes/${nodeId}`;
+      const url: string = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
       try {
         const response = await axios.patch(
           url,
@@ -187,7 +188,7 @@
       const destNodeId = dest.workflowNode.nodeId;
       const inputName = dest.name;
 
-      const url = "http://localhost:3000/v1/caduceus/connectors";
+      const url = "http://localhost:3000/v1/orchestration/connectors";
       try {
         const response = await axios.post(
           url,
@@ -221,7 +222,7 @@
     };
 
     canvas.connectorDeletedHandler = async (connectorId: string) => {
-      const url = `http://localhost:3000/v1/caduceus/connectors/${connectorId}`;
+      const url = `http://localhost:3000/v1/orchestration/connectors/${connectorId}`;
       try {
         await axios.delete(url, {
           headers: {
