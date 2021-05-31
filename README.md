@@ -1,4 +1,4 @@
-# Mercuri - a workflow based application builder
+# Mercury - a workflow based application builder
 
 ## Setting up for development
 
@@ -11,10 +11,12 @@ After that, setup is really easy:
 1. Clone this repo.
 2. Install all required npm packages using: `npm install`
 3. Start a local (auto-updating) development server with: `npm run dev`.
-4. Run the `jupyter-caduceus` docker image (build instructions [here](https://github.com/mercuri-bio/caduceus#build-the-caduceus-docker-image-for-mercuri))
-  ```
-  docker run --user root -p 8888:8888 jupyter-caduceus:latest
-  ```
+4. Run the `jupyter-mercury` docker image (build instructions [here](https://github.com/mercury-app/orchestration#build-the-docker-image-for-mercury))
+
+   ```sh
+   docker run --user root -p 8888:8888 jupyter-mercury:latest
+   ```
+
 5. Visit [localhost:5000](http://localhost:5000) in your browser.
 6. Edit code to see changes on the fly.
 
