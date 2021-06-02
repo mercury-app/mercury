@@ -3,11 +3,11 @@ import { G, Path, Svg } from "@svgdotjs/svg.js";
 import { strokeWidth, cellSize, clamp } from "../constants.js";
 import { Point } from "../interfaces.js";
 
-
 export class WorkflowConnector extends G {
   private _mainPath: Path;
   private _overlayPath: Path;
   private _isSelected: boolean;
+  private _connectorId: string;
 
   constructor(svg: Svg, start: Point) {
     super();
@@ -27,6 +27,7 @@ export class WorkflowConnector extends G {
     this.add(this._overlayPath);
 
     this._isSelected = false;
+    this._connectorId = "";
 
     svg.add(this);
   }
@@ -214,5 +215,13 @@ export class WorkflowConnector extends G {
 
   get isSelected(): boolean {
     return this._isSelected;
+  }
+
+  get connectorId(): string {
+    return this._connectorId;
+  }
+
+  set connectorId(connectorId: string) {
+    this._connectorId = connectorId;
   }
 }

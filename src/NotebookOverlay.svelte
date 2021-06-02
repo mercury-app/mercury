@@ -5,6 +5,7 @@
   export let visible = false;
   export let inputs: Array<string> = [];
   export let outputs: Array<string> = [];
+  export let notebookUrl = "about:blank";
 
   const hiddenClass = "hidden";
   const visibleClass = "visible";
@@ -27,6 +28,19 @@
     }
   }
 
+  const iframeSandboxPermissions = [
+    "allow-scripts",
+    "allow-forms",
+    "allow-pointer-lock",
+    "allow-same-origin",
+    "allow-downloads",
+    "allow-orientation-lock",
+    "allow-presentation",
+    "allow-storage-access-by-user-activation",
+    "allow-top-navigation-by-user-activation",
+  ];
+  const iframeSandboxValue = iframeSandboxPermissions.join(" ");
+
   let inputPanelVisible = false;
   let outputPanelVisible = false;
 </script>
@@ -37,7 +51,9 @@
   </button>
 
   <iframe
-    src="http://localhost:8888/notebooks/work/scripts/Untitled.ipynb"
+    id="notebook-iframe"
+    sandbox="{iframeSandboxValue}"
+    src="{notebookUrl}"
     title="Jupyter notebook"
   >
   </iframe>

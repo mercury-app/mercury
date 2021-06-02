@@ -6,7 +6,7 @@ import {
   strokeWidth,
   cellSize,
 } from "../constants.js";
-import { Point } from "../interfaces.js";
+import { Point, WorkflowNodeAttributes } from "../interfaces.js";
 import { IOPortType } from "../types.js";
 
 import { IOPort } from "./ioport.js";
@@ -21,6 +21,9 @@ export class WorkflowNode extends G {
   private _isSelected: boolean;
   private _inputPorts: Array<IOPort>;
   private _outputPorts: Array<IOPort>;
+  private _nodeId: string;
+  private _attributes: WorkflowNodeAttributes | null;
+  private _ready: boolean;
 
   constructor(svg: Svg, position: Point) {
     super();
@@ -53,7 +56,7 @@ export class WorkflowNode extends G {
       .foreignObject(this._innerRect.width(), cellSize)
       .move(titleOffset, 0);
     this._titleElement = document.createElement("p");
-    this._titleElement.textContent = "Untitled";
+    this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
     this._titleElement.style.maxWidth = `${
       this._innerRect.width() - titleOffset * 2
@@ -72,9 +75,13 @@ export class WorkflowNode extends G {
 
     this._isSelected = false;
 
-    // array containing type ioport
     this._inputPorts = new Array<IOPort>();
     this._outputPorts = new Array<IOPort>();
+
+    this._nodeId = "";
+    this._attributes = null;
+
+    this._ready = false;
   }
 
   public select(): void {
@@ -207,5 +214,44 @@ export class WorkflowNode extends G {
 
   get outputPorts(): Array<IOPort> {
     return this._outputPorts;
+  }
+
+  get title(): string {
+    return this._titleElement.textContent;
+  }
+
+  set title(title: string) {
+    this._titleElement.textContent = title;
+  }
+
+  get nodeId(): string {
+    const nodeId: string = this._nodeId;
+    return nodeId;
+  }
+
+  set nodeId(nodeId: string) {
+    this._nodeId = nodeId;
+  }
+
+  get attributes(): WorkflowNodeAttributes {
+    return this._attributes;
+  }
+
+  set attributes(nodeAttributes: WorkflowNodeAttributes) {
+    this._attributes = nodeAttributes;
+  }
+
+  get ready(): boolean {
+    return this._ready;
+  }
+
+  set ready(ready: boolean) {
+    const notReadyTitle = "Preparing…";
+    if (ready && this.title === notReadyTitle) {
+      this.title = "Untitled";
+    } else if (!ready) {
+      this.title = notReadyTitle;
+    }
+    this._ready = ready;
   }
 }

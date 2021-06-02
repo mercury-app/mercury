@@ -7,7 +7,6 @@ export interface Point {
 }
 
 export interface AnimatedElement {
-  // method
   animate: (args: {
     duration?: number;
     delay?: number;
@@ -27,7 +26,6 @@ export interface DragHandler {
   el: AnimatedElement;
 }
 
-// what is event here
 export interface SvgDragEvent extends Event {
   detail: {
     handler: DragHandler;
@@ -36,8 +34,29 @@ export interface SvgDragEvent extends Event {
   };
 }
 
-// what is mouseevent?
 export interface SvgMouseMoveEvent extends MouseEvent {
   layerX: number;
   layerY: number;
+}
+
+export interface WorkflowNodeAttributes extends Object {
+  container_id: string;
+  container_state: {
+    Dead: boolean;
+    Error: string;
+    ExitCode: number;
+    FinishedAt: string;
+    OOMKilled: boolean;
+    Paused: boolean;
+    Pid: number;
+    Restarting: boolean;
+    Running: boolean;
+    StartedAt: string;
+    Status: string;
+  };
+  docker_img_name: string;
+  docker_img_tag: string;
+  input: Array<string>;
+  notebook_url: string;
+  output: Array<string>;
 }

@@ -24,6 +24,7 @@ export class WorkflowCanvas {
   private _placementMarker: Rect;
   private _nodes: Set<WorkflowNode>;
   private _selectedNode: WorkflowNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _nodeSelectionMenu: any;
   private _moveAnimationDuration: number;
   private _connectionInProgress: boolean;
@@ -33,11 +34,18 @@ export class WorkflowCanvas {
   private _selectedConnectors: Set<WorkflowConnector>;
   private _connectionsSrcToDest: Map<IOPort, Map<IOPort, WorkflowConnector>>;
   private _connectionsDestForSrc: Map<IOPort, [IOPort, WorkflowConnector]>;
-  private _nodeEditHandler: () => void;
-  private _nodeSelectionHandler: (
-    inputs: Array<string>,
-    outputs: Array<string>
-  ) => void;
+  private _validSrcToDestMap: Map<string, Set<string>>;
+  private _nodeEditRequestedHandler: (node: WorkflowNode) => void;
+  private _nodeSelectedHandler: (node: WorkflowNode) => void;
+  private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
+  private _nodeDeletedHandler: (nodeId: string) => Promise<void>;
+  private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
+  private _connectorAddedHandler: (
+    src: IOPort,
+    dest: IOPort,
+    connector: WorkflowConnector
+  ) => Promise<void>;
+  private _connectorDeletedHandler: (connectorId: string) => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -109,9 +117,15 @@ export class WorkflowCanvas {
     this._selectedConnectors = new Set();
     this._connectionsSrcToDest = new Map();
     this._connectionsDestForSrc = new Map();
+    this._validSrcToDestMap = new Map();
 
-    this._nodeEditHandler = null;
-    this._nodeSelectionHandler = null;
+    this._nodeEditRequestedHandler = null;
+    this._nodeSelectedHandler = null;
+    this._nodePlacedHandler = null;
+    this._nodeDeletedHandler = null;
+    this._nodeIOChangedHandler = null;
+    this._connectorAddedHandler = null;
+    this._connectorDeletedHandler = null;
   }
 
   private _handleKeyboardEvent(event: KeyboardEvent) {
@@ -167,7 +181,7 @@ export class WorkflowCanvas {
         .move(x, y);
     };
 
-    this._svg.node.onclick = (event) => {
+    this._svg.node.onclick = async (event) => {
       event.preventDefault();
       document.getElementById(this._divId).focus();
       if (this._inPlacementMode) {
@@ -179,6 +193,10 @@ export class WorkflowCanvas {
 
         this._exitPlacementMode();
         this._placementMarker.front();
+
+        node.ready = false;
+        await this._nodePlacedHandler(node);
+        node.ready = true;
       }
     };
   }
@@ -222,7 +240,8 @@ export class WorkflowCanvas {
     containerDiv.appendChild(editButton);
     editButton.onclick = (event: MouseEvent) => {
       event.preventDefault();
-      if (this._nodeEditHandler !== null) this._nodeEditHandler();
+      if (this._nodeEditRequestedHandler !== null)
+        this._nodeEditRequestedHandler(this._selectedNode);
     };
 
     const deleteButton = createButton("trash");
@@ -239,7 +258,7 @@ export class WorkflowCanvas {
     const menuItemHeight = 28;
     const spacing = 6;
 
-    // The '- 2' below is to adjus for the 1px borders on the container.
+    // The '- 2' below is to adjust for the 1px borders on the container.
     containerDiv.style.height = `${menuItemHeight + 2 * spacing - 2}px`;
 
     // @ts-ignore
@@ -362,7 +381,7 @@ export class WorkflowCanvas {
 
     node.mainBody.click((event: MouseEvent) => {
       document.getElementById(this._divId).focus();
-      if (this._connectionInProgress) {
+      if (this._connectionInProgress || !node.ready) {
         return;
       }
       event.preventDefault();
@@ -371,7 +390,7 @@ export class WorkflowCanvas {
       this._showNodeSelectionMenu(node);
     });
     node.mainBody.mouseover((event: MouseEvent) => {
-      if (node.isSelected || this._connectionInProgress) {
+      if (node.isSelected || this._connectionInProgress || !node.ready) {
         return;
       }
       event.preventDefault();
@@ -382,7 +401,7 @@ export class WorkflowCanvas {
       }
     });
     node.mainBody.mouseout((event: MouseEvent) => {
-      if (node.isSelected || this._connectionInProgress) {
+      if (node.isSelected || this._connectionInProgress || !node.ready) {
         return;
       }
       event.preventDefault();
@@ -396,13 +415,18 @@ export class WorkflowCanvas {
       }
     });
     node.mainBody.dblclick((event: MouseEvent) => {
+      if (!node.ready) {
+        return;
+      }
+
       event.preventDefault();
-      if (this._nodeEditHandler !== null) this._nodeEditHandler();
+      if (this._nodeEditRequestedHandler !== null)
+        this._nodeEditRequestedHandler(this._selectedNode);
     });
 
     node.draggable();
     node.on("dragmove.namespace", (event: SvgDragEvent) => {
-      if (this._connectionInProgress) {
+      if (this._connectionInProgress || !node.ready) {
         event.preventDefault();
         return;
       }
@@ -436,6 +460,7 @@ export class WorkflowCanvas {
     inputPort.mouseover((event: MouseEvent) => {
       if (
         !this._connectionInProgress ||
+        !this._connectionValid(this._unconnectedSource, inputPort) ||
         this._connectionsDestForSrc.has(inputPort)
       ) {
         return;
@@ -456,6 +481,7 @@ export class WorkflowCanvas {
       document.getElementById(this._divId).focus();
       if (
         !this._connectionInProgress ||
+        !this._connectionValid(this._unconnectedSource, inputPort) ||
         this._connectionsDestForSrc.has(inputPort)
       ) {
         return;
@@ -491,6 +517,7 @@ export class WorkflowCanvas {
   }
 
   private _removeNode(node: WorkflowNode): void {
+    this._nodeDeletedHandler(node.nodeId);
     this._removeAllConnectionsForNode(node);
     this._nodes.delete(node);
     node.remove();
@@ -538,14 +565,8 @@ export class WorkflowCanvas {
     }
     this._selectedNode = node;
 
-    if (this._selectedNode !== null && this._nodeSelectionHandler !== null) {
-      const inputNames = this._selectedNode.inputPorts.map((port: IOPort) => {
-        return port.name;
-      });
-      const outputNames = this._selectedNode.outputPorts.map((port: IOPort) => {
-        return port.name;
-      });
-      this._nodeSelectionHandler(inputNames, outputNames);
+    if (this._selectedNode !== null && this._nodeSelectedHandler !== null) {
+      this._nodeSelectedHandler(this._selectedNode);
     }
   }
 
@@ -584,6 +605,12 @@ export class WorkflowCanvas {
       input,
       this._unfinishedConnector
     );
+    this._connectorAddedHandler(
+      this._unconnectedSource,
+      input,
+      this._unfinishedConnector
+    );
+
     this._unconnectedSource = null;
     this._unfinishedConnector = null;
     this._possibleDestination = null;
@@ -669,7 +696,6 @@ export class WorkflowCanvas {
     node.inputPorts.forEach((inputPort) => {
       if (this._connectionsDestForSrc.has(inputPort)) {
         const [src, connector] = this._connectionsDestForSrc.get(inputPort);
-
         // Remove the output->input binding
         this._connectionsSrcToDest.get(src).delete(inputPort);
 
@@ -709,6 +735,8 @@ export class WorkflowCanvas {
       ([src, connections]) => {
         Array.from(connections.entries()).every(([dest, conn]) => {
           if (conn === connector) {
+            this._connectorDeletedHandler(connector.connectorId);
+
             // Remove both output->input and input<-output binding
             this._connectionsSrcToDest.get(src).delete(dest);
             this._connectionsDestForSrc.delete(dest);
@@ -851,6 +879,18 @@ export class WorkflowCanvas {
     return false;
   }
 
+  private _connectionValid(src: IOPort, dest: IOPort): boolean {
+    const srcId = src.workflowNode.nodeId;
+    const destId = dest.workflowNode.nodeId;
+    if (this._validSrcToDestMap.has(srcId)) {
+      const validDestinations = this._validSrcToDestMap.get(srcId);
+      if (validDestinations.has(destId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private _cancelCurrentConnection() {
     this._connectionInProgress = false;
 
@@ -874,6 +914,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -881,6 +922,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -888,6 +930,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -895,6 +938,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode);
     }
   }
 
@@ -906,13 +950,43 @@ export class WorkflowCanvas {
     return this._svg.node;
   }
 
-  set nodeEditHandler(fn: () => void) {
-    this._nodeEditHandler = fn;
+  set validSrcToDestMap(connections: Map<string, Array<string>>) {
+    this._validSrcToDestMap = new Map(
+      Array.from(connections, ([k, v]) => [k, new Set(v)])
+    );
   }
 
-  set nodeSelectHandler(
-    fn: (inputs: Array<string>, outputs: Array<string>) => void
+  set nodePlacedHandler(fn: (node: WorkflowNode) => Promise<void>) {
+    this._nodePlacedHandler = fn;
+  }
+
+  set nodeDeletedHandler(fn: (nodeId: string) => Promise<void>) {
+    this._nodeDeletedHandler = fn;
+  }
+
+  set nodeEditRequestedHandler(fn: (node: WorkflowNode) => void) {
+    this._nodeEditRequestedHandler = fn;
+  }
+
+  set nodeSelectedHandler(fn: (node: WorkflowNode) => void) {
+    this._nodeSelectedHandler = fn;
+  }
+
+  set nodeIOChangedHandler(fn: (node: WorkflowNode) => Promise<void>) {
+    this._nodeIOChangedHandler = fn;
+  }
+
+  set connectorAddedHandler(
+    fn: (
+      src: IOPort,
+      dest: IOPort,
+      connector: WorkflowConnector
+    ) => Promise<void>
   ) {
-    this._nodeSelectionHandler = fn;
+    this._connectorAddedHandler = fn;
+  }
+
+  set connectorDeletedHandler(fn: (conenctorId: string) => Promise<void>) {
+    this._connectorDeletedHandler = fn;
   }
 }
