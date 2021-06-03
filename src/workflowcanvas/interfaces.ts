@@ -40,23 +40,20 @@ export interface SvgMouseMoveEvent extends MouseEvent {
 }
 
 export interface WorkflowNodeAttributes extends Object {
-  container_id: string;
-  container_state: {
-    Dead: boolean;
-    Error: string;
-    ExitCode: number;
-    FinishedAt: string;
-    OOMKilled: boolean;
-    Paused: boolean;
-    Pid: number;
-    Restarting: boolean;
-    Running: boolean;
-    StartedAt: string;
-    Status: string;
+  container_attributes: {
+    id: string;
+    state: string;
   };
-  docker_img_name: string;
-  docker_img_tag: string;
+  image_attributes: {
+    name: string;
+    state: string | null;
+    tag: string;
+  };
+  notebook_attributes :{
+    exit_code: number;
+    state: string | null;
+    url: string;
+  }
   input: Array<string>;
-  notebook_url: string;
   output: Array<string>;
 }

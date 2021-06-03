@@ -128,7 +128,7 @@
     };
 
     canvas.nodeEditRequestedHandler = (node: WorkflowNode) => {
-      const notebookUrl = node.attributes.notebook_url;
+      const notebookUrl = node.attributes.notebook_attributes.url;
       dispatch("nodeEditRequested", { notebookUrl });
     };
 
