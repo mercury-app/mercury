@@ -264,8 +264,8 @@ export class WorkflowCanvas {
     // @ts-ignore
     const nodeSelectionMenu = this._svg.foreignObject(
       menuItemWidth * containerDiv.childElementCount +
-        spacing * (containerDiv.childElementCount + 1) -
-        1,
+      spacing * (containerDiv.childElementCount + 1) -
+      1,
       menuItemHeight + spacing * 2
     );
 
@@ -696,6 +696,7 @@ export class WorkflowCanvas {
     node.inputPorts.forEach((inputPort) => {
       if (this._connectionsDestForSrc.has(inputPort)) {
         const [src, connector] = this._connectionsDestForSrc.get(inputPort);
+        src.workflowNode.updateAttributes();
         // Remove the output->input binding
         this._connectionsSrcToDest.get(src).delete(inputPort);
 
@@ -714,6 +715,7 @@ export class WorkflowCanvas {
       if (this._connectionsSrcToDest.has(outputPort)) {
         const connections = this._connectionsSrcToDest.get(outputPort);
         Array.from(connections.entries()).forEach(([dest, connector]) => {
+          dest.workflowNode.updateAttributes();
           // Remove the input<-output binding
           this._connectionsDestForSrc.delete(dest);
 
@@ -733,6 +735,7 @@ export class WorkflowCanvas {
   private _removeConnector(connector: WorkflowConnector): void {
     Array.from(this._connectionsSrcToDest.entries()).forEach(
       ([src, connections]) => {
+        src.workflowNode.updateAttributes();
         Array.from(connections.entries()).every(([dest, conn]) => {
           if (conn === connector) {
             this._connectorDeletedHandler(connector.connectorId);
@@ -744,6 +747,8 @@ export class WorkflowCanvas {
             if (this._selectedConnectors.has(connector)) {
               this._selectedConnectors.delete(connector);
             }
+
+            dest.workflowNode.updateAttributes();
 
             src.unhighlight();
             src.unselect();
@@ -914,7 +919,10 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertInputsMessageMercuryExtension());
+      this._nodeIOChangedHandler(this._selectedNode).then(
+        () => this._selectedNode.ExecuteInputCodeInNotebookKernel()).then(
+          () => this._selectedNode.InsertInputsMessageMercuryExtension()
+        );
     }
   }
 
@@ -922,7 +930,10 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertOutputsMessageMercuryExtension());
+      this._nodeIOChangedHandler(this._selectedNode).then(
+        () => this._selectedNode.WriteOutputsFromNotebookKernel()).then(
+          () => this._selectedNode.InsertOutputsMessageMercuryExtension()
+        );
     }
   }
 
@@ -930,7 +941,10 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertInputsMessageMercuryExtension());
+      this._nodeIOChangedHandler(this._selectedNode).then(
+        () => this._selectedNode.ExecuteInputCodeInNotebookKernel()).then(
+          () => this._selectedNode.InsertInputsMessageMercuryExtension()
+        );
     }
   }
 
@@ -938,7 +952,20 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertOutputsMessageMercuryExtension());
+      this._nodeIOChangedHandler(this._selectedNode).then(
+        () => this._selectedNode.WriteOutputsFromNotebookKernel()).then(
+          () => this._selectedNode.InsertOutputsMessageMercuryExtension()
+        );
+    }
+  }
+
+  public async executeOnNotebookOverlayClosed(): Promise<void> {
+    if (this._selectedNode !== null) {
+
+      if (this._selectedNode.attributes.output)
+        this._selectedNode.WriteOutputsFromNotebookKernel().then(
+          () => this._selectedNode.InsertOutputsMessageMercuryExtension()
+        );
     }
   }
 
