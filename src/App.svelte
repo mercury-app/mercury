@@ -8,6 +8,7 @@
     addOutputOnSelectedNode,
     removeInputOnSelectedNode,
     removeOutputOnSelectedNode,
+    executeOnNotebookOverlayClosed,
   } from "./workflowcanvas/WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
@@ -67,6 +68,7 @@
           removeInputOnSelectedNode(event.detail.inputName)}"
         on:outputRemoved="{(event) =>
           removeOutputOnSelectedNode(event.detail.outputName)}"
+        on:NotebookPanelRemoved="{() => executeOnNotebookOverlayClosed()}"
       />
     </div>
   </div>

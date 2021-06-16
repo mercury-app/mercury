@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   import InputPanel from "./InputPanel.svelte";
   import OutputPanel from "./OutputPanel.svelte";
 
@@ -43,10 +45,20 @@
 
   let inputPanelVisible = false;
   let outputPanelVisible = false;
+
+  const dispatch = createEventDispatcher();
+
+  const dispatchNotebookPanelRemovedEvent = () => {
+    visible = false;
+    dispatch("NotebookPanelRemoved");
+  };
 </script>
 
 <div id="notebook-panel" class="{hiddenClass}" tabindex="-1">
-  <button id="notebook-back-button" on:click="{() => (visible = false)}">
+  <button
+    id="notebook-back-button"
+    on:click="{dispatchNotebookPanelRemovedEvent}"
+  >
     <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
   </button>
 
