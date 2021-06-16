@@ -140,6 +140,7 @@
       dispatch("nodeEditRequested", { notebookUrl });
 
       (async () => {
+        await node.updateAttributes();
         console.log("inside check cirrrrrrr");
         if (lastMessageFrameOrigin == null) return;
         const timeStarted: any = new Date();
@@ -150,7 +151,6 @@
           ) {
             console.log("correct origin detected");
             console.log("resolved after", DateNow - timeStarted, "ms");
-            console.log(node.attributes.notebook_attributes.io.output_code);
             if (node.attributes.input) {
               console.log("starting input injection");
               console.log(
@@ -260,8 +260,8 @@
         console.log(`error received from POST ${url}: ${exception}`);
       }
 
-      src.workflowNode.updateAttributes();
-      dest.workflowNode.updateAttributes();
+      // on creation of a connector, the source node tries to write its outputs to the json
+      src.workflowNode.WriteOutputsFromNotebookKernel();
       updateValidConnections();
     };
 
