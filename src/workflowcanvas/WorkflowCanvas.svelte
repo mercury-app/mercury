@@ -7,6 +7,8 @@
   // All node events are handled by the global canvas instance.
   let canvas: WorkflowCanvas = null;
 
+  let lastMessageFrameOrigin: string = null;
+
   export const placeNewNode = () => {
     if (canvas !== null) {
       canvas.placeNewNode();
@@ -130,6 +132,41 @@
     canvas.nodeEditRequestedHandler = (node: WorkflowNode) => {
       const notebookUrl = node.attributes.notebook_attributes.url;
       dispatch("nodeEditRequested", { notebookUrl });
+      console.log("notebookurl");
+      console.log(notebookUrl);
+      console.log("iframe loaded");
+      console.log(lastMessageFrameOrigin);
+
+      // run only if there is atleast one output and input
+      console.log("output code snippet");
+      (async () => {
+        console.log("inside check cirrrrrrr")
+        if (lastMessageFrameOrigin == null)
+          return
+        const timeStarted: any = new Date();
+        var interval = setInterval(() => {
+          let DateNow: any = new Date();
+          if (
+            notebookUrl.split("/")[2] === lastMessageFrameOrigin.split("/")[2]
+          ) {
+            console.log("correct origin detected");
+            console.log("resolved after", DateNow - timeStarted, "ms");
+            console.log(node.attributes.notebook_attributes.io.output_code);
+
+            if (node.attributes.input)
+              node.InsertInputsMessageMercuryExtension();
+            if (node.attributes.output)
+              node.InsertOutputsMessageMercuryExtension();
+            clearInterval(interval)
+          } else if (DateNow - timeStarted > 5000) {
+            console.log(
+              "Timed out waiting for notebook after ",
+              DateNow - timeStarted,
+              "ms"
+            );
+          }
+        }, 20);
+      })();
     };
 
     canvas.nodeSelectedHandler = (node: WorkflowNode) => {
@@ -218,6 +255,35 @@
       } catch (exception) {
         console.log(`error received from POST ${url}: ${exception}`);
       }
+
+      const srcNodeUrl =
+        "http://localhost:3000/v1/orchestration/nodes/" + srcNodeId;
+      try {
+        const srcNodeResponse = await axios.get(srcNodeUrl, {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        });
+        src.workflowNode.attributes = srcNodeResponse.data.data.attributes;
+      } catch (exception) {
+        console.log(`error received from GET ${srcNodeUrl}: ${exception}`);
+      }
+
+      const destNodeUrl =
+        "http://localhost:3000/v1/orchestration/nodes/" + destNodeId;
+      try {
+        const destNodeResponse = await axios.get(destNodeUrl, {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        });
+        dest.workflowNode.attributes = destNodeResponse.data.data.attributes;
+      } catch (exception) {
+        console.log(`error received from GET ${destNodeUrl}: ${exception}`);
+      }
+
       updateValidConnections();
     };
 
@@ -235,6 +301,11 @@
       }
       updateValidConnections();
     };
+  });
+
+  // listen to iframe message event
+  window.addEventListener("message", (event) => {
+    lastMessageFrameOrigin = event.origin;
   });
 </script>
 

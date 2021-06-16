@@ -58,9 +58,8 @@ export class WorkflowNode extends G {
     this._titleElement = document.createElement("p");
     this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
-    this._titleElement.style.maxWidth = `${
-      this._innerRect.width() - titleOffset * 2
-    }px`;
+    this._titleElement.style.maxWidth = `${this._innerRect.width() - titleOffset * 2
+      }px`;
     this._titleElement.style.fontSize = "14px";
     this._titleElement.style.lineHeight = `${cellSize}px`;
     this._titleElement.style.overflow = "hidden";
@@ -198,6 +197,38 @@ export class WorkflowNode extends G {
       this._innerRect.height(pos);
       this._outlineRect.height(pos);
     }
+  }
+
+  public InsertInputsMessageMercuryExtension(): void {
+    const message = {
+      "data":
+      {
+        "action": "add_input_cell",
+        "code": this._attributes.notebook_attributes.io.input_code
+      }
+    };
+    const frame = document.getElementById("notebook-iframe") as HTMLIFrameElement;
+    frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
+  }
+
+  public InsertOutputsMessageMercuryExtension(): void {
+    const message = {
+      "data":
+      {
+        "action": "add_output_cell",
+        "code": this._attributes.notebook_attributes.io.output_code
+      }
+    };
+    const frame = document.getElementById("notebook-iframe") as HTMLIFrameElement;
+    frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
+  }
+
+  public isIFrameContentLoaded(): boolean {
+    const frame = document.getElementById("notebook-iframe") as HTMLIFrameElement;
+    const frameDoc = frame.contentDocument || frame.contentWindow.document;
+    if (frameDoc.readyState  == 'complete')
+      return(true);
+    return(false);
   }
 
   get isSelected(): boolean {

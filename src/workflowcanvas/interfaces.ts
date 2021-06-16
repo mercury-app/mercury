@@ -39,6 +39,11 @@ export interface SvgMouseMoveEvent extends MouseEvent {
   layerY: number;
 }
 
+export interface NotebookIO {
+  input_code: string;
+  output_code: string;
+}
+
 export interface WorkflowNodeAttributes extends Object {
   container_attributes: {
     id: string;
@@ -53,6 +58,7 @@ export interface WorkflowNodeAttributes extends Object {
     exit_code: number;
     state: string | null;
     url: string;
+    io: NotebookIO
   }
   input: Array<string>;
   output: Array<string>;

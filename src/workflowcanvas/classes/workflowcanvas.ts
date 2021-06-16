@@ -914,7 +914,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertInputsMessageMercuryExtension());
     }
   }
 
@@ -922,7 +922,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertOutputsMessageMercuryExtension());
     }
   }
 
@@ -930,7 +930,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertInputsMessageMercuryExtension());
     }
   }
 
@@ -938,7 +938,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode);
+      this._nodeIOChangedHandler(this._selectedNode).then(() => this._selectedNode.InsertOutputsMessageMercuryExtension());
     }
   }
 
