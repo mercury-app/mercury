@@ -223,14 +223,6 @@ export class WorkflowNode extends G {
     frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
   }
 
-  public isIFrameContentLoaded(): boolean {
-    const frame = document.getElementById("notebook-iframe") as HTMLIFrameElement;
-    const frameDoc = frame.contentDocument || frame.contentWindow.document;
-    if (frameDoc.readyState  == 'complete')
-      return(true);
-    return(false);
-  }
-
   get isSelected(): boolean {
     return this._isSelected;
   }
