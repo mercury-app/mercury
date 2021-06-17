@@ -159,6 +159,7 @@
               );
               node.ExecuteInputCodeInNotebookKernel();
               node.InsertInputsMessageMercuryExtension();
+              node.InsertOutputsMessageMercuryExtension();
             }
             clearInterval(interval);
           } else if (DateNow - timeStarted > 5000) {
