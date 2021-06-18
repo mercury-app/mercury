@@ -266,7 +266,11 @@
       updateValidConnections();
     };
 
-    canvas.connectorDeletedHandler = async (connectorId: string) => {
+    canvas.connectorDeletedHandler = async (
+      src: IOPort,
+      dest: IOPort,
+      connectorId: string
+    ) => {
       const url = `http://localhost:3000/v1/orchestration/connectors/${connectorId}`;
       try {
         await axios.delete(url, {
@@ -278,6 +282,9 @@
       } catch (exception) {
         console.log(`error received from DELETE ${url}: ${exception}`);
       }
+
+      // write outputs from source into json when a new connector is added
+      src.workflowNode.WriteOutputsFromNotebookKernel();
       updateValidConnections();
     };
 

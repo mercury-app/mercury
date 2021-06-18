@@ -210,6 +210,7 @@ export class WorkflowNode extends G {
         },
       });
       this._attributes = response.data.data.attributes;
+      console.log("updated node attributes");
     } catch (exception) {
       console.log(`error received from GET ${url}: ${exception}`);
     }
