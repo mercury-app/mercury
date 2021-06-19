@@ -216,7 +216,7 @@ export class WorkflowNode extends G {
     }
   }
 
-  public InsertInputsMessageMercuryExtension(): void {
+  public insertInputsMessageMercuryExtension(): void {
     const message = {
       "data":
       {
@@ -228,7 +228,7 @@ export class WorkflowNode extends G {
     frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
   }
 
-  public InsertOutputsMessageMercuryExtension(): void {
+  public insertOutputsMessageMercuryExtension(): void {
     const message = {
       "data":
       {
@@ -240,7 +240,7 @@ export class WorkflowNode extends G {
     frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
   }
 
-  public async ExecuteInputCodeInNotebookKernel(): Promise<void> {
+  public async executeInputCodeInNotebookKernel(): Promise<void> {
     const url = `http://localhost:3000/v1/orchestration/nodes/${this._nodeId}/notebook`
     try {
       const response = await axios.patch(
@@ -271,7 +271,7 @@ export class WorkflowNode extends G {
     };
   }
 
-  public async WriteOutputsFromNotebookKernel(): Promise<void> {
+  public async writeOutputsFromNotebookKernel(): Promise<void> {
     const url = `http://localhost:3000/v1/orchestration/nodes/${this._nodeId}/notebook`
     try {
       const response = await axios.patch(

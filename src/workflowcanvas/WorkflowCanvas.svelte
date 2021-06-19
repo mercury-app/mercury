@@ -157,9 +157,9 @@
                 "code- ",
                 node.attributes.notebook_attributes.io.input_code
               );
-              node.ExecuteInputCodeInNotebookKernel();
-              node.InsertInputsMessageMercuryExtension();
-              node.InsertOutputsMessageMercuryExtension();
+              node.executeInputCodeInNotebookKernel();
+              node.insertInputsMessageMercuryExtension();
+              node.insertOutputsMessageMercuryExtension();
             }
             clearInterval(interval);
           } else if (DateNow - timeStarted > 5000) {
@@ -262,7 +262,7 @@
       }
 
       // on creation of a connector, the source node tries to write its outputs to the json
-      src.workflowNode.WriteOutputsFromNotebookKernel();
+      src.workflowNode.writeOutputsFromNotebookKernel();
       updateValidConnections();
     };
 
@@ -283,8 +283,8 @@
         console.log(`error received from DELETE ${url}: ${exception}`);
       }
 
-      // write outputs from source into json when a new connector is added
-      src.workflowNode.WriteOutputsFromNotebookKernel();
+      // write outputs from source into json when a connector is deleted
+      src.workflowNode.writeOutputsFromNotebookKernel();
       updateValidConnections();
     };
 

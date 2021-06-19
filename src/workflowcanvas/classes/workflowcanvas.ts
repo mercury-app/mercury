@@ -917,8 +917,8 @@ export class WorkflowCanvas {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.ExecuteInputCodeInNotebookKernel()).then(
-          () => this._selectedNode.InsertInputsMessageMercuryExtension()
+        () => this._selectedNode.executeInputCodeInNotebookKernel()).then(
+          () => this._selectedNode.insertInputsMessageMercuryExtension()
         );
     }
   }
@@ -928,8 +928,8 @@ export class WorkflowCanvas {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.WriteOutputsFromNotebookKernel()).then(
-          () => this._selectedNode.InsertOutputsMessageMercuryExtension()
+        () => this._selectedNode.writeOutputsFromNotebookKernel()).then(
+          () => this._selectedNode.insertOutputsMessageMercuryExtension()
         );
     }
   }
@@ -939,8 +939,8 @@ export class WorkflowCanvas {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.ExecuteInputCodeInNotebookKernel()).then(
-          () => this._selectedNode.InsertInputsMessageMercuryExtension()
+        () => this._selectedNode.executeInputCodeInNotebookKernel()).then(
+          () => this._selectedNode.insertInputsMessageMercuryExtension()
         );
     }
   }
@@ -950,8 +950,8 @@ export class WorkflowCanvas {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.WriteOutputsFromNotebookKernel()).then(
-          () => this._selectedNode.InsertOutputsMessageMercuryExtension()
+        () => this._selectedNode.writeOutputsFromNotebookKernel()).then(
+          () => this._selectedNode.insertOutputsMessageMercuryExtension()
         );
     }
   }
@@ -960,8 +960,8 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
 
       if (this._selectedNode.attributes.output)
-        this._selectedNode.WriteOutputsFromNotebookKernel().then(
-          () => this._selectedNode.InsertOutputsMessageMercuryExtension()
+        this._selectedNode.writeOutputsFromNotebookKernel().then(
+          () => this._selectedNode.insertOutputsMessageMercuryExtension()
         );
     }
   }
