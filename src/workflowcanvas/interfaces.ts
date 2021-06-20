@@ -91,5 +91,4 @@ export interface IOPortJson extends Object {
   node_id: string;
   port_type: IOPortType;
   port_name: string;
-  y_position: number;
 }

@@ -998,6 +998,57 @@ export class WorkflowCanvas {
     };
   }
 
+  public fromJson(workflowJson: WorkflowCanvasJson): void {
+    // Clear existing nodes (and associated connections)
+    this._nodes.forEach((node) => this._removeNode(node));
+
+    // Add new nodes and any ports defined on it
+    const nodeInputPortsMap = new Map<string, Map<string, IOPort>>();
+    const nodeOutputPortsMap = new Map<string, Map<string, IOPort>>();
+    workflowJson.nodes.forEach(async (nodeJson) => {
+      const node = await this._addNode(nodeJson.position);
+      node.nodeId = nodeJson.id;
+      node.title = nodeJson.title;
+      node.attributes = nodeJson.attributes;
+
+      nodeJson.input_ports.forEach((ioPortJson) => {
+        const portName = ioPortJson.port_name;
+        const inputPort = node.addInput(portName);
+        if (nodeInputPortsMap.has(node.nodeId)) {
+          nodeInputPortsMap.get(node.nodeId).set(portName, inputPort);
+        } else {
+          nodeInputPortsMap.set(node.nodeId, new Map([[portName, inputPort]]));
+        }
+      });
+      nodeJson.output_ports.forEach((ioPortJson) => {
+        const portName = ioPortJson.port_name;
+        const outputPort = node.addOutput(portName);
+        if (nodeOutputPortsMap.has(node.nodeId)) {
+          nodeOutputPortsMap.get(node.nodeId).set(portName, outputPort);
+        } else {
+          nodeOutputPortsMap.set(
+            node.nodeId,
+            new Map([[portName, outputPort]])
+          );
+        }
+      });
+    });
+
+    // Add the connectors between nodes
+    workflowJson.connectors.forEach((connectorJson) => {
+      const srcNodeId = connectorJson.src.node_id;
+      const srcPortName = connectorJson.src.port_name;
+      const srcPort = nodeInputPortsMap.get(srcNodeId).get(srcPortName);
+
+      const destNodeId = connectorJson.dest.node_id;
+      const destPortName = connectorJson.dest.port_name;
+      const destPort = nodeOutputPortsMap.get(destNodeId).get(destPortName);
+
+      this._beginConnection(srcPort);
+      this._endConnection(destPort);
+    });
+  }
+
   get container(): HTMLElement {
     return this._svg.node.parentElement.parentElement;
   }

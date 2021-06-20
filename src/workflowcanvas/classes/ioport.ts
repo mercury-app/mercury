@@ -125,7 +125,6 @@ export class IOPort extends G {
       node_id: this._workflowNode.nodeId,
       port_type: this._portType,
       port_name: this._name,
-      y_position: this.y() - this._workflowNode.mainBody.y(),
     };
   }
 
