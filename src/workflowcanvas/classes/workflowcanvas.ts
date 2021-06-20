@@ -8,7 +8,12 @@ import {
   portWidth,
   clamp,
 } from "../constants.js";
-import { Point, SvgDragEvent, SvgMouseMoveEvent } from "../interfaces.js";
+import {
+  Point,
+  SvgDragEvent,
+  SvgMouseMoveEvent,
+  WorkflowCanvasJson,
+} from "../interfaces.js";
 import { Delta } from "../types.js";
 
 import { IOPort } from "./ioport.js";
@@ -632,7 +637,7 @@ export class WorkflowCanvas {
     dest: IOPort,
     connector: WorkflowConnector
   ): void {
-    this._redrawConnection(src, dest, connector);
+    connector.setSrcAndDest(src, dest);
     connector.click((event: MouseEvent) => {
       document.getElementById(this._divId).focus();
       if (this._connectionInProgress) {
@@ -678,29 +683,13 @@ export class WorkflowCanvas {
     this._selectConnector(connector);
   }
 
-  private _redrawConnection(
-    src: IOPort,
-    dest: IOPort,
-    connector: WorkflowConnector
-  ): void {
-    const p1 = src.coordinate;
-    const p2 = dest.coordinate;
-    const startTopOffset = src.topOffset;
-    const startBottomOffset = src.bottomOffset;
-    const endTopOffset = dest.topOffset;
-    const endBottomOffset = dest.bottomOffset;
-    connector.redraw(
-      p1,
-      p2,
-      startTopOffset,
-      startBottomOffset,
-      endTopOffset,
-      endBottomOffset
-    );
-  }
-
   private _redrawAllConnectionsForNode(node: WorkflowNode): void {
-    this._forAllNodeConnections(node, this._redrawConnection.bind(this));
+    this._forAllNodeConnections(
+      node,
+      (src: IOPort, dest: IOPort, connector: WorkflowConnector) => {
+        connector.setSrcAndDest(src, dest);
+      }
+    );
   }
 
   private _removeAllConnectionsForNode(node: WorkflowNode): void {
@@ -996,6 +985,17 @@ export class WorkflowCanvas {
       await this._stopWorkflow();
     // eslint-disable-next-line no-console
     else console.warn("no nodes exist in this workflow");
+  }
+  
+  public toJson(): WorkflowCanvasJson {
+    const nodes = Array.from(this._nodes);
+    const connectors = Array.from(this._connectionsDestForSrc.values()).map(
+      (entry) => entry[1]
+    );
+    return {
+      nodes: nodes.map((node) => node.toJson()),
+      connectors: connectors.map((connector) => connector.toJson()),
+    };
   }
 
   get container(): HTMLElement {

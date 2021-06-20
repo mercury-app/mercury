@@ -137,6 +137,7 @@
     } catch (exception) {
       console.log(`error received from GET ${workflowUrl}: ${exception}`);
     }
+    console.log(canvas.toJson());
   };
 
   onMount(() => {

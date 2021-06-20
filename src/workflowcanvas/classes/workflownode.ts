@@ -7,7 +7,11 @@ import {
   strokeWidth,
   cellSize,
 } from "../constants.js";
-import { Point, WorkflowNodeAttributes } from "../interfaces.js";
+import {
+  Point,
+  WorkflowNodeAttributes,
+  WorkflowNodeJson,
+} from "../interfaces.js";
 import { IOPortType } from "../types.js";
 
 import { IOPort } from "./ioport.js";
@@ -277,6 +281,17 @@ export class WorkflowNode extends G {
       message,
       this._attributes.notebook_attributes.url
     );
+  }
+
+  public toJson(): WorkflowNodeJson {
+    return {
+      position: { x: this.x(), y: this.y() },
+      input_ports: this._inputPorts.map((port) => port.toJson()),
+      output_ports: this._outputPorts.map((port) => port.toJson()),
+      title: this.title,
+      id: this._nodeId,
+      attributes: this._attributes,
+    };
   }
 
   get isSelected(): boolean {
