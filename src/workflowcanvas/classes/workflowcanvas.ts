@@ -38,7 +38,7 @@ export class WorkflowCanvas {
   private _validSrcToDestMap: Map<string, Set<string>>;
   private _nodeEditRequestedHandler: (node: WorkflowNode) => void;
   private _nodeSelectedHandler: (node: WorkflowNode) => void;
-  private _nodePlacedHandler: (node: WorkflowNode) => Promise<void>;
+  private _nodeAddedHandler: (node: WorkflowNode) => Promise<void>;
   private _nodeDeletedHandler: (nodeId: string) => Promise<void>;
   private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
   private _connectorAddedHandler: (
@@ -128,7 +128,7 @@ export class WorkflowCanvas {
 
     this._nodeEditRequestedHandler = null;
     this._nodeSelectedHandler = null;
-    this._nodePlacedHandler = null;
+    this._nodeAddedHandler = null;
     this._nodeDeletedHandler = null;
     this._nodeIOChangedHandler = null;
     this._connectorAddedHandler = null;
@@ -192,18 +192,12 @@ export class WorkflowCanvas {
       event.preventDefault();
       document.getElementById(this._divId).focus();
       if (this._inPlacementMode) {
-        const node = this._addNode({
+        this._addNode({
           x: this._placementMarker.x(),
           y: this._placementMarker.y(),
         });
-        this._nodes.add(node);
-
         this._exitPlacementMode();
         this._placementMarker.front();
-
-        node.ready = false;
-        await this._nodePlacedHandler(node);
-        node.ready = true;
       }
     };
   }
@@ -383,7 +377,7 @@ export class WorkflowCanvas {
     });
   }
 
-  private _addNode(position: Point): WorkflowNode {
+  private async _addNode(position: Point): Promise<WorkflowNode> {
     const node = new WorkflowNode(this._svg, position);
 
     node.mainBody.click((event: MouseEvent) => {
@@ -459,10 +453,16 @@ export class WorkflowCanvas {
       }
     });
 
+    this._nodes.add(node);
+
+    node.ready = false;
+    await this._nodeAddedHandler(node);
+    node.ready = true;
+
     return node;
   }
 
-  private _addInput(node: WorkflowNode, name: string) {
+  private _addInput(node: WorkflowNode, name: string): IOPort {
     const inputPort = node.addInput(name);
     inputPort.mouseover((event: MouseEvent) => {
       if (
@@ -496,9 +496,11 @@ export class WorkflowCanvas {
       event.preventDefault();
       this._endConnection(inputPort);
     });
+
+    return inputPort;
   }
 
-  private _addOutput(node: WorkflowNode, name: string) {
+  private _addOutput(node: WorkflowNode, name: string): IOPort {
     const outputPort = node.addOutput(name);
     outputPort.mouseover((event: MouseEvent) => {
       if (this._connectionInProgress) {
@@ -521,6 +523,8 @@ export class WorkflowCanvas {
       }
       this._beginConnection(outputPort);
     });
+
+    return outputPort;
   }
 
   private _removeNode(node: WorkflowNode): void {
@@ -1008,8 +1012,8 @@ export class WorkflowCanvas {
     );
   }
 
-  set nodePlacedHandler(fn: (node: WorkflowNode) => Promise<void>) {
-    this._nodePlacedHandler = fn;
+  set nodeAddedHandler(fn: (node: WorkflowNode) => Promise<void>) {
+    this._nodeAddedHandler = fn;
   }
 
   set nodeDeletedHandler(fn: (nodeId: string) => Promise<void>) {

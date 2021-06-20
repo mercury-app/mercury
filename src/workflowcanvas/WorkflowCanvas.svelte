@@ -143,7 +143,7 @@
     canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
 
-    canvas.nodePlacedHandler = async (node: WorkflowNode) => {
+    canvas.nodeAddedHandler = async (node: WorkflowNode) => {
       const url: string = "http://localhost:3000/v1/orchestration/nodes";
       try {
         const response = await axios.post(
