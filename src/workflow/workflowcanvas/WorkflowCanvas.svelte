@@ -72,6 +72,7 @@
 
   const dispatch = createEventDispatcher();
 
+  export let projectId: string;
   export let numColumns: number = 20;
   export let numRows: number = 20;
   export let colWidth: number = 50;
@@ -143,6 +144,7 @@
   onMount(() => {
     canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
+    console.log(projectId);
 
     canvas.nodeAddedHandler = async (node: WorkflowNode) => {
       const url: string = "http://localhost:3000/v1/orchestration/nodes";

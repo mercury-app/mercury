@@ -12,6 +12,11 @@
     runWorkflowRequestedHandler,
     stopWorkflowRequestedHandler,
   } from "./workflowcanvas/WorkflowCanvas.svelte";
+
+  export let params = {
+    project_id: "",
+  };
+
   const workflowBarWidth = 48;
 
   const numCanvasColumns = 24;
@@ -65,6 +70,7 @@
     <WorkflowCanvas
       bind:runningWorkflow
       bind:notebookUrl
+      projectId="{params.project_id}"
       numColumns="{numCanvasColumns}"
       numRows="{numCanvasRows}"
       colWidth="{canvasColWidth}"
