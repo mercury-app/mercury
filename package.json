@@ -31,7 +31,6 @@
     "rollup-plugin-terser": "^7.0.0",
     "svelte": "^3.38.2",
     "svelte-check": "^1.6.0",
-    "svelte-loading-spinners": "^0.1.6",
     "svelte-preprocess": "^4.7.3",
     "tslib": "^2.2.0",
     "typescript": "^3.9.9"
@@ -40,6 +39,7 @@
     "@svgdotjs/svg.draggable.js": "^3.0.2",
     "@svgdotjs/svg.js": "^3.0.16",
     "axios": "^0.21.1",
-    "sirv-cli": "^1.0.12"
+    "sirv-cli": "^1.0.12",
+    "svelte-spa-router": "^3.2.0"
   }
 }
