@@ -200,7 +200,17 @@ export class WorkflowCanvas {
         this._addNode({
           x: this._placementMarker.x(),
           y: this._placementMarker.y(),
-        });
+        })
+          .then(async (node) => {
+            node.ready = false;
+            await this._nodeAddedHandler(node);
+            node.ready = true;
+            return node;
+          })
+          .catch((err) => {
+            throw err;
+          });
+
         this._exitPlacementMode();
         this._placementMarker.front();
       }
@@ -459,10 +469,6 @@ export class WorkflowCanvas {
     });
 
     this._nodes.add(node);
-
-    node.ready = false;
-    await this._nodeAddedHandler(node);
-    node.ready = true;
 
     return node;
   }
@@ -998,55 +1004,75 @@ export class WorkflowCanvas {
     };
   }
 
-  public fromJson(workflowJson: WorkflowCanvasJson): void {
+  public fromJson(canvasJson: WorkflowCanvasJson): void {
+    if (Object.keys(canvasJson).length === 0) {
+      return;
+    }
+
     // Clear existing nodes (and associated connections)
     this._nodes.forEach((node) => this._removeNode(node));
 
     // Add new nodes and any ports defined on it
     const nodeInputPortsMap = new Map<string, Map<string, IOPort>>();
     const nodeOutputPortsMap = new Map<string, Map<string, IOPort>>();
-    workflowJson.nodes.forEach(async (nodeJson) => {
-      const node = await this._addNode(nodeJson.position);
-      node.nodeId = nodeJson.id;
-      node.title = nodeJson.title;
-      node.attributes = nodeJson.attributes;
+    const nodePromises = canvasJson.nodes.map(async (nodeJson) => {
+      return this._addNode(nodeJson.position)
+        .then((node) => {
+          node.nodeId = nodeJson.id;
+          node.title = nodeJson.title;
+          node.attributes = nodeJson.attributes;
+          node.ready = true;
 
-      nodeJson.input_ports.forEach((ioPortJson) => {
-        const portName = ioPortJson.port_name;
-        const inputPort = node.addInput(portName);
-        if (nodeInputPortsMap.has(node.nodeId)) {
-          nodeInputPortsMap.get(node.nodeId).set(portName, inputPort);
-        } else {
-          nodeInputPortsMap.set(node.nodeId, new Map([[portName, inputPort]]));
-        }
-      });
-      nodeJson.output_ports.forEach((ioPortJson) => {
-        const portName = ioPortJson.port_name;
-        const outputPort = node.addOutput(portName);
-        if (nodeOutputPortsMap.has(node.nodeId)) {
-          nodeOutputPortsMap.get(node.nodeId).set(portName, outputPort);
-        } else {
-          nodeOutputPortsMap.set(
-            node.nodeId,
-            new Map([[portName, outputPort]])
-          );
-        }
-      });
+          nodeJson.input_ports.forEach((ioPortJson) => {
+            const portName = ioPortJson.port_name;
+            const inputPort = node.addInput(portName);
+            if (nodeInputPortsMap.has(node.nodeId)) {
+              nodeInputPortsMap.get(node.nodeId).set(portName, inputPort);
+            } else {
+              nodeInputPortsMap.set(
+                node.nodeId,
+                new Map([[portName, inputPort]])
+              );
+            }
+          });
+          nodeJson.output_ports.forEach((ioPortJson) => {
+            const portName = ioPortJson.port_name;
+            const outputPort = node.addOutput(portName);
+            if (nodeOutputPortsMap.has(node.nodeId)) {
+              nodeOutputPortsMap.get(node.nodeId).set(portName, outputPort);
+            } else {
+              nodeOutputPortsMap.set(
+                node.nodeId,
+                new Map([[portName, outputPort]])
+              );
+            }
+          });
+          return node;
+        })
+        .catch((err) => {
+          throw err;
+        });
     });
 
     // Add the connectors between nodes
-    workflowJson.connectors.forEach((connectorJson) => {
-      const srcNodeId = connectorJson.src.node_id;
-      const srcPortName = connectorJson.src.port_name;
-      const srcPort = nodeInputPortsMap.get(srcNodeId).get(srcPortName);
+    Promise.all(nodePromises)
+      .then(() => {
+        return canvasJson.connectors.forEach((connectorJson) => {
+          const srcNodeId = connectorJson.src.node_id;
+          const srcPortName = connectorJson.src.port_name;
+          const srcPort = nodeOutputPortsMap.get(srcNodeId).get(srcPortName);
 
-      const destNodeId = connectorJson.dest.node_id;
-      const destPortName = connectorJson.dest.port_name;
-      const destPort = nodeOutputPortsMap.get(destNodeId).get(destPortName);
+          const destNodeId = connectorJson.dest.node_id;
+          const destPortName = connectorJson.dest.port_name;
+          const destPort = nodeInputPortsMap.get(destNodeId).get(destPortName);
 
-      this._beginConnection(srcPort);
-      this._endConnection(destPort);
-    });
+          this._beginConnection(srcPort);
+          this._endConnection(destPort);
+        });
+      })
+      .catch((err) => {
+        throw err;
+      });
   }
 
   get container(): HTMLElement {

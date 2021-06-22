@@ -68,7 +68,8 @@
 
   import { WorkflowNode } from "./classes/workflownode";
   import { IOPort } from "./classes/ioport";
-  import { WorkflowConnector } from "./classes/workflowconnector.js";
+  import { WorkflowConnector } from "./classes/workflowconnector";
+  import type { WorkflowCanvasJson } from "./interfaces";
 
   const dispatch = createEventDispatcher();
 
@@ -120,8 +121,7 @@
   };
 
   const updateValidConnections = async () => {
-    const workflowUrl: string =
-      "http://localhost:3000/v1/orchestration/workflows";
+    const workflowUrl = "http://localhost:3000/v1/orchestration/workflows";
     try {
       const workflowResponse = await axios.get(workflowUrl, {
         headers: {
@@ -134,20 +134,63 @@
       canvas.validSrcToDestMap = new Map(
         Object.entries(workflowData.attributes.valid_connections)
       );
-      console.log(workflowData);
     } catch (exception) {
       console.log(`error received from GET ${workflowUrl}: ${exception}`);
     }
-    console.log(canvas.toJson());
   };
 
-  onMount(() => {
+  const fetchCanvasJson = async (
+    projectId: string
+  ): Promise<WorkflowCanvasJson> => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+        },
+      });
+      return response.data.data.attributes.canvas;
+    } catch (exception) {
+      console.log(`error received from GET ${url}: ${exception}`);
+    }
+
+    return null;
+  };
+
+  const saveCanvasJson = async (
+    canvasJson: WorkflowCanvasJson
+  ): Promise<void> => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      await axios.patch(
+        url,
+        {
+          data: {
+            type: "projects",
+            id: projectId,
+            attributes: {
+              canvas: canvasJson,
+            },
+          },
+        },
+        {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        }
+      );
+    } catch (exception) {
+      console.log(`error received from PATCH ${url}: ${exception}`);
+    }
+  };
+
+  onMount(async () => {
     canvas = new WorkflowCanvas("workflow-canvas", canvasWidth, canvasHeight);
     canvas.svgNode.style.display = "block";
-    console.log(projectId);
 
     canvas.nodeAddedHandler = async (node: WorkflowNode) => {
-      const url: string = "http://localhost:3000/v1/orchestration/nodes";
+      const url = "http://localhost:3000/v1/orchestration/nodes";
       try {
         const response = await axios.post(
           url,
@@ -206,10 +249,11 @@
 
       node.ws = websocket;
       updateValidConnections();
+      saveCanvasJson(canvas.toJson());
     };
 
     canvas.nodeDeletedHandler = async (nodeId: string) => {
-      const url: string = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
+      const url = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
       try {
         await axios.delete(url, {
           headers: {
@@ -221,6 +265,7 @@
         console.log(`error received from DELETE ${url}: ${exception}`);
       }
       updateValidConnections();
+      saveCanvasJson(canvas.toJson());
     };
 
     canvas.nodeEditRequestedHandler = (node: WorkflowNode) => {
@@ -253,7 +298,7 @@
       });
 
       const nodeId = node.nodeId;
-      const url: string = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
+      const url = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
       try {
         const response = await axios.patch(
           url,
@@ -278,6 +323,7 @@
       } catch (exception) {
         console.log(`error received from PATCH ${url}: ${exception}`);
       }
+      saveCanvasJson(canvas.toJson());
     };
 
     canvas.connectorAddedHandler = async (
@@ -330,6 +376,7 @@
         .then(() => console.log("Correct Iframe detected"))
         .then(() => src.workflowNode.insertOutputsMessageMercuryExtension());
       updateValidConnections();
+      saveCanvasJson(canvas.toJson());
     };
 
     canvas.connectorDeletedHandler = async (
@@ -348,6 +395,8 @@
       } catch (exception) {
         console.log(`error received from DELETE ${url}: ${exception}`);
       }
+      updateValidConnections();
+      saveCanvasJson(canvas.toJson());
 
       // write outputs from source into json when a connector is deleted
       await src.workflowNode.updateAttributes();
@@ -423,6 +472,9 @@
         }
       }
     });
+
+    // Load any previously saved state for this project
+    canvas.fromJson(await fetchCanvasJson(projectId));
   });
 </script>
 
