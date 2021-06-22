@@ -7,8 +7,8 @@
 
   const routes = {
     "/": ProjectsInterface,
-
-    "/:project_id/workflow_builder": WorkflowBuilder,
+    "/projects": ProjectsInterface,
+    "/projects/:project_id/workflow_builder": WorkflowBuilder,
 
     // Catch any other paths
     "*": NotFound,
