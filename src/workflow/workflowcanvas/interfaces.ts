@@ -71,6 +71,12 @@ export interface WorkflowNodeAttributes extends Object {
 export interface WorkflowCanvasJson extends Object {
   nodes: Array<WorkflowNodeJson>;
   connectors: Array<WorkflowConnectorJson>;
+  window: {
+    scroll_position: {
+      left: number;
+      top: number;
+    };
+  };
 }
 
 export interface WorkflowNodeJson extends Object {

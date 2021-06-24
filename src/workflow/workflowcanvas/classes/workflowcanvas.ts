@@ -1006,6 +1006,12 @@ export class WorkflowCanvas {
     return {
       nodes: nodes.map((node) => node.toJson()),
       connectors: connectors.map((connector) => connector.toJson()),
+      window: {
+        scroll_position: {
+          left: this.container.scrollLeft,
+          top: this.container.scrollTop,
+        },
+      },
     };
   }
 
@@ -1083,6 +1089,12 @@ export class WorkflowCanvas {
       .catch((err) => {
         throw err;
       });
+
+    this.container.scrollTo({
+      left: canvasJson.window.scroll_position.left,
+      top: canvasJson.window.scroll_position.top,
+      behavior: "smooth",
+    });
   }
 
   get container(): HTMLElement {
