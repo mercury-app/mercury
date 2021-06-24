@@ -1052,6 +1052,11 @@ export class WorkflowCanvas {
               );
             }
           });
+
+          // Have to do this since ports being added after node creation have an
+          // effect on the node's overall position.
+          node.move(nodeJson.position.x, nodeJson.position.y);
+
           return node;
         })
         .catch((err) => {
