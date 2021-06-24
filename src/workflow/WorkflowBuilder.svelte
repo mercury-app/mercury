@@ -109,8 +109,11 @@
 <style>
   #workflow-builder-main {
     height: 100%;
+    height: calc(
+      100% - var(--common-toolbar-width) - var(--common-border-width)
+    );
     display: grid;
-    grid-template-columns: 48px auto;
+    grid-template-columns: var(--common-toolbar-width) auto;
     grid-template-areas: "workflow-bar-container workflow-canvas-container";
     gap: 0;
   }

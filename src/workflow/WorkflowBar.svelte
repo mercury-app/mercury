@@ -32,7 +32,7 @@
 <style>
   #workflow-bar-container {
     height: 100%;
-    border-right: 1px solid var(--main-border-color);
+    border-right: var(--common-border-width) solid var(--main-border-color);
   }
 
   #workflow-bar {

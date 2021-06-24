@@ -149,7 +149,7 @@
   #input-panel-container.hidden {
     transform: translateX(
       calc(
-        -1 * 100% + (var(--default-button-width) / 2) + var(--common-spacing) - 1px
+        -1 * 100% + (var(--default-button-width) / 2) + var(--common-spacing) - var(--common-border-width)
       )
     );
   }
@@ -172,7 +172,8 @@
   #output-panel-container.hidden {
     transform: translateX(
       calc(
-        100% - (var(--default-button-width) / 2) - var(--common-spacing) + 1px
+        100% - (var(--default-button-width) / 2) - var(--common-spacing) +
+          var(--common-border-width)
       )
     );
   }

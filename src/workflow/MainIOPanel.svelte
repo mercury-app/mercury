@@ -92,7 +92,7 @@
 
     margin: var(--common-spacing) 0;
 
-    border: 1px solid var(--main-border-color);
+    border: var(--common-border-width) solid var(--main-border-color);
     border-radius: var(--common-radius);
 
     background-color: #fff;
@@ -125,7 +125,7 @@
   }
 
   #io-param-list .io-param button:hover {
-    border: 1px solid var(--main-border-color);
+    border: var(--common-border-width) solid var(--main-border-color);
   }
 
   #io-param-list .io-param button:not(:disabled):active {

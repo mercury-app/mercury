@@ -35,7 +35,7 @@ input, button, select, textarea {
   padding: 0.4em;
   margin: 0 0 0.5em 0;
   box-sizing: border-box;
-  border: 1px solid #ccc;
+  border: var(--common-border-width) solid #ccc;
   border-radius: var(--common-radius);
 }
 
@@ -74,8 +74,10 @@ button .icon {
 
 :root {
   --main-border-color: lightgray;
+  --common-border-width: 1px;
   --common-radius: 3px;
   --common-spacing: 6px;
+  --common-toolbar-width: 48px;
   --default-button-width: 36px;
   --default-button-height: 36px;
 }
