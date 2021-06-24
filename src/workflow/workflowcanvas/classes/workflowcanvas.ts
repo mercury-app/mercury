@@ -46,6 +46,7 @@ export class WorkflowCanvas {
   private _nodeAddedHandler: (node: WorkflowNode) => Promise<void>;
   private _nodeDeletedHandler: (nodeId: string) => Promise<void>;
   private _nodeIOChangedHandler: (node: WorkflowNode) => Promise<void>;
+  private _nodeMovedHandler: (node: WorkflowNode) => Promise<void>;
   private _connectorAddedHandler: (
     src: IOPort,
     dest: IOPort,
@@ -136,6 +137,7 @@ export class WorkflowCanvas {
     this._nodeAddedHandler = null;
     this._nodeDeletedHandler = null;
     this._nodeIOChangedHandler = null;
+    this._nodeMovedHandler = null;
     this._connectorAddedHandler = null;
     this._connectorDeletedHandler = null;
   }
@@ -465,6 +467,9 @@ export class WorkflowCanvas {
       this._setNormalCursor();
       if (node.isSelected) {
         this._showNodeSelectionMenu(node);
+      }
+      if (this._nodeMovedHandler) {
+        this._nodeMovedHandler(node);
       }
     });
 
@@ -1107,6 +1112,10 @@ export class WorkflowCanvas {
 
   set nodeIOChangedHandler(fn: (node: WorkflowNode) => Promise<void>) {
     this._nodeIOChangedHandler = fn;
+  }
+
+  set nodeMovedHandler(fn: (node: WorkflowNode) => Promise<void>) {
+    this._nodeMovedHandler = fn;
   }
 
   set connectorAddedHandler(

@@ -1,6 +1,6 @@
 <script lang="ts">
   // Have to add this, otherwise throws warning in console
-  export let params = {};
+  export const params = {};
 </script>
 
 <div>

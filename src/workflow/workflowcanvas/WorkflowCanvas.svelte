@@ -326,6 +326,10 @@
       saveCanvasJson(canvas.toJson());
     };
 
+    canvas.nodeMovedHandler = async (_node: WorkflowNode) => {
+      saveCanvasJson(canvas.toJson());
+    };
+
     canvas.connectorAddedHandler = async (
       src: IOPort,
       dest: IOPort,
