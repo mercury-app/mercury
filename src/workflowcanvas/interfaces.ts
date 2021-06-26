@@ -54,9 +54,10 @@ export interface WorkflowNodeAttributes extends Object {
     state: string | null;
     tag: string;
   };
-  notebook_attributes :{
+  notebook_attributes: {
     exit_code: number;
     state: string | null;
+    kernel_state: string | null;
     url: string;
     io: NotebookIO
   }

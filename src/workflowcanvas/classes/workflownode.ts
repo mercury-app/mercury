@@ -1,5 +1,6 @@
 import { G, Line, Svg, Rect } from "@svgdotjs/svg.js";
 import axios from "axios";
+import { compute_slots } from "svelte/internal";
 
 import {
   mainBodyHeight,
@@ -25,6 +26,7 @@ export class WorkflowNode extends G {
   private _nodeId: string;
   private _attributes: WorkflowNodeAttributes | null;
   private _ready: boolean;
+  private _ws: WebSocket;
 
   constructor(svg: Svg, position: Point) {
     super();
@@ -82,6 +84,7 @@ export class WorkflowNode extends G {
     this._attributes = null;
 
     this._ready = false;
+    this._ws = null;
   }
 
   public select(): void {
@@ -350,9 +353,30 @@ export class WorkflowNode extends G {
     const notReadyTitle = "Preparing…";
     if (ready && this.title === notReadyTitle) {
       this.title = "Untitled";
+
+      this._ws = new WebSocket(`ws://localhost:3000/v1/orchestration/nodes/${this._nodeId}/ws`);
+
+      this._ws.onopen = event => {
+        console.log(`WebSocket opened for node`);
+      };
+
+      this._ws.onmessage = event => {
+        console.log(`Message received`);
+        console.log(event)
+        const message = JSON.parse(event.data);
+        console.log(message);
+        this._attributes = message.attributes;
+        this.title = "Untitled" + this._attributes.notebook_attributes.kernel_state;
+      };
+
+      this._ws.onclose = event => {
+        console.log("websocket closed for node")
+      };
     } else if (!ready) {
       this.title = notReadyTitle;
     }
     this._ready = ready;
+
+
   }
 }
