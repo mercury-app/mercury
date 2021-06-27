@@ -1,10 +1,14 @@
 <script lang="ts">
   import axios from "axios";
-  import { onMount } from "svelte";
+  import { onMount, getContext } from "svelte";
+  import { fade, scale } from "svelte/transition";
   import { push } from "svelte-spa-router";
+  import CommitMessageInput from "./modals/CommitMessageInput.svelte";
 
   export let projectId = "";
   let projectName = "Untitled";
+
+  const { open, close } = getContext("simple-modal");
 
   const fetchProjectName = async (projectId: string): Promise<string> => {
     const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
@@ -22,8 +26,59 @@
     return "";
   };
 
+  const sendCommitRequest = async (
+    projectId: string,
+    commitMessage: string
+  ): Promise<void> => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}/commits`;
+    try {
+      await axios.post(
+        url,
+        {
+          data: {
+            type: "commits",
+            attributes: {
+              message: commitMessage,
+            },
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/vnd.api+json",
+            Accept: "application/vnd.api+json",
+          },
+        }
+      );
+    } catch (exception) {
+      console.log(`error received from POST ${url}: ${exception}`);
+    }
+  };
+
   const openVersionControlInterface = async (projectId: string) => {
     push(`/projects/${projectId}/version_control`);
+  };
+
+  const commitChanges = (projectId: string): void => {
+    open(
+      CommitMessageInput,
+      {
+        cancelHandler: () => {
+          close();
+        },
+        commitHandler: (commitMessage: string) => {
+          sendCommitRequest(projectId, commitMessage);
+          close();
+        },
+      },
+      {
+        closeButton: false,
+        closeOnEsc: false,
+        closeOnOuterClick: false,
+        styleWindow: { "max-width": "max-content", "border-radius": "3px" },
+        transitionBg: fade,
+        transitionWindow: scale,
+      }
+    );
   };
 
   onMount(async () => (projectName = await fetchProjectName(projectId)));
@@ -46,7 +101,7 @@
     </button>
     <button
       class="header-bar-item header-bar-button"
-      on:click="{() => console.log('commit!')}"
+      on:click="{() => commitChanges(projectId)}"
     >
       <img
         src="/icons/git-commit.svg"

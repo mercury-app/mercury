@@ -1,6 +1,7 @@
 <script lang="ts">
   import Router from "svelte-spa-router";
 
+  import Modal from "svelte-simple-modal";
   import NotFound from "./misc/NotFound.svelte";
   import ProjectsInterface from "./workspace/ProjectsInterface.svelte";
   import WorkflowBuilder from "./workflow/WorkflowBuilder.svelte";
@@ -18,7 +19,9 @@
 </script>
 
 <main>
-  <Router routes="{routes}" />
+  <Modal>
+    <Router routes="{routes}" />
+  </Modal>
 </main>
 
 <style>

@@ -40,6 +40,7 @@
     "@svgdotjs/svg.js": "^3.0.16",
     "axios": "^0.21.1",
     "sirv-cli": "^1.0.12",
+    "svelte-simple-modal": "^0.10.4",
     "svelte-spa-router": "^3.2.0"
   }
 }
