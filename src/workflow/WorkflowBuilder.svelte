@@ -1,4 +1,5 @@
 <script lang="ts">
+  import HeaderBar from "../misc/HeaderBar.svelte";
   import NotebookOverlay from "./NotebookOverlay.svelte";
   import WorkflowActions from "./WorkflowActions.svelte";
   import WorkflowBar from "./WorkflowBar.svelte";
@@ -58,6 +59,7 @@
   let reloadIframe = false;
 </script>
 
+<HeaderBar projectId="{params.project_id}" />
 <div id="workflow-builder-main">
   <div class="container" id="workflow-bar-container">
     <WorkflowBar
