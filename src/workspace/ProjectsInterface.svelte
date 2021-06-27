@@ -58,6 +58,21 @@
     push(`/projects/${projectId}/workflow_builder`);
   };
 
+  const deleteProject = async (projectId: string) => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      await axios.delete(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+          "Content-Type": "application/vnd.api+json",
+        },
+      });
+    } catch (exception) {
+      console.log(`error received from DELETE ${url}: ${exception}`);
+    }
+    projects = await fetchAllProjects();
+  };
+
   let projects = [];
   onMount(async () => {
     projects = await fetchAllProjects();
@@ -68,9 +83,21 @@
   <button on:click="{createAndOpenProject}">New project</button>
   <div id="project-list">
     {#each projects as project}
-      <button on:click="{() => openProject(project.id)}">
-        {project.attributes.name}
-      </button>
+      <div class="project-list-item">
+        <button on:click="{() => openProject(project.id)}">
+          {project.attributes.name}
+        </button>
+        <button on:click="{() => deleteProject(project.id)}">
+          <img src="/icons/trash.svg" alt="Delete project" class="icon" />
+        </button>
+      </div>
     {/each}
   </div>
 </div>
+
+<style>
+  .project-list-item {
+    display: flex;
+    flex-direction: row;
+  }
+</style>
