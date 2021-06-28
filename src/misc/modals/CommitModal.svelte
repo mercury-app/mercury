@@ -6,7 +6,7 @@
 </script>
 
 <div>
-  <label for="commit">Please enter a commit message for your changes:</label>
+  <p id="commit-modal-title">Please enter a commit message for your changes:</p>
   <textarea
     id="commit-message"
     name="commit-message"
@@ -25,8 +25,9 @@
 </div>
 
 <style>
-  label {
+  #commit-modal-title {
     display: block;
+    font-weight: bold;
   }
 
   textarea {
@@ -37,6 +38,7 @@
     resize: vertical;
 
     font-family: monospace;
+    font-size: larger;
     line-height: 1.2;
 
     border-radius: var(--common-radius);
