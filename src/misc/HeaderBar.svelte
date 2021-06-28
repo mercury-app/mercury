@@ -4,6 +4,7 @@
   import { fade, scale } from "svelte/transition";
   import { push } from "svelte-spa-router";
   import CommitModal from "./modals/CommitModal.svelte";
+  import MessageModal from "./modals/MessageModal.svelte";
 
   export let projectId = "";
   let projectName = "Untitled";
@@ -24,6 +25,27 @@
     }
 
     return "";
+  };
+
+  const isProjectOnLatestCommit = async (
+    projectId: string
+  ): Promise<boolean> => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+        },
+      });
+      const projectAttributes = response.data.data.attributes;
+      return (
+        projectAttributes.current_commit === projectAttributes.latest_commit
+      );
+    } catch (exception) {
+      console.log(`error received from GET ${url}: ${exception}`);
+    }
+
+    return false;
   };
 
   const sendCommitRequest = async (
@@ -58,27 +80,63 @@
     push(`/projects/${projectId}/version_control`);
   };
 
-  const commitChanges = (projectId: string): void => {
-    open(
-      CommitModal,
-      {
-        cancelHandler: () => {
-          close();
+  const commitChanges = async (projectId: string): Promise<void> => {
+    const openCommitMessageModal = () => {
+      open(
+        CommitModal,
+        {
+          cancelHandler: () => {
+            close();
+          },
+          commitHandler: (commitMessage: string) => {
+            sendCommitRequest(projectId, commitMessage);
+            close();
+          },
         },
-        commitHandler: (commitMessage: string) => {
-          sendCommitRequest(projectId, commitMessage);
-          close();
+        {
+          closeButton: false,
+          closeOnOuterClick: false,
+          styleWindow: {
+            "max-width": "max-content",
+            "border-radius": "3px",
+          },
+          transitionBg: fade,
+          transitionWindow: scale,
+        }
+      );
+    };
+
+    if (await isProjectOnLatestCommit(projectId)) {
+      openCommitMessageModal();
+    } else {
+      open(
+        MessageModal,
+        {
+          messageTitle: "Attempting commit on an older version",
+          messageDetail:
+            "You are about to add a commit on top of a base commit that is " +
+            "not the latest for this project. All changes added from the " +
+            "base to the current latest will be lost once you add this " +
+            "commit. Do you still want to continue?",
+          rejectButtonText: "No",
+          acceptButtonText: "Yes",
+          rejectHandler: () => {
+            close();
+          },
+          acceptHandler: () => {
+            close();
+            openCommitMessageModal();
+          },
         },
-      },
-      {
-        closeButton: false,
-        closeOnEsc: false,
-        closeOnOuterClick: false,
-        styleWindow: { "max-width": "max-content", "border-radius": "3px" },
-        transitionBg: fade,
-        transitionWindow: scale,
-      }
-    );
+        {
+          closeButton: false,
+          closeOnOuterClick: false,
+          styleWindow: { "max-width": "max-content", "border-radius": "3px" },
+          transitionBg: fade,
+          transitionWindow: scale,
+        }
+      );
+    }
   };
 
   onMount(async () => (projectName = await fetchProjectName(projectId)));
