@@ -3,7 +3,7 @@
   import { onMount, getContext } from "svelte";
   import { fade, scale } from "svelte/transition";
   import { push } from "svelte-spa-router";
-  import CommitMessageInput from "./modals/CommitMessageInput.svelte";
+  import CommitModal from "./modals/CommitModal.svelte";
 
   export let projectId = "";
   let projectName = "Untitled";
@@ -60,7 +60,7 @@
 
   const commitChanges = (projectId: string): void => {
     open(
-      CommitMessageInput,
+      CommitModal,
       {
         cancelHandler: () => {
           close();
