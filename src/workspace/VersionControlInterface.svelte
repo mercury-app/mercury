@@ -1,6 +1,7 @@
 <script lang="ts">
   import axios from "axios";
   import { onMount } from "svelte";
+  import { set_attributes } from "svelte/internal";
 
   export let params = {
     project_id: "",
@@ -26,20 +27,84 @@
     return commits;
   };
 
+  const getCurrentRef = async (projectId: string): Promise<string> => {
+    let currentCommitRef = "";
+
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+        },
+      });
+      currentCommitRef = response.data.data.attributes.current_commit;
+    } catch (exception) {
+      console.log(`error received from GET ${url}: ${exception}`);
+    }
+
+    return currentCommitRef;
+  };
+
+  const checkoutRef = async (
+    projectId: string,
+    ref: string
+  ): Promise<string> => {
+    let checkedOutRef = await getCurrentRef(projectId);
+
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      const response = await axios.patch(
+        url,
+        {
+          data: {
+            type: "nodes",
+            id: projectId,
+            attributes: {
+              current_commit: ref,
+            },
+          },
+        },
+        {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        }
+      );
+      checkedOutRef = response.data.data.attributes.current_commit;
+    } catch (exception) {
+      console.log(`error received from PATCH ${url}: ${exception}`);
+    }
+
+    return checkedOutRef;
+  };
+
   let commits = [];
+  let currentCommitRef = "";
   onMount(async () => {
     commits = await fetchAllCommits(params.project_id);
+    currentCommitRef = await getCurrentRef(params.project_id);
   });
 </script>
 
 <div id="commit-list-container">
   <div id="commit-list">
     {#each commits as commit}
-      <div class="commit-list-item">
+      <div
+        class="commit-list-item"
+        class:highlighted="{commit.id === currentCommitRef}"
+      >
         <div class="commit-list-item-message">{commit.attributes.message}</div>
         <div class="commit-list-item-sha">{commit.id.slice(0, 7)}</div>
         <div>
-          <button>
+          <button
+            on:click="{async () => {
+              currentCommitRef = await checkoutRef(
+                params.project_id,
+                commit.id
+              );
+            }}"
+          >
             <img
               src="/icons/arrow-right.svg"
               alt="Switch to this commit in history"
@@ -72,6 +137,10 @@
   .commit-list-item {
     display: flex;
     flex-direction: row;
+  }
+
+  .commit-list-item.highlighted {
+    background-color: antiquewhite;
   }
 
   .commit-list-item-message {
