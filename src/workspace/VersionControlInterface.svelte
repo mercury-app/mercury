@@ -1,7 +1,7 @@
 <script lang="ts">
   import axios from "axios";
   import { onMount } from "svelte";
-  import { set_attributes } from "svelte/internal";
+  import { push } from "svelte-spa-router";
 
   export let params = {
     project_id: "",
@@ -72,6 +72,7 @@
         }
       );
       checkedOutRef = response.data.data.attributes.current_commit;
+      push(`/projects/${projectId}/workflow_builder`);
     } catch (exception) {
       console.log(`error received from PATCH ${url}: ${exception}`);
     }
