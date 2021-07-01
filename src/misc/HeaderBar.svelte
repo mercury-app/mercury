@@ -11,6 +11,10 @@
 
   const { open, close } = getContext("simple-modal");
 
+  const openProjectsInterface = async () => {
+    push(`/projects`);
+  };
+
   const fetchProjectName = async (projectId: string): Promise<string> => {
     const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
     try {
@@ -144,7 +148,21 @@
 
 <div id="header-bar-container">
   <div id="header-bar">
-    <button id="header-bar-project-button" class="header-bar-item">
+    <button
+      id="header-bar-back-button"
+      class="header-bar-item header-bar-button"
+      on:click="{openProjectsInterface}"
+    >
+      <img
+        src="/icons/chevron-left.svg"
+        alt="Go back to projects"
+        class="icon"
+      />
+    </button>
+    <button
+      id="header-bar-project-button"
+      class="header-bar-item header-bar-button"
+    >
       {projectName}
     </button>
     <button
@@ -183,17 +201,6 @@
     align-items: center;
 
     height: var(--common-toolbar-width);
-    padding-left: var(--common-spacing);
-  }
-
-  #header-bar-project-button {
-    width: 160px;
-    max-width: 160px;
-
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: start;
   }
 
   .header-bar-item {
@@ -204,5 +211,15 @@
   .header-bar-button {
     width: calc(var(--common-toolbar-width) - (var(--common-spacing) * 2));
     margin-left: var(--common-spacing);
+  }
+
+  #header-bar-project-button {
+    width: 160px;
+    max-width: 160px;
+
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: start;
   }
 </style>
