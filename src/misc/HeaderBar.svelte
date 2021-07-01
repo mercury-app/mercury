@@ -5,6 +5,7 @@
   import { push } from "svelte-spa-router";
   import CommitModal from "./modals/CommitModal.svelte";
   import MessageModal from "./modals/MessageModal.svelte";
+  import ButtonGroup from "./reusable/ButtonGroup.svelte";
 
   export let projectId = "";
   let projectName = "Untitled";
@@ -143,6 +144,19 @@
     }
   };
 
+  const vcsButtonAttributes = [
+    {
+      icon: "/icons/history.svg",
+      alt: "Show version control history icon",
+      handler: () => openVersionControlInterface(projectId),
+    },
+    {
+      icon: "/icons/git-commit.svg",
+      alt: "Commit changes to project icon",
+      handler: () => commitChanges(projectId),
+    },
+  ];
+
   onMount(async () => (projectName = await fetchProjectName(projectId)));
 </script>
 
@@ -165,26 +179,11 @@
     >
       {projectName}
     </button>
-    <button
-      class="header-bar-item header-bar-button"
-      on:click="{() => openVersionControlInterface(projectId)}"
-    >
-      <img
-        src="/icons/history.svg"
-        alt="Show version control history for project"
-        class="icon"
-      />
-    </button>
-    <button
-      class="header-bar-item header-bar-button"
-      on:click="{() => commitChanges(projectId)}"
-    >
-      <img
-        src="/icons/git-commit.svg"
-        alt="Commit changes to project"
-        class="icon"
-      />
-    </button>
+    <div class="header-bar-item">
+      <ButtonGroup buttonAttributes="{vcsButtonAttributes}" let:attributes>
+        <img src="{attributes.icon}" alt="{attributes.alt}" class="icon" />
+      </ButtonGroup>
+    </div>
   </div>
 </div>
 
@@ -205,17 +204,17 @@
 
   .header-bar-item {
     height: calc(var(--common-toolbar-width) - (var(--common-spacing) * 2));
-    padding: var(--common-spacing);
+    margin-left: var(--common-spacing);
   }
 
   .header-bar-button {
     width: calc(var(--common-toolbar-width) - (var(--common-spacing) * 2));
-    margin-left: var(--common-spacing);
   }
 
   #header-bar-project-button {
     width: 160px;
     max-width: 160px;
+    padding: var(--common-spacing);
 
     display: inline-block;
     overflow: hidden;
