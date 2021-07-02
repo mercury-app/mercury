@@ -351,32 +351,15 @@ export class WorkflowNode extends G {
 
   set ready(ready: boolean) {
     const notReadyTitle = "Preparing…";
-    if (ready && this.title === notReadyTitle) {
-      this.title = "Untitled";
-
-      this._ws = new WebSocket(`ws://localhost:3000/v1/orchestration/nodes/${this._nodeId}/ws`);
-
-      this._ws.onopen = event => {
-        console.log(`WebSocket opened for node`);
-      };
-
-      this._ws.onmessage = event => {
-        console.log(`Message received`);
-        console.log(event)
-        const message = JSON.parse(event.data);
-        console.log(message);
-        this._attributes = message.attributes;
-        this.title = "Untitled" + this._attributes.notebook_attributes.kernel_state;
-      };
-
-      this._ws.onclose = event => {
-        console.log("websocket closed for node")
-      };
+    if (ready && this.title === notReadyTitle && this.attributes.notebook_attributes.jupyter_server) {
+      this.title = "Untitled"
     } else if (!ready) {
       this.title = notReadyTitle;
     }
     this._ready = ready;
+  }
 
-
+  set ws(websocket: WebSocket) {
+    this._ws = websocket;
   }
 }

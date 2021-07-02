@@ -117,6 +117,30 @@
       } catch (exception) {
         console.log(`error received from POST ${url}: ${exception}`);
       }
+
+      const websocket = new WebSocket(
+        `ws://localhost:3000/v1/orchestration/nodes/${node.nodeId}/ws`
+      );
+
+      websocket.onopen = (event) => {
+        console.log(`WebSocket opened for node`);
+      };
+
+      websocket.onmessage = (event) => {
+        console.log(`Message received`);
+        console.log(event);
+        const message = JSON.parse(event.data);
+        console.log(message);
+        node.attributes = message.attributes;
+        node.title =
+          "Untitled" + ": " + node.attributes.notebook_attributes.kernel_state;
+      };
+
+      websocket.onclose = (event) => {
+        console.log("websocket closed for node");
+      };
+
+      node.ws = websocket;
       updateValidConnections();
     };
 

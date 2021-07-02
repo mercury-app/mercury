@@ -58,6 +58,7 @@ export interface WorkflowNodeAttributes extends Object {
     exit_code: number;
     state: string | null;
     kernel_state: string | null;
+    jupyter_server: boolean;
     url: string;
     io: NotebookIO
   }
