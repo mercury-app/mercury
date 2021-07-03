@@ -9,6 +9,7 @@
     removeInputOnSelectedNode,
     removeOutputOnSelectedNode,
     executeOnNotebookOverlayClosed,
+    runWorkflowRequestedHandler,
   } from "./workflowcanvas/WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
@@ -31,12 +32,22 @@
     notebookUrl = event.detail.notebookUrl;
     notebookOverlayVisible = true;
   };
+
+  const runWorkflowRequested = async (event: CustomEvent) => {
+    disableInputs = true;
+    await runWorkflowRequestedHandler();
+    console.log("workflow executed successfully");
+    disableInputs = false;
+  };
+
+  let disableInputs = false;
 </script>
 
 <main>
   <div id="workflow-builder-main">
     <div class="container" id="workflow-bar-container">
       <WorkflowBar
+        bind:disableInputs
         workflowBarWidth="{workflowBarWidth}"
         on:newNodeRequested="{placeNewNode}"
       />
@@ -52,7 +63,10 @@
       />
     </div>
     <div class="container" id="workflow-actions-container">
-      <WorkflowActions />
+      <WorkflowActions
+        bind:disableInputs
+        on:workflowRunRequested="{runWorkflowRequested}"
+      />
     </div>
     <div>
       <NotebookOverlay

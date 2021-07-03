@@ -14,8 +14,10 @@ import { Delta } from "../types.js";
 import { IOPort } from "./ioport.js";
 import { WorkflowNode } from "./workflownode.js";
 import { WorkflowConnector } from "./workflowconnector.js";
+import { select_option } from "svelte/internal";
 
 export class WorkflowCanvas {
+  private _workflowId: string;
   private _svg: Svg;
   private _divId: string;
   private _width: number;
@@ -46,6 +48,8 @@ export class WorkflowCanvas {
     connector: WorkflowConnector
   ) => Promise<void>;
   private _connectorDeletedHandler: (src: IOPort, dest: IOPort, connectorId: string) => Promise<void>;
+  private _runWorkflow: () => Promise<void>
+
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -966,6 +970,17 @@ export class WorkflowCanvas {
     }
   }
 
+  public toggleNodeSelectionMenuButtons(): void {
+    this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) { x.disabled = !x.disabled })
+  }
+
+  public async runWorkflowRequestedHandler(): Promise<void> {
+    if (this.workflowId !== null && this._nodes.size > 0)
+      await this._runWorkflow()
+    else
+      console.log("no nodes exist in this workflow")
+  }
+
   get container(): HTMLElement {
     return this._svg.node.parentElement.parentElement;
   }
@@ -1012,5 +1027,17 @@ export class WorkflowCanvas {
 
   set connectorDeletedHandler(fn: (src: IOPort, dest: IOPort, conenctorId: string) => Promise<void>) {
     this._connectorDeletedHandler = fn;
+  }
+
+  get workflowId() {
+    return this._workflowId;
+  }
+
+  set workflowId(id: string) {
+    this._workflowId = id;
+  }
+
+  set runWorkflow(fn: () => Promise<void>) {
+    this._runWorkflow = fn;
   }
 }
