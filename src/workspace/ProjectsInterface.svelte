@@ -4,6 +4,7 @@
   import { fade, scale } from "svelte/transition";
   import { push } from "svelte-spa-router";
   import MessageModal from "../misc/modals/MessageModal.svelte";
+  import TextInputModal from "../misc/modals/TextInputModal.svelte";
 
   const { open, close } = getContext("simple-modal");
 
@@ -28,34 +29,55 @@
   };
 
   const createAndOpenProject = async () => {
-    const projectName = window.prompt("Enter project name");
-
-    const url = "http://localhost:3000/v1/workspace/projects";
-    try {
-      const response = await axios.post(
-        url,
-        {
-          data: {
-            type: "projects",
-            attributes: {
-              name: projectName,
-            },
-          },
+    open(
+      TextInputModal,
+      {
+        inputTitle: "Please enter a name for the project",
+        inputDetail: "",
+        rejectButtonText: "Cancel",
+        acceptButtonText: "Create",
+        rejectHandler: () => {
+          close();
         },
-        {
-          headers: {
-            Accept: "application/vnd.api+json",
-            "Content-Type": "application/vnd.api+json",
-          },
-        }
-      );
-      if (response.status === 200) {
-        const projectId = response.data.data.id;
-        openProject(projectId);
+        acceptHandler: async (projectName: string) => {
+          close();
+
+          const url = "http://localhost:3000/v1/workspace/projects";
+          try {
+            const response = await axios.post(
+              url,
+              {
+                data: {
+                  type: "projects",
+                  attributes: {
+                    name: projectName,
+                  },
+                },
+              },
+              {
+                headers: {
+                  Accept: "application/vnd.api+json",
+                  "Content-Type": "application/vnd.api+json",
+                },
+              }
+            );
+            if (response.status === 200) {
+              const projectId = response.data.data.id;
+              openProject(projectId);
+            }
+          } catch (exception) {
+            console.log(`error received from POST ${url}: ${exception}`);
+          }
+        },
+      },
+      {
+        closeButton: false,
+        closeOnOuterClick: false,
+        styleWindow: { "max-width": "max-content", "border-radius": "3px" },
+        transitionBg: fade,
+        transitionWindow: scale,
       }
-    } catch (exception) {
-      console.log(`error received from POST ${url}: ${exception}`);
-    }
+    );
   };
 
   const openProject = async (projectId: string) => {
