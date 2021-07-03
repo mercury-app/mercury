@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
+  export let disableInputs;
+
   const buttonWidth = 36;
   const buttonHeight = 36;
   const buttonWidthStyle = `width: ${buttonWidth}px;`;
@@ -10,10 +14,16 @@
   const workflowActionsHeightStyle = `height: ${buttonHeight}px;`;
   const workflowActionsStyle =
     workflowActionsWidthStyle + workflowActionsHeightStyle;
+
+  const dispatch = createEventDispatcher();
 </script>
 
 <div id="workflow-actions" style="{workflowActionsStyle}">
-  <button style="{buttonStyle}">
+  <button
+    style="{buttonStyle}"
+    disabled="{disableInputs}"
+    on:click="{() => dispatch('workflowRunRequested')}"
+  >
     <img src="/icons/player-play.svg" alt="Run workflow icon" class="icon" />
   </button>
   <div class="vertical-separator"></div>

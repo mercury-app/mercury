@@ -44,6 +44,14 @@
       canvas.executeOnNotebookOverlayClosed();
     }
   };
+
+  export const runWorkflowRequestedHandler = async () => {
+    if (canvas != null) {
+      canvas.toggleNodeSelectionMenuButtons();
+      await canvas.runWorkflowRequestedHandler();
+      canvas.toggleNodeSelectionMenuButtons();
+    }
+  };
 </script>
 
 <script lang="ts">
@@ -60,6 +68,7 @@
   export let numRows: number = 20;
   export let colWidth: number = 50;
   export let rowHeight: number = 50;
+  let disableInputs = false;
 
   const canvasWidth = numColumns * colWidth;
   const canvasHeight = numRows * rowHeight;
@@ -80,6 +89,7 @@
         },
       });
       const workflowData = workflowResponse.data.data[0];
+      canvas.workflowId = workflowData.id;
       canvas.validSrcToDestMap = new Map(
         Object.entries(workflowData.attributes.valid_connections)
       );
@@ -310,6 +320,34 @@
       // write outputs from source into json when a connector is deleted
       src.workflowNode.writeOutputsFromNotebookKernel();
       updateValidConnections();
+    };
+
+    canvas.runWorkflow = async () => {
+      const url = `http://localhost:3000/v1/orchestration/workflows/${canvas.workflowId}`;
+      try {
+        const response = await axios.patch(
+          url,
+          {
+            data: {
+              id: canvas.workflowId,
+              type: "workflows",
+              attributes: {
+                state: "run",
+              },
+            },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
+        );
+        console.log("workflow execution exit code");
+        console.log(response.data.data.attributes.run_exit_code);
+      } catch (exception) {
+        console.log(`error received from PATCH ${url}: ${exception}`);
+      }
     };
 
     // listen to iframe message event
