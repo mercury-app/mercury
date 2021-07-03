@@ -1,7 +1,11 @@
 <script lang="ts">
   import axios from "axios";
-  import { onMount } from "svelte";
+  import { onMount, getContext } from "svelte";
+  import { fade, scale } from "svelte/transition";
   import { push } from "svelte-spa-router";
+  import MessageModal from "../misc/modals/MessageModal.svelte";
+
+  const { open, close } = getContext("simple-modal");
 
   const fetchAllProjects = async (): Promise<
     Array<Record<string, unknown>>
@@ -59,18 +63,43 @@
   };
 
   const deleteProject = async (projectId: string) => {
-    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
-    try {
-      await axios.delete(url, {
-        headers: {
-          Accept: "application/vnd.api+json",
-          "Content-Type": "application/vnd.api+json",
+    open(
+      MessageModal,
+      {
+        messageTitle: `Confirm project deletion`,
+        messageDetail:
+          "This action cannot be undone. Your workflow, application and " +
+          "notebooks will be permanently deleted. Do you want to continue?",
+        rejectButtonText: "No",
+        acceptButtonText: "Yes",
+        rejectHandler: () => {
+          close();
         },
-      });
-    } catch (exception) {
-      console.log(`error received from DELETE ${url}: ${exception}`);
-    }
-    projects = await fetchAllProjects();
+        acceptHandler: async () => {
+          close();
+
+          const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+          try {
+            await axios.delete(url, {
+              headers: {
+                Accept: "application/vnd.api+json",
+                "Content-Type": "application/vnd.api+json",
+              },
+            });
+          } catch (exception) {
+            console.log(`error received from DELETE ${url}: ${exception}`);
+          }
+          projects = await fetchAllProjects();
+        },
+      },
+      {
+        closeButton: false,
+        closeOnOuterClick: false,
+        styleWindow: { "max-width": "max-content", "border-radius": "3px" },
+        transitionBg: fade,
+        transitionWindow: scale,
+      }
+    );
   };
 
   let projects = [];
