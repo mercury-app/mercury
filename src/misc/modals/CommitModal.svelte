@@ -3,6 +3,10 @@
   export let commitHandler = (commitMessage: string) => commitMessage;
 
   let commitMessage = "";
+
+  const init = (element: HTMLElement) => {
+    element.focus();
+  };
 </script>
 
 <div>
@@ -13,7 +17,8 @@
     rows="5"
     cols="72"
     placeholder="..."
-    bind:value="{commitMessage}"></textarea>
+    bind:value="{commitMessage}"
+    use:init></textarea>
   <div id="response-container">
     <button class="response-button" on:click="{cancelHandler}">Cancel</button>
     <button
