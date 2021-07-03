@@ -79,25 +79,104 @@
   });
 </script>
 
-<div>
-  <button on:click="{createAndOpenProject}">New project</button>
+<div id="project-interface-container">
+  <div id="project-interface-header">
+    <h1>Projects</h1>
+    <button on:click="{createAndOpenProject}">Create new</button>
+  </div>
   <div id="project-list">
     {#each projects as project}
       <div class="project-list-item">
-        <button on:click="{() => openProject(project.id)}">
+        <button
+          class="project-select-button"
+          on:click="{() => openProject(project.id)}"
+        >
           {project.attributes.name}
         </button>
-        <button on:click="{() => deleteProject(project.id)}">
+        <button
+          class="project-delete-button"
+          on:click="{() => deleteProject(project.id)}"
+        >
           <img src="/icons/trash.svg" alt="Delete project" class="icon" />
         </button>
       </div>
+      <div class="horizontal-separator"></div>
     {/each}
   </div>
 </div>
 
 <style>
+  #project-interface-container {
+    height: 100%;
+    margin: 0 20%;
+  }
+
+  #project-interface-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  #project-interface-header h1 {
+    flex: auto;
+  }
+
+  #project-interface-header button {
+    height: var(--default-button-height);
+    padding: var(--common-spacing);
+  }
+
+  #project-list {
+    width: 100%;
+    max-height: 80%;
+    overflow: auto;
+
+    border: var(--common-border-width) solid var(--main-border-color);
+    border-radius: var(--common-radius);
+  }
+
+  /* This hides the last vertical separator */
+  #project-list div:last-of-type {
+    display: none;
+  }
+
   .project-list-item {
     display: flex;
     flex-direction: row;
+    position: relative;
+    height: calc(var(--default-button-height) + (var(--common-spacing) * 4));
+  }
+
+  .project-select-button {
+    flex: auto;
+    padding: calc(var(--common-spacing) * 2);
+    border: none;
+    justify-content: left;
+
+    background-color: white;
+  }
+
+  .project-select-button:hover {
+    background-color: #f8f8f8;
+    cursor: pointer;
+  }
+
+  .project-select-button:hover + .project-delete-button {
+    display: flex;
+  }
+
+  .project-delete-button {
+    position: absolute;
+    width: var(--default-button-width);
+    height: var(--default-button-height);
+    top: calc((100% - var(--default-button-height)) / 2);
+    right: calc(var(--common-spacing) * 2);
+
+    /* Hidden by default */
+    display: none;
+  }
+
+  .horizontal-separator {
+    border-bottom: var(--common-border-width) solid var(--main-border-color);
   }
 </style>
