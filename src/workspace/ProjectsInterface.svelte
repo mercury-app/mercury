@@ -113,25 +113,32 @@
     <h1>Projects</h1>
     <button on:click="{createAndOpenProject}">Create new</button>
   </div>
-  <div id="project-list">
-    {#each projects as project}
-      <div class="project-list-item">
-        <button
-          class="project-select-button"
-          on:click="{() => openProject(project.id)}"
-        >
-          {project.attributes.name}
-        </button>
-        <button
-          class="project-delete-button"
-          on:click="{() => deleteProject(project.id)}"
-        >
-          <img src="/icons/trash.svg" alt="Delete project" class="icon" />
-        </button>
-      </div>
-      <div class="horizontal-separator"></div>
-    {/each}
-  </div>
+  {#if projects.length > 0}
+    <div id="project-list">
+      {#each projects as project}
+        <div class="project-list-item">
+          <button
+            class="project-select-button"
+            on:click="{() => openProject(project.id)}"
+          >
+            {project.attributes.name}
+          </button>
+          <button
+            class="project-delete-button"
+            on:click="{() => deleteProject(project.id)}"
+          >
+            <img src="/icons/trash.svg" alt="Delete project" class="icon" />
+          </button>
+        </div>
+        <div class="horizontal-separator"></div>
+      {/each}
+    </div>
+  {:else}
+    <div id="project-list-empty-label">
+      <h4>It seems like there are no existing projects in this workspace.</h4>
+      <h4>Please create a new project to get started.</h4>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -191,7 +198,7 @@
   }
 
   .project-select-button:hover + .project-delete-button {
-    display: flex;
+    visibility: visible;
   }
 
   .project-delete-button {
@@ -202,10 +209,17 @@
     right: calc(var(--common-spacing) * 2);
 
     /* Hidden by default */
-    display: none;
+    visibility: hidden;
   }
 
   .horizontal-separator {
     border-bottom: var(--common-border-width) solid var(--main-border-color);
+  }
+
+  #project-list-empty-label {
+    margin: 10% 25%;
+    text-align: center;
+    line-height: 0.2em;
+    color: gray;
   }
 </style>
