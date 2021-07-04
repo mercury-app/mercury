@@ -56,6 +56,7 @@
     </div>
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
+        bind:disableInputs
         numColumns="{numCanvasColumns}"
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"

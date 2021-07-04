@@ -68,7 +68,7 @@
   export let numRows: number = 20;
   export let colWidth: number = 50;
   export let rowHeight: number = 50;
-  let disableInputs = false;
+  export let disableInputs = false;
 
   const canvasWidth = numColumns * colWidth;
   const canvasHeight = numRows * rowHeight;
@@ -142,8 +142,16 @@
         const message = JSON.parse(event.data);
         console.log(message);
         node.attributes = message.attributes;
-        node.title =
-          "Untitled" + ": " + node.attributes.notebook_attributes.kernel_state;
+        if (disableInputs)
+          node.title =
+            "Untitled" +
+            ": " +
+            node.attributes.notebook_attributes.workflow_kernel_state;
+        else
+          node.title =
+            "Untitled" +
+            ": " +
+            node.attributes.notebook_attributes.kernel_state;
       };
 
       websocket.onclose = (event) => {
