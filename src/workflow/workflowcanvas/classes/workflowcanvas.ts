@@ -1086,6 +1086,11 @@ export class WorkflowCanvas {
           this._endConnection(destPort);
         });
       })
+      .then(() => {
+        this._selectNode(null);
+        this._selectConnector(null);
+        return true;
+      })
       .catch((err) => {
         throw err;
       });
