@@ -80,6 +80,20 @@
     return checkedOutRef;
   };
 
+  const dateString = (timestamp: number): string => {
+    const then = new Date(timestamp * 1000);
+    const month = then.toLocaleString("default", {
+      month: "short",
+    });
+
+    const today = new Date();
+    if (then.getFullYear() === today.getFullYear()) {
+      return `${month} ${then.getDate()}`;
+    } else {
+      return `${month} ${then.getDate()}, ${then.getFullYear()}`;
+    }
+  };
+
   let commits = [];
   let currentCommitRef = "";
   onMount(async () => {
@@ -89,62 +103,115 @@
 </script>
 
 <div id="commit-list-container">
+  <div>
+    <h1>Commit history</h1>
+  </div>
   <div id="commit-list">
     {#each commits as commit}
       <div
         class="commit-list-item"
         class:highlighted="{commit.id === currentCommitRef}"
       >
-        <div class="commit-list-item-message">{commit.attributes.message}</div>
-        <div class="commit-list-item-sha">{commit.id.slice(0, 7)}</div>
-        <div>
-          <button
-            on:click="{async () => {
-              currentCommitRef = await checkoutRef(
-                params.project_id,
-                commit.id
-              );
-            }}"
-          >
-            <img
-              src="/icons/arrow-right.svg"
-              alt="Switch to this commit in history"
-              class="icon"
-            />
-          </button>
+        <div class="commit-list-item-message-container">
+          <p class="commit-list-item-message">{commit.attributes.message}</p>
+          <p class="commit-list-item-subtext">
+            <strong>{commit.attributes.author_name}</strong> committed on
+            {dateString(commit.attributes.timestamp)}
+          </p>
         </div>
+        <div class="commit-list-item-sha">{commit.id.slice(0, 7)}</div>
+        <button
+          class="commit-checkout-button"
+          on:click="{async () => {
+            currentCommitRef = await checkoutRef(params.project_id, commit.id);
+          }}"
+        >
+          <img
+            src="/icons/arrow-right.svg"
+            alt="Switch to this commit in history"
+            class="icon"
+          />
+        </button>
       </div>
+      <div class="horizontal-separator"></div>
     {/each}
   </div>
 </div>
 
 <style>
   #commit-list-container {
-    position: relative;
     height: 100%;
-    margin: 0 10%;
+    margin: 0 20%;
+    display: flex;
+    flex-direction: column;
   }
 
   #commit-list {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-
     width: 100%;
-    max-height: 80%;
     overflow: auto;
+    margin: 0 0 10% 0;
+
+    border: var(--common-border-width) solid var(--main-border-color);
+    border-radius: var(--common-radius);
+  }
+
+  /* This hides the last vertical separator */
+  #commit-list div:last-of-type {
+    display: none;
   }
 
   .commit-list-item {
     display: flex;
     flex-direction: row;
+    align-items: center;
+
+    position: relative;
+    height: calc(var(--default-button-height) + (var(--common-spacing) * 4));
   }
 
   .commit-list-item.highlighted {
-    background-color: antiquewhite;
+    background-color: #f4f4f4;
+  }
+
+  .commit-list-item.highlighted .commit-checkout-button {
+    visibility: hidden;
+  }
+
+  .commit-list-item-message-container {
+    display: flex;
+    flex-direction: column;
+
+    flex: auto;
+    padding: var(--common-spacing) calc(var(--common-spacing) * 2);
+    border: none;
+    justify-content: left;
   }
 
   .commit-list-item-message {
-    flex: auto;
+    color: #4a4a4a;
+    font-weight: bolder;
+    line-height: 0.1em;
+    margin-top: 4px;
+    margin-bottom: 10px;
+  }
+
+  .commit-list-item-subtext {
+    color: gray;
+    font-size: 0.8em;
+    line-height: 0.1em;
+    margin-top: 10px;
+    margin-bottom: 4px;
+  }
+
+  .commit-checkout-button {
+    position: absolute;
+    width: var(--default-button-width);
+    height: var(--default-button-height);
+    top: calc((100% - var(--default-button-height)) / 2);
+    right: calc(var(--common-spacing) * 2);
+  }
+
+  .horizontal-separator {
+    border-bottom: var(--common-border-width) solid var(--main-border-color);
   }
 </style>
