@@ -108,10 +108,7 @@
   </div>
   <div id="commit-list">
     {#each commits as commit}
-      <div
-        class="commit-list-item"
-        class:highlighted="{commit.id === currentCommitRef}"
-      >
+      <div class="commit-list-item">
         <div class="commit-list-item-message-container">
           <p class="commit-list-item-message">{commit.attributes.message}</p>
           <p class="commit-list-item-subtext">
@@ -119,19 +116,25 @@
             {dateString(commit.attributes.timestamp)}
           </p>
         </div>
-        <div class="commit-list-item-sha">{commit.id.slice(0, 7)}</div>
-        <button
-          class="commit-checkout-button"
-          on:click="{async () => {
-            currentCommitRef = await checkoutRef(params.project_id, commit.id);
-          }}"
-        >
-          <img
-            src="/icons/arrow-right.svg"
-            alt="Switch to this commit in history"
-            class="icon"
-          />
-        </button>
+        {#if commit.id === currentCommitRef}
+          <p class="commit-is-current-tag">Current</p>
+        {:else}
+          <button
+            class="commit-checkout-button"
+            on:click="{async () => {
+              currentCommitRef = await checkoutRef(
+                params.project_id,
+                commit.id
+              );
+            }}"
+          >
+            <img
+              src="/icons/arrow-right.svg"
+              alt="Switch to this commit in history"
+              class="icon"
+            />
+          </button>
+        {/if}
       </div>
       <div class="horizontal-separator"></div>
     {/each}
@@ -155,11 +158,6 @@
     border-radius: var(--common-radius);
   }
 
-  /* This hides the last vertical separator */
-  #commit-list div:last-of-type {
-    display: none;
-  }
-
   .commit-list-item {
     display: flex;
     flex-direction: row;
@@ -169,12 +167,16 @@
     height: calc(var(--default-button-height) + (var(--common-spacing) * 4));
   }
 
-  .commit-list-item.highlighted {
-    background-color: #f4f4f4;
-  }
+  .commit-is-current-tag {
+    margin: 0 calc(var(--common-spacing) * 2) 0 0;
+    padding: var(--common-spacing);
 
-  .commit-list-item.highlighted .commit-checkout-button {
-    visibility: hidden;
+    color: #4a4a4a;
+    font-size: smaller;
+    font-weight: bolder;
+
+    border: var(--common-border-width) solid gray;
+    border-radius: var(--common-radius);
   }
 
   .commit-list-item-message-container {
@@ -213,5 +215,10 @@
 
   .horizontal-separator {
     border-bottom: var(--common-border-width) solid var(--main-border-color);
+  }
+
+  /* This hides the last vertical separator */
+  .horizontal-separator:last-of-type {
+    display: none;
   }
 </style>
