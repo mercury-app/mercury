@@ -6,6 +6,7 @@
   import CommitModal from "./modals/CommitModal.svelte";
   import MessageModal from "./modals/MessageModal.svelte";
   import ButtonGroup from "./reusable/ButtonGroup.svelte";
+  import TextInputModal from "../misc/modals/TextInputModal.svelte";
 
   export let projectId = "";
   let projectName = "Untitled";
@@ -184,6 +185,58 @@
     }
   };
 
+  const renameProject = async (projectId: string) => {
+    const _renameProject = async (name: string) => {
+      const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+      try {
+        await axios.patch(
+          url,
+          {
+            data: {
+              type: "nodes",
+              id: projectId,
+              attributes: {
+                name: name,
+              },
+            },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
+        );
+      } catch (exception) {
+        console.log(`error received from PATCH ${url}: ${exception}`);
+      }
+    };
+
+    open(
+      TextInputModal,
+      {
+        inputTitle: "Please enter a new name for the project",
+        rejectButtonText: "Cancel",
+        acceptButtonText: "Rename",
+        rejectHandler: () => {
+          close();
+        },
+        acceptHandler: async (newProjectName: string) => {
+          close();
+          _renameProject(newProjectName);
+          projectName = newProjectName;
+        },
+      },
+      {
+        closeButton: false,
+        closeOnOuterClick: false,
+        styleWindow: { "max-width": "max-content", "border-radius": "3px" },
+        transitionBg: fade,
+        transitionWindow: scale,
+      }
+    );
+  };
+
   const vcsButtonAttributes = [
     {
       icon: "/icons/history.svg",
@@ -209,16 +262,22 @@
     >
       <img
         src="/icons/chevron-left.svg"
-        alt="Go back to projects"
+        alt="Go back to projects icon"
         class="icon"
       />
     </button>
-    <button
-      id="header-bar-project-button"
-      class="header-bar-item header-bar-button"
-    >
-      {projectName}
-    </button>
+    <div id="header-bar-project-name-container" class="header-bar-item">
+      <p>
+        {projectName}
+      </p>
+      <button on:click="{() => renameProject(projectId)}">
+        <img
+          src="/icons/pencil.svg"
+          alt="Edit project name icon"
+          class="icon"
+        />
+      </button>
+    </div>
     <div class="header-bar-item">
       <ButtonGroup buttonAttributes="{vcsButtonAttributes}" let:attributes>
         <img src="{attributes.icon}" alt="{attributes.alt}" class="icon" />
@@ -251,14 +310,47 @@
     width: calc(var(--common-toolbar-width) - (var(--common-spacing) * 2));
   }
 
-  #header-bar-project-button {
-    width: 160px;
-    max-width: 160px;
+  #header-bar-project-name-container {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    width: 200px;
+    max-width: 200px;
+
+    border: var(--common-border-width) solid rgba(1, 1, 1, 0);
+    border-radius: var(--common-radius);
+  }
+
+  #header-bar-project-name-container p {
     padding: var(--common-spacing);
 
-    display: inline-block;
+    width: 100%;
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
-    text-align: start;
+
+    font-weight: bolder;
+  }
+
+  #header-bar-project-name-container button {
+    position: absolute;
+    right: var(--common-spacing);
+
+    width: calc(var(--common-toolbar-width) - (var(--common-spacing) * 4));
+    height: calc(var(--common-toolbar-width) - (var(--common-spacing) * 4));
+
+    box-shadow: -6px 0 12px white;
+
+    visibility: hidden;
+  }
+
+  #header-bar-project-name-container:hover {
+    border: var(--common-border-width) solid var(--main-border-color);
+  }
+
+  #header-bar-project-name-container:hover button {
+    visibility: visible;
   }
 </style>

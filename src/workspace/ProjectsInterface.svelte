@@ -212,6 +212,7 @@
     justify-content: left;
 
     background-color: white;
+    font-weight: bolder;
   }
 
   .project-select-button:hover {

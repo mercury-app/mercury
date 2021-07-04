@@ -1,10 +1,10 @@
 <script lang="ts">
   import BaseInputModal from "./BaseInputModal.svelte";
 
-  export let inputTitle = "Input text title";
-  export let inputDetail = "Input text detail";
-  export let rejectButtonText = "Cancel";
-  export let acceptButtonText = "Ok";
+  export let inputTitle = "";
+  export let inputDetail = "";
+  export let rejectButtonText = "";
+  export let acceptButtonText = "";
   export let rejectHandler = () => null;
   export let acceptHandler = (_value: string) => null;
 
