@@ -8,6 +8,7 @@
   export let inputs: Array<string> = [];
   export let outputs: Array<string> = [];
   export let notebookUrl = "about:blank";
+  export let reloadIframe = false;
 
   const hiddenClass = "hidden";
   const visibleClass = "visible";
@@ -15,6 +16,15 @@
     const notebookPanel = document.getElementById("notebook-panel");
     if (notebookPanel !== null) {
       if (visible) {
+        // reloadiframe if the notebook file has been overwritten by workflow run
+        if (reloadIframe) {
+          console.log("Reloading iframe");
+          const notebookIframe = document.getElementById(
+            "notebook-iframe"
+          ) as HTMLIFrameElement;
+          notebookIframe.src = notebookIframe.src;
+        }
+        reloadIframe = false;
         notebookPanel.classList.remove(hiddenClass);
         notebookPanel.classList.add(visibleClass);
 

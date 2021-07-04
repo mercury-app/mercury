@@ -38,9 +38,11 @@
     await runWorkflowRequestedHandler();
     console.log("workflow executed successfully");
     disableInputs = false;
+    reloadIframe = true;
   };
 
   let disableInputs = false;
+  let reloadIframe = false;
 </script>
 
 <main>
@@ -74,6 +76,7 @@
         bind:inputs="{selectedNotebookInputs}"
         bind:outputs="{selectedNotebookOutputs}"
         bind:notebookUrl
+        bind:reloadIframe
         on:inputAdded="{(event) =>
           addInputOnSelectedNode(event.detail.inputName)}"
         on:outputAdded="{(event) =>
