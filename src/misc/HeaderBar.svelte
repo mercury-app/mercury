@@ -32,6 +32,25 @@
     return "";
   };
 
+  const hasProjectUncommittedChanges = async (
+    projectId: string
+  ): Promise<boolean> => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+        },
+      });
+      const projectAttributes = response.data.data.attributes;
+      return projectAttributes.has_uncommitted_changes;
+    } catch (exception) {
+      console.log(`error received from GET ${url}: ${exception}`);
+    }
+
+    return false;
+  };
+
   const isProjectOnLatestCommit = async (
     projectId: string
   ): Promise<boolean> => {
@@ -111,7 +130,28 @@
       );
     };
 
-    if (await isProjectOnLatestCommit(projectId)) {
+    if (!(await hasProjectUncommittedChanges(projectId))) {
+      open(
+        MessageModal,
+        {
+          messageTitle: "No changes to commit",
+          acceptHandler: () => {
+            close();
+          },
+        },
+        {
+          closeButton: false,
+          closeOnOuterClick: false,
+          styleWindow: {
+            "max-width": "max-content",
+            "border-radius": "3px",
+            "min-width": "420px",
+          },
+          transitionBg: fade,
+          transitionWindow: scale,
+        }
+      );
+    } else if (await isProjectOnLatestCommit(projectId)) {
       openCommitMessageModal();
     } else {
       open(

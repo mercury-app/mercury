@@ -1,11 +1,17 @@
 <script lang="ts">
   import axios from "axios";
-  import { onMount } from "svelte";
+  import { onMount, getContext } from "svelte";
+  import { fade, scale } from "svelte/transition";
   import { push } from "svelte-spa-router";
+  import MessageModal from "../misc/modals/MessageModal.svelte";
 
   export let params = {
     project_id: "",
   };
+
+  const { open, close } = getContext("simple-modal");
+  let commits = [];
+  let currentCommitRef = "";
 
   const fetchAllCommits = async (
     projectId: string
@@ -27,6 +33,25 @@
     return commits;
   };
 
+  const hasProjectUncommittedChanges = async (
+    projectId: string
+  ): Promise<boolean> => {
+    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+        },
+      });
+      const projectAttributes = response.data.data.attributes;
+      return projectAttributes.has_uncommitted_changes;
+    } catch (exception) {
+      console.log(`error received from GET ${url}: ${exception}`);
+    }
+
+    return false;
+  };
+
   const getCurrentRef = async (projectId: string): Promise<string> => {
     let currentCommitRef = "";
 
@@ -45,39 +70,69 @@
     return currentCommitRef;
   };
 
-  const checkoutRef = async (
-    projectId: string,
-    ref: string
-  ): Promise<string> => {
-    let checkedOutRef = await getCurrentRef(projectId);
-
-    const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
-    try {
-      const response = await axios.patch(
-        url,
-        {
-          data: {
-            type: "nodes",
-            id: projectId,
-            attributes: {
-              current_commit: ref,
+  const checkoutRef = async (projectId: string, ref: string): Promise<void> => {
+    const _checkoutRef = async () => {
+      let checkedOutRef = await getCurrentRef(projectId);
+      const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+      try {
+        const response = await axios.patch(
+          url,
+          {
+            data: {
+              type: "nodes",
+              id: projectId,
+              attributes: {
+                current_commit: ref,
+              },
             },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
+        );
+        checkedOutRef = response.data.data.attributes.current_commit;
+        push(`/projects/${projectId}/workflow_builder`);
+      } catch (exception) {
+        console.log(`error received from PATCH ${url}: ${exception}`);
+      }
+      currentCommitRef = checkedOutRef;
+    };
+
+    if (await hasProjectUncommittedChanges(projectId)) {
+      open(
+        MessageModal,
+        {
+          messageTitle: "About to lose existing changes",
+          messageDetail:
+            "It seems that you have made some changes to the project on top " +
+            "the current base commit. Checking out a new commit from the " +
+            "history will discard any outstanding changes that have not been " +
+            "committed. Do you wish to continue?",
+          rejectButtonText: "No",
+          acceptButtonText: "Yes",
+          rejectHandler: () => {
+            close();
+          },
+          acceptHandler: () => {
+            close();
+            _checkoutRef();
           },
         },
         {
-          headers: {
-            Accept: "application/vnd.api+json",
-            "Content-Type": "application/vnd.api+json",
+          closeButton: false,
+          closeOnOuterClick: false,
+          styleWindow: {
+            "max-width": "max-content",
+            "border-radius": "3px",
           },
+          transitionBg: fade,
+          transitionWindow: scale,
         }
       );
-      checkedOutRef = response.data.data.attributes.current_commit;
-      push(`/projects/${projectId}/workflow_builder`);
-    } catch (exception) {
-      console.log(`error received from PATCH ${url}: ${exception}`);
     }
-
-    return checkedOutRef;
   };
 
   const dateString = (timestamp: number): string => {
@@ -94,8 +149,6 @@
     }
   };
 
-  let commits = [];
-  let currentCommitRef = "";
   onMount(async () => {
     commits = await fetchAllCommits(params.project_id);
     currentCommitRef = await getCurrentRef(params.project_id);
@@ -122,10 +175,7 @@
           <button
             class="commit-checkout-button"
             on:click="{async () => {
-              currentCommitRef = await checkoutRef(
-                params.project_id,
-                commit.id
-              );
+              await checkoutRef(params.project_id, commit.id);
             }}"
           >
             <img

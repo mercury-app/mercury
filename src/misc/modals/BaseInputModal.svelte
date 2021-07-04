@@ -1,7 +1,7 @@
 <script lang="ts">
-  export let inputTitle = "Input title";
-  export let inputDetail = "Input detail";
-  export let rejectButtonText = "Cancel";
+  export let inputTitle = "";
+  export let inputDetail = "";
+  export let rejectButtonText = "";
   export let acceptButtonText = "Ok";
   export let rejectHandler = () => null;
   export let acceptHandler = (_value: unknown) => null;
@@ -16,9 +16,11 @@
     <input />
   </slot>
   <div id="response-container">
-    <button class="response-button" on:click="{rejectHandler}"
-      >{rejectButtonText}</button
-    >
+    {#if rejectButtonText}
+      <button class="response-button" on:click="{rejectHandler}"
+        >{rejectButtonText}</button
+      >
+    {/if}
     <button class="response-button" on:click="{acceptHandler}"
       >{acceptButtonText}</button
     >

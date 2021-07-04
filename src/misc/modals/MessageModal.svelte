@@ -1,7 +1,7 @@
 <script lang="ts">
-  export let messageTitle = "Message title";
-  export let messageDetail = "Message details";
-  export let rejectButtonText = "Cancel";
+  export let messageTitle = "";
+  export let messageDetail = "";
+  export let rejectButtonText = "";
   export let acceptButtonText = "Ok";
   export let rejectHandler = () => null;
   export let acceptHandler = () => null;
@@ -9,11 +9,15 @@
 
 <div>
   <p id="message-title">{messageTitle}</p>
-  <p id="message-detail">{messageDetail}</p>
+  {#if messageDetail}
+    <p id="message-detail">{messageDetail}</p>
+  {/if}
   <div id="response-container">
-    <button class="response-button" on:click="{rejectHandler}"
-      >{rejectButtonText}</button
-    >
+    {#if rejectButtonText}
+      <button class="response-button" on:click="{rejectHandler}"
+        >{rejectButtonText}</button
+      >
+    {/if}
     <button class="response-button" on:click="{acceptHandler}"
       >{acceptButtonText}</button
     >
