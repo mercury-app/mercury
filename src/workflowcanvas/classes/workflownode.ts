@@ -243,67 +243,6 @@ export class WorkflowNode extends G {
     frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
   }
 
-  public async executeInputCodeInNotebookKernel(): Promise<void> {
-    const url = `http://localhost:3000/v1/orchestration/nodes/${this._nodeId}/notebook`
-    try {
-      const response = await axios.patch(
-        url,
-        {
-          data: {
-            id: this._nodeId,
-            type: "nodes",
-            attributes: {
-              "state": "run",
-              "code": this._attributes.notebook_attributes.io.input_code
-            },
-          },
-        },
-        {
-          headers: {
-            Accept: "application/vnd.api+json",
-            "Content-Type": "application/vnd.api+json",
-          },
-        }
-      );
-      const exitCode = response.data.data.attributes.notebook_attributes.exit_code;
-      const containerLog = response.data.data.attributes.notebook_attributes.container_log;
-      console.log("Exit code from kernel for input execution: ", exitCode);
-      console.log("Container log from kernel: ", containerLog);
-    } catch (exception) {
-      console.log(`error received from PATCH ${url}: ${exception}`);
-    };
-  }
-
-  public async writeOutputsFromNotebookKernel(): Promise<void> {
-    const url = `http://localhost:3000/v1/orchestration/nodes/${this._nodeId}/notebook`
-    try {
-      const response = await axios.patch(
-        url,
-        {
-          data: {
-            id: this._nodeId,
-            type: "nodes",
-            attributes: {
-              "state": "write_json"
-            },
-          },
-        },
-        {
-          headers: {
-            Accept: "application/vnd.api+json",
-            "Content-Type": "application/vnd.api+json",
-          },
-        }
-      );
-      const exitCode = response.data.data.attributes.notebook_attributes.exit_code;
-      const containerLog = response.data.data.attributes.notebook_attributes.container_log;
-      console.log("Exit code from kernel: ", exitCode);
-      console.log("Container log from kernel: ", containerLog);
-    } catch (exception) {
-      console.log(`error received from PATCH ${url}: ${exception}`);
-    };
-  }
-
   get isSelected(): boolean {
     return this._isSelected;
   }

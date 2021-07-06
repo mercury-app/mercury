@@ -69,6 +69,7 @@
   export let colWidth: number = 50;
   export let rowHeight: number = 50;
   export let disableInputs = false;
+  export let notebookUrl;
 
   const canvasWidth = numColumns * colWidth;
   const canvasHeight = numRows * rowHeight;
@@ -77,6 +78,36 @@
   function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  const waitForCorrectIframe = async (
+    notebookUrl: string
+  ): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+      let correctIframe = false;
+      const timeStarted: any = new Date();
+      var interval = setInterval(() => {
+        let DateNow: any = new Date();
+        if (
+          lastMessageFrameOrigin !== null &&
+          notebookUrl.split("/")[2] === lastMessageFrameOrigin.split("/")[2]
+        ) {
+          console.log("correct origin detected");
+          console.log("resolved after", DateNow - timeStarted, "ms");
+          correctIframe = true;
+          clearInterval(interval);
+          resolve(true);
+        } else if (DateNow - timeStarted > 25000) {
+          console.log(lastMessageFrameOrigin);
+          console.log(
+            "Timed out waiting for notebook after ",
+            DateNow - timeStarted,
+            "ms"
+          );
+          clearInterval(interval);
+        }
+      }, 20);
+    });
+  };
 
   const updateValidConnections = async () => {
     const workflowUrl: string =
@@ -138,9 +169,7 @@
 
       websocket.onmessage = (event) => {
         console.log(`Message received`);
-        console.log(event);
         const message = JSON.parse(event.data);
-        console.log(message);
         node.attributes = message.attributes;
         if (disableInputs)
           node.title =
@@ -181,39 +210,11 @@
       const notebookUrl = node.attributes.notebook_attributes.url;
       dispatch("nodeEditRequested", { notebookUrl });
 
-      (async () => {
-        await node.updateAttributes();
-        console.log("inside check cirrrrrrr");
-        if (lastMessageFrameOrigin == null) return;
-        const timeStarted: any = new Date();
-        var interval = setInterval(() => {
-          let DateNow: any = new Date();
-          if (
-            notebookUrl.split("/")[2] === lastMessageFrameOrigin.split("/")[2]
-          ) {
-            console.log("correct origin detected");
-            console.log("resolved after", DateNow - timeStarted, "ms");
-            if (node.attributes.input) {
-              console.log("starting input injection");
-              console.log(
-                "code- ",
-                node.attributes.notebook_attributes.io.input_code
-              );
-              node.executeInputCodeInNotebookKernel();
-              node.insertInputsMessageMercuryExtension();
-              node.insertOutputsMessageMercuryExtension();
-            }
-            clearInterval(interval);
-          } else if (DateNow - timeStarted > 5000) {
-            console.log(
-              "Timed out waiting for notebook after ",
-              DateNow - timeStarted,
-              "ms"
-            );
-            clearInterval(interval);
-          }
-        }, 20);
-      })();
+      // waitForCorrectIframe(notebookUrl).then(() => console.log("adsdasdasd"));
+      waitForCorrectIframe(notebookUrl)
+        .then(() => console.log("Correct Iframe detected"))
+        .then(() => node.insertInputsMessageMercuryExtension())
+        .then(() => node.insertOutputsMessageMercuryExtension());
     };
 
     canvas.nodeSelectedHandler = (node: WorkflowNode) => {
@@ -304,7 +305,13 @@
       }
 
       // on creation of a connector, the source node tries to write its outputs to the json
-      src.workflowNode.writeOutputsFromNotebookKernel();
+      // for this we also need to set the active iframae as the source node of the connector
+      // and wait for the iframe to be loaded for injecting the cell
+      await src.workflowNode.updateAttributes();
+      notebookUrl = src.workflowNode.attributes.notebook_attributes.url;
+      waitForCorrectIframe(notebookUrl)
+        .then(() => console.log("Correct Iframe detected"))
+        .then(() => src.workflowNode.insertOutputsMessageMercuryExtension());
       updateValidConnections();
     };
 
@@ -326,8 +333,11 @@
       }
 
       // write outputs from source into json when a connector is deleted
-      src.workflowNode.writeOutputsFromNotebookKernel();
-      updateValidConnections();
+      await src.workflowNode.updateAttributes();
+      notebookUrl = src.workflowNode.attributes.notebook_attributes.url;
+      waitForCorrectIframe(notebookUrl)
+        .then(() => console.log("Correct Iframe detected"))
+        .then(() => src.workflowNode.insertOutputsMessageMercuryExtension());
     };
 
     canvas.runWorkflow = async () => {
@@ -360,6 +370,8 @@
 
     // listen to iframe message event
     window.addEventListener("message", (event) => {
+      console.log("message received from notebook");
+      console.log(event.origin);
       lastMessageFrameOrigin = event.origin;
     });
   });

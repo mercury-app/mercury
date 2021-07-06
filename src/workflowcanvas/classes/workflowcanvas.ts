@@ -921,9 +921,8 @@ export class WorkflowCanvas {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.executeInputCodeInNotebookKernel()).then(
-          () => this._selectedNode.insertInputsMessageMercuryExtension()
-        );
+        () => this._selectedNode.insertInputsMessageMercuryExtension()
+      );
     }
   }
 
@@ -932,9 +931,8 @@ export class WorkflowCanvas {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.writeOutputsFromNotebookKernel()).then(
-          () => this._selectedNode.insertOutputsMessageMercuryExtension()
-        );
+        () => this._selectedNode.insertOutputsMessageMercuryExtension()
+      );
     }
   }
 
@@ -943,9 +941,8 @@ export class WorkflowCanvas {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.executeInputCodeInNotebookKernel()).then(
-          () => this._selectedNode.insertInputsMessageMercuryExtension()
-        );
+        () => this._selectedNode.insertInputsMessageMercuryExtension()
+      );
     }
   }
 
@@ -954,9 +951,8 @@ export class WorkflowCanvas {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.writeOutputsFromNotebookKernel()).then(
-          () => this._selectedNode.insertOutputsMessageMercuryExtension()
-        );
+        () => this._selectedNode.insertOutputsMessageMercuryExtension()
+      );
     }
   }
 
@@ -964,9 +960,7 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
 
       if (this._selectedNode.attributes.output)
-        this._selectedNode.writeOutputsFromNotebookKernel().then(
-          () => this._selectedNode.insertOutputsMessageMercuryExtension()
-        );
+        () => this._selectedNode.insertOutputsMessageMercuryExtension();
     }
   }
 

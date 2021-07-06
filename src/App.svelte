@@ -57,6 +57,7 @@
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
         bind:disableInputs
+        bind:notebookUrl
         numColumns="{numCanvasColumns}"
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"
