@@ -10,12 +10,11 @@
   let newParam = "";
 
   const addParam = () => {
-    if (newParam !== "") {
+    if (newParam !== "" && !params.includes(newParam)) {
       dispatch("ioAdded", {
         ioName: newParam,
       });
-
-      params = [...params, newParam];
+      if (!params.includes(newParam)) params = [...params, newParam];
       newParam = "";
     }
   };
