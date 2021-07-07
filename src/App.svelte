@@ -10,6 +10,7 @@
     removeOutputOnSelectedNode,
     executeOnNotebookOverlayClosed,
     runWorkflowRequestedHandler,
+    stopWorkflowRequestedHandler,
   } from "./workflowcanvas/WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
@@ -34,14 +35,22 @@
   };
 
   const runWorkflowRequested = async (event: CustomEvent) => {
-    disableInputs = true;
+    runningWorkflow = true;
     await runWorkflowRequestedHandler();
     console.log("workflow executed successfully");
-    disableInputs = false;
+    runningWorkflow = false;
     reloadIframe = true;
   };
 
-  let disableInputs = false;
+  const stopWorkflowRequested = async (event: CustomEvent) => {
+    runningWorkflow = true;
+    await stopWorkflowRequestedHandler();
+    console.log("workflow stopped");
+    runningWorkflow = false;
+    reloadIframe = true;
+  };
+
+  let runningWorkflow = false;
   let reloadIframe = false;
 </script>
 
@@ -49,14 +58,14 @@
   <div id="workflow-builder-main">
     <div class="container" id="workflow-bar-container">
       <WorkflowBar
-        bind:disableInputs
+        bind:runningWorkflow
         workflowBarWidth="{workflowBarWidth}"
         on:newNodeRequested="{placeNewNode}"
       />
     </div>
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
-        bind:disableInputs
+        bind:runningWorkflow
         bind:notebookUrl
         numColumns="{numCanvasColumns}"
         numRows="{numCanvasRows}"
@@ -68,8 +77,9 @@
     </div>
     <div class="container" id="workflow-actions-container">
       <WorkflowActions
-        bind:disableInputs
+        bind:runningWorkflow
         on:workflowRunRequested="{runWorkflowRequested}"
+        on:workflowStopRequested="{stopWorkflowRequested}"
       />
     </div>
     <div>

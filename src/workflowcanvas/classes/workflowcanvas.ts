@@ -49,6 +49,7 @@ export class WorkflowCanvas {
   ) => Promise<void>;
   private _connectorDeletedHandler: (src: IOPort, dest: IOPort, connectorId: string) => Promise<void>;
   private _runWorkflow: () => Promise<void>
+  private _stopWorkflow: () => Promise<void>
 
 
   constructor(elementId: string, width: number, height: number) {
@@ -964,9 +965,10 @@ export class WorkflowCanvas {
     }
   }
 
-  public toggleNodeSelectionMenuButtons(): void {
-    this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) { x.disabled = !x.disabled })
+  public toggleNodeSelectionMenuButtons(disable: boolean = true): void {
+    this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) { x.disabled = disable })
   }
+
 
   public async runWorkflowRequestedHandler(): Promise<void> {
     if (this.workflowId !== null && this._nodes.size > 0)
@@ -1033,5 +1035,9 @@ export class WorkflowCanvas {
 
   set runWorkflow(fn: () => Promise<void>) {
     this._runWorkflow = fn;
+  }
+
+  set stopWorkflow(fn: () => Promise<void>) {
+    this._stopWorkflow = fn;
   }
 }

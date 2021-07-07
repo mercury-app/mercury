@@ -47,9 +47,17 @@
 
   export const runWorkflowRequestedHandler = async () => {
     if (canvas != null) {
-      canvas.toggleNodeSelectionMenuButtons();
+      canvas.toggleNodeSelectionMenuButtons(true);
       await canvas.runWorkflowRequestedHandler();
-      canvas.toggleNodeSelectionMenuButtons();
+      canvas.toggleNodeSelectionMenuButtons(false);
+    }
+  };
+
+  export const stopWorkflowRequestedHandler = async () => {
+    if (canvas != null) {
+      canvas.toggleNodeSelectionMenuButtons(true);
+      await canvas.runWorkflowRequestedHandler();
+      canvas.toggleNodeSelectionMenuButtons(false);
     }
   };
 </script>
@@ -68,7 +76,7 @@
   export let numRows: number = 20;
   export let colWidth: number = 50;
   export let rowHeight: number = 50;
-  export let disableInputs = false;
+  export let runningWorkflow = false;
   export let notebookUrl;
 
   const canvasWidth = numColumns * colWidth;
@@ -171,7 +179,7 @@
         console.log(`Message received`);
         const message = JSON.parse(event.data);
         node.attributes = message.attributes;
-        if (disableInputs)
+        if (runningWorkflow)
           node.title =
             "Untitled" +
             ": " +
@@ -363,6 +371,32 @@
         );
         console.log("workflow execution exit code");
         console.log(response.data.data.attributes.run_exit_code);
+      } catch (exception) {
+        console.log(`error received from PATCH ${url}: ${exception}`);
+      }
+    };
+
+    canvas.stopWorkflow = async () => {
+      const url = `http://localhost:3000/v1/orchestration/workflows/${canvas.workflowId}`;
+      try {
+        const response = await axios.patch(
+          url,
+          {
+            data: {
+              id: canvas.workflowId,
+              type: "workflows",
+              attributes: {
+                state: "stop",
+              },
+            },
+          },
+          {
+            headers: {
+              Accept: "application/vnd.api+json",
+              "Content-Type": "application/vnd.api+json",
+            },
+          }
+        );
       } catch (exception) {
         console.log(`error received from PATCH ${url}: ${exception}`);
       }
