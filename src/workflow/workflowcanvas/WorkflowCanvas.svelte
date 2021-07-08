@@ -83,6 +83,7 @@
 
   const canvasWidth = numColumns * colWidth;
   const canvasHeight = numRows * rowHeight;
+  let workflowId = "";
 
   // For high-latency testing purposes
   function sleep(ms: number) {
@@ -120,8 +121,34 @@
     });
   };
 
-  const updateValidConnections = async () => {
-    const workflowUrl = "http://localhost:3000/v1/orchestration/workflows";
+  const createWorkflow = async (): Promise<string> => {
+    const workflowUrl = `http://localhost:3000/v1/orchestration/workflows`;
+    try {
+      const response = await axios.post(
+        workflowUrl,
+        {
+          data: {
+            type: "workflows",
+          },
+        },
+        {
+          headers: {
+            Accept: "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+          },
+        }
+      );
+      if (response.status === 201) {
+        return response.data.data.id;
+      }
+    } catch (exception) {
+      console.log(`error received from POST ${workflowUrl}: ${exception}`);
+    }
+    return "";
+  };
+
+  const fetchWorkflowData = async (): Promise<Record<string, unknown>> => {
+    const workflowUrl = `http://localhost:3000/v1/orchestration/workflows/${workflowId}`;
     try {
       const workflowResponse = await axios.get(workflowUrl, {
         headers: {
@@ -129,14 +156,23 @@
           "Content-Type": "application/vnd.api+json",
         },
       });
-      const workflowData = workflowResponse.data.data[0];
-      canvas.workflowId = workflowData.id;
-      canvas.validSrcToDestMap = new Map(
-        Object.entries(workflowData.attributes.valid_connections)
-      );
+      return workflowResponse.data.data as Record<string, unknown>;
     } catch (exception) {
       console.log(`error received from GET ${workflowUrl}: ${exception}`);
     }
+    return {};
+  };
+
+  const updateValidConnections = async () => {
+    const workflowData = await fetchWorkflowData();
+    canvas.workflowId = workflowData.id;
+    const workflowAttributes = workflowData.attributes as Record<
+      string,
+      unknown
+    >;
+    canvas.validSrcToDestMap = new Map(
+      Object.entries(workflowAttributes.valid_connections)
+    );
   };
 
   const fetchCanvasJson = async (
@@ -190,7 +226,7 @@
     canvas.svgNode.style.display = "block";
 
     canvas.nodeAddedHandler = async (node: WorkflowNode) => {
-      const url = "http://localhost:3000/v1/orchestration/nodes";
+      const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes`;
       try {
         const response = await axios.post(
           url,
@@ -253,7 +289,7 @@
     };
 
     canvas.nodeDeletedHandler = async (nodeId: string) => {
-      const url = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
+      const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes/${nodeId}`;
       try {
         await axios.delete(url, {
           headers: {
@@ -298,7 +334,7 @@
       });
 
       const nodeId = node.nodeId;
-      const url = `http://localhost:3000/v1/orchestration/nodes/${nodeId}`;
+      const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes/${nodeId}`;
       try {
         const response = await axios.patch(
           url,
@@ -340,7 +376,7 @@
       const destNodeId = dest.workflowNode.nodeId;
       const inputName = dest.name;
 
-      const url = "http://localhost:3000/v1/orchestration/connectors";
+      const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/connectors`;
       try {
         const response = await axios.post(
           url,
@@ -388,7 +424,7 @@
       dest: IOPort,
       connectorId: string
     ) => {
-      const url = `http://localhost:3000/v1/orchestration/connectors/${connectorId}`;
+      const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/connectors/${connectorId}`;
       try {
         await axios.delete(url, {
           headers: {
@@ -479,6 +515,9 @@
 
     // Load any previously saved state for this project
     canvas.fromJson(await fetchCanvasJson(projectId));
+
+    // Create a new workflow and store its ID for all future orchestration calls
+    workflowId = await createWorkflow();
   });
 </script>
 
