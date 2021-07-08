@@ -37,7 +37,7 @@
   const runWorkflowRequested = async (event: CustomEvent) => {
     runningWorkflow = true;
     await runWorkflowRequestedHandler();
-    console.log("workflow executed successfully");
+    console.log("workflow execution complete");
     runningWorkflow = false;
     reloadIframe = true;
   };

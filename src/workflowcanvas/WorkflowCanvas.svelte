@@ -56,7 +56,7 @@
   export const stopWorkflowRequestedHandler = async () => {
     if (canvas != null) {
       canvas.toggleNodeSelectionMenuButtons(true);
-      await canvas.runWorkflowRequestedHandler();
+      await canvas.stopWorkflowRequestedHandler();
       canvas.toggleNodeSelectionMenuButtons(false);
     }
   };
@@ -369,8 +369,10 @@
             },
           }
         );
-        console.log("workflow execution exit code");
-        console.log(response.data.data.attributes.run_exit_code);
+        console.log(
+          "workflow execution exit code: ",
+          response.data.data.attributes.run_exit_code
+        );
       } catch (exception) {
         console.log(`error received from PATCH ${url}: ${exception}`);
       }

@@ -977,6 +977,13 @@ export class WorkflowCanvas {
       console.log("no nodes exist in this workflow")
   }
 
+  public async stopWorkflowRequestedHandler(): Promise<void> {
+    if (this.workflowId !== null && this._nodes.size > 0)
+      await this._stopWorkflow()
+    else
+      console.log("no nodes exist in this workflow")
+  }
+
   get container(): HTMLElement {
     return this._svg.node.parentElement.parentElement;
   }
