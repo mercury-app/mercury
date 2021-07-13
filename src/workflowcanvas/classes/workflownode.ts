@@ -1,6 +1,5 @@
 import { G, Line, Svg, Rect } from "@svgdotjs/svg.js";
 import axios from "axios";
-import { compute_slots } from "svelte/internal";
 
 import {
   mainBodyHeight,
@@ -19,6 +18,7 @@ export class WorkflowNode extends G {
   private _outlineRect: Rect;
   private _titleSeparator: Line;
   private _titleElement: HTMLParagraphElement;
+  private _kernelStatusElement: HTMLUnknownElement;
   private _mainBody: G;
   private _isSelected: boolean;
   private _inputPorts: Array<IOPort>;
@@ -70,8 +70,18 @@ export class WorkflowNode extends G {
     this._titleElement.style.whiteSpace = "nowrap";
     titleObject.add(this._titleElement);
 
+
+    const kernelStatusObject = this._svg
+      // @ts-ignore
+      .foreignObject(this._innerRect.width(), cellSize)
+      .move(titleOffset, 30);
+    this._kernelStatusElement = document.createElement("div");
+    this._kernelStatusElement.style.display = "table-cell";
+    kernelStatusObject.add(this._kernelStatusElement)
+
     this._svg.add(this);
     this.add(titleObject);
+    this.add(kernelStatusObject);
     this.add(this._mainBody);
     this.move(position.x, position.y);
 
@@ -265,6 +275,10 @@ export class WorkflowNode extends G {
 
   set title(title: string) {
     this._titleElement.textContent = title;
+  }
+
+  get kernelStatusElement(): HTMLUnknownElement {
+    return this._kernelStatusElement;
   }
 
   get nodeId(): string {

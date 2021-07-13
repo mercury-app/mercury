@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+  import { BarLoader } from "svelte-loading-spinners";
   import axios from "axios";
   import "@svgdotjs/svg.draggable.js";
 
@@ -179,16 +180,30 @@
         console.log(`Message received`);
         const message = JSON.parse(event.data);
         node.attributes = message.attributes;
-        if (runningWorkflow)
-          node.title =
-            "Untitled" +
-            ": " +
+        node.title = "Untitled";
+        let kernelStatus;
+
+        if (runningWorkflow) {
+          kernelStatus =
             node.attributes.notebook_attributes.workflow_kernel_state;
-        else
-          node.title =
-            "Untitled" +
-            ": " +
-            node.attributes.notebook_attributes.kernel_state;
+        } else kernelStatus = node.attributes.notebook_attributes.kernel_state;
+
+        if (kernelStatus == "busy") {
+          node.kernelStatusElement.innerHTML = null;
+          new BarLoader({
+            target: node.kernelStatusElement,
+            props: {
+              size: "60",
+              color: "#FF3E00",
+              unit: "px",
+              duration: "1s",
+            },
+          });
+        }
+
+        if (kernelStatus == "idle") {
+          node.kernelStatusElement.innerHTML = "&#9634";
+        }
       };
 
       websocket.onclose = (event) => {
