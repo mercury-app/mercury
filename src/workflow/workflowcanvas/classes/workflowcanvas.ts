@@ -510,7 +510,10 @@ export class WorkflowCanvas {
         return;
       }
       event.preventDefault();
-      this._endConnection(inputPort);
+
+      const outputPort = this._unconnectedSource;
+      const connector = this._endConnection(inputPort);
+      this._connectorAddedHandler(outputPort, inputPort, connector);
     });
 
     return inputPort;
@@ -625,22 +628,20 @@ export class WorkflowCanvas {
     });
   }
 
-  private _endConnection(input: IOPort) {
+  private _endConnection(input: IOPort): WorkflowConnector {
     this._connectionInProgress = false;
     this._addConnection(
       this._unconnectedSource,
       input,
       this._unfinishedConnector
     );
-    this._connectorAddedHandler(
-      this._unconnectedSource,
-      input,
-      this._unfinishedConnector
-    );
+    const connector = this._unfinishedConnector;
 
     this._unconnectedSource = null;
     this._unfinishedConnector = null;
     this._possibleDestination = null;
+
+    return connector;
   }
 
   private _addConnection(

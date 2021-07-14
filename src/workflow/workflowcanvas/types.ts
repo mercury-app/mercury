@@ -6,3 +6,5 @@ export enum IOPortType {
 }
 
 export type Delta = Point;
+
+export type WorkflowAttributes = Record<string, unknown>;
