@@ -380,7 +380,6 @@
     };
 
     canvas.nodeMovedHandler = async (_node: WorkflowNode) => {
-      if (workflowId === "") return;
       const workflowAttributes = await fetchWorkflowAttributes(workflowId);
       saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
     };
@@ -540,12 +539,14 @@
     const [workflowCanvasJson, workflowAttributes] = await fetchProjectDetails(
       projectId
     );
-    canvas.fromJson(workflowCanvasJson);
 
     // Create a new workflow and store its ID for all future orchestration calls
     workflowId = await createWorkflow(workflowAttributes);
     canvas.workflowId = workflowId;
     updateValidConnections(workflowId);
+
+    // Restore the canvas for this project, only after the backend is ready
+    canvas.fromJson(workflowCanvasJson);
   });
 </script>
 

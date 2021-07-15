@@ -89,6 +89,7 @@ export interface WorkflowNodeJson extends Object {
 }
 
 export interface WorkflowConnectorJson extends Object {
+  id: string;
   src: IOPortJson;
   dest: IOPortJson;
 }

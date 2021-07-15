@@ -1084,7 +1084,8 @@ export class WorkflowCanvas {
           const destPort = nodeInputPortsMap.get(destNodeId).get(destPortName);
 
           this._beginConnection(srcPort);
-          this._endConnection(destPort);
+          const connector = this._endConnection(destPort);
+          connector.connectorId = connectorJson.id;
         });
       })
       .then(() => {

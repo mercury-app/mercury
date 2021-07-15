@@ -239,6 +239,7 @@ export class WorkflowConnector extends G {
 
   public toJson(): WorkflowConnectorJson {
     return {
+      id: this._connectorId,
       src: this._src ? this._src.toJson() : null,
       dest: this._dest ? this._dest.toJson() : null,
     };
