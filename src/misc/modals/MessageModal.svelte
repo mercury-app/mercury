@@ -18,9 +18,11 @@
         >{rejectButtonText}</button
       >
     {/if}
-    <button class="response-button" on:click="{acceptHandler}"
-      >{acceptButtonText}</button
-    >
+    {#if acceptButtonText}
+      <button class="response-button" on:click="{acceptHandler}"
+        >{acceptButtonText}</button
+      >
+    {/if}
   </div>
 </div>
 

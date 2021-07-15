@@ -64,15 +64,18 @@
 
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { onMount } from "svelte";
+  import { onMount, getContext } from "svelte";
+  import { fade, scale } from "svelte/transition";
 
   import { WorkflowNode } from "./classes/workflownode";
   import { IOPort } from "./classes/ioport";
   import { WorkflowConnector } from "./classes/workflowconnector";
   import type { WorkflowCanvasJson } from "./interfaces";
   import type { WorkflowAttributes } from "./types.js";
+  import MessageModal from "../../misc/modals/MessageModal.svelte";
 
   const dispatch = createEventDispatcher();
+  const { open, close } = getContext("simple-modal");
 
   export let projectId: string;
   export let numColumns: number = 20;
@@ -524,16 +527,24 @@
       }
     };
 
-    // listen to iframe message event
-    window.addEventListener("message", (event) => {
-      console.log(`message received from ${event.origin}`);
-      if ("scope" in event.data) {
-        if (event.data.scope === "mercury") {
-          lastMessageFrameOrigin = event.origin;
-          console.log("message received from mercury nbextension");
-        }
+    open(
+      MessageModal,
+      {
+        messageTitle: "Please wait. Your workflow is being restored…",
+        acceptButtonText: "",
+      },
+      {
+        closeButton: false,
+        closeOnOuterClick: false,
+        styleWindow: {
+          "max-width": "max-content",
+          "border-radius": "3px",
+          "min-width": "420px",
+        },
+        transitionBg: fade,
+        transitionWindow: scale,
       }
-    });
+    );
 
     // Load any previously saved state for this project
     const [workflowCanvasJson, workflowAttributes] = await fetchProjectDetails(
@@ -547,6 +558,8 @@
 
     // Restore the canvas for this project, only after the backend is ready
     canvas.fromJson(workflowCanvasJson);
+
+    close();
   });
 </script>
 
