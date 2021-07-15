@@ -1037,7 +1037,7 @@ export class WorkflowCanvas {
 
           nodeJson.input_ports.forEach((ioPortJson) => {
             const portName = ioPortJson.port_name;
-            const inputPort = node.addInput(portName);
+            const inputPort = this._addInput(node, portName);
             if (nodeInputPortsMap.has(node.nodeId)) {
               nodeInputPortsMap.get(node.nodeId).set(portName, inputPort);
             } else {
@@ -1049,7 +1049,7 @@ export class WorkflowCanvas {
           });
           nodeJson.output_ports.forEach((ioPortJson) => {
             const portName = ioPortJson.port_name;
-            const outputPort = node.addOutput(portName);
+            const outputPort = this._addOutput(node, portName);
             if (nodeOutputPortsMap.has(node.nodeId)) {
               nodeOutputPortsMap.get(node.nodeId).set(portName, outputPort);
             } else {

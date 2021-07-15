@@ -543,7 +543,6 @@
     canvas.fromJson(workflowCanvasJson);
 
     // Create a new workflow and store its ID for all future orchestration calls
-    console.log(workflowAttributes);
     workflowId = await createWorkflow(workflowAttributes);
     canvas.workflowId = workflowId;
     updateValidConnections(workflowId);
