@@ -100,16 +100,32 @@
         acceptHandler: async () => {
           close();
 
-          const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+          const workflowUrl = `http://localhost:3000/v1/orchestration/workflows/${projectId}`;
           try {
-            await axios.delete(url, {
+            await axios.delete(workflowUrl, {
               headers: {
                 Accept: "application/vnd.api+json",
                 "Content-Type": "application/vnd.api+json",
               },
             });
           } catch (exception) {
-            console.log(`error received from DELETE ${url}: ${exception}`);
+            console.log(
+              `error received from DELETE ${workflowUrl}: ${exception}`
+            );
+          }
+
+          const projectUrl = `http://localhost:3000/v1/workspace/projects/${projectId}`;
+          try {
+            await axios.delete(projectUrl, {
+              headers: {
+                Accept: "application/vnd.api+json",
+                "Content-Type": "application/vnd.api+json",
+              },
+            });
+          } catch (exception) {
+            console.log(
+              `error received from DELETE ${projectUrl}: ${exception}`
+            );
           }
           projects = await fetchAllProjects();
         },

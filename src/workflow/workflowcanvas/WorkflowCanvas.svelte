@@ -126,9 +126,11 @@
   };
 
   const createWorkflow = async (
+    projectId: string,
     workflowAttributes: WorkflowAttributes = {}
   ): Promise<string> => {
     const data = {
+      id: projectId,
       type: "workflows",
     };
     if (Object.entries(workflowAttributes).length !== 0) {
@@ -552,7 +554,7 @@
     );
 
     // Create a new workflow and store its ID for all future orchestration calls
-    workflowId = await createWorkflow(workflowAttributes);
+    workflowId = await createWorkflow(projectId, workflowAttributes);
     canvas.workflowId = workflowId;
     updateValidConnections(workflowId);
 
