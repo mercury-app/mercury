@@ -1104,6 +1104,10 @@ export class WorkflowCanvas {
     });
   }
 
+  get nodes(): Set<WorkflowNode> {
+    return this._nodes;
+  }
+
   get container(): HTMLElement {
     return this._svg.node.parentElement.parentElement;
   }

@@ -5,6 +5,8 @@
   export let acceptButtonText = "Ok";
   export let rejectHandler = () => null;
   export let acceptHandler = (_value: unknown) => null;
+  export let inputIsValid = true;
+  export let inputInvalidMessage = "";
 </script>
 
 <div>
@@ -15,14 +17,21 @@
   <slot>
     <input />
   </slot>
-  <div id="response-container">
+  <div id="controls-container">
+    <div id="controls-filler">
+      <p hidden="{inputIsValid}" id="input-invalid-message">
+        {inputInvalidMessage}
+      </p>
+    </div>
     {#if rejectButtonText}
       <button class="response-button" on:click="{rejectHandler}"
         >{rejectButtonText}</button
       >
     {/if}
-    <button class="response-button" on:click="{acceptHandler}"
-      >{acceptButtonText}</button
+    <button
+      class="response-button"
+      disabled="{!inputIsValid}"
+      on:click="{acceptHandler}">{acceptButtonText}</button
     >
   </div>
 </div>
@@ -36,10 +45,23 @@
     font-size: 0.9em;
   }
 
-  #response-container {
+  #controls-container {
     display: flex;
     flex-direction: row;
-    justify-content: end;
+    align-items: center;
+  }
+
+  #controls-filler {
+    flex: auto;
+    max-height: var(--default-button-height);
+    margin: 0 calc(var(--common-spacing) * 3) 0 0;
+  }
+
+  #input-invalid-message {
+    margin: 0;
+    word-wrap: break-word;
+    color: red;
+    font-size: 0.9em;
   }
 
   .response-button {

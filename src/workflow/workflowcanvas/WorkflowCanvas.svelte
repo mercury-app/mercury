@@ -67,11 +67,11 @@
   import { onMount, getContext } from "svelte";
   import { fade, scale } from "svelte/transition";
 
+  import type { WorkflowCanvasJson } from "./interfaces";
+  import type { WorkflowAttributes } from "./types.js";
   import { WorkflowNode } from "./classes/workflownode";
   import { IOPort } from "./classes/ioport";
   import { WorkflowConnector } from "./classes/workflowconnector";
-  import type { WorkflowCanvasJson } from "./interfaces";
-  import type { WorkflowAttributes } from "./types.js";
   import MessageModal from "../../misc/modals/MessageModal.svelte";
   import TextInputModal from "../../misc/modals/TextInputModal.svelte";
 
@@ -294,9 +294,34 @@
               workflowAttributes
             );
           },
+          validationHandler: (
+            title: string
+          ): { isValid: boolean; validationMessage: string } => {
+            if (title === "") {
+              return {
+                isValid: false,
+                validationMessage: "",
+              };
+            }
+            if (title.match(/[^-_.A-Za-z0-9]/)) {
+              return {
+                isValid: false,
+                validationMessage: "Invalid characters present in given name",
+              };
+            }
+            const existingNodes = canvas.nodes;
+            if ([...existingNodes].some((node) => node.title == title)) {
+              return {
+                isValid: false,
+                validationMessage: "A node with that name already exists",
+              };
+            }
+            return { isValid: true, validationMessage: "" };
+          },
         },
         {
           closeButton: false,
+          closeOnEsc: false,
           closeOnOuterClick: false,
           styleWindow: { "max-width": "max-content", "border-radius": "3px" },
           transitionBg: fade,
