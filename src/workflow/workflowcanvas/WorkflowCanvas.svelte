@@ -73,6 +73,7 @@
   import type { WorkflowCanvasJson } from "./interfaces";
   import type { WorkflowAttributes } from "./types.js";
   import MessageModal from "../../misc/modals/MessageModal.svelte";
+  import TextInputModal from "../../misc/modals/TextInputModal.svelte";
 
   const dispatch = createEventDispatcher();
   const { open, close } = getContext("simple-modal");
@@ -127,14 +128,21 @@
 
   const createWorkflow = async (
     projectId: string,
+    notebooksDir: string,
     workflowAttributes: WorkflowAttributes = {}
   ): Promise<string> => {
     const data = {
       id: projectId,
       type: "workflows",
+      attributes: {
+        notebooks_dir: notebooksDir,
+      },
     };
     if (Object.entries(workflowAttributes).length !== 0) {
-      data["attributes"] = workflowAttributes;
+      data.attributes = {
+        ...data.attributes,
+        ...workflowAttributes,
+      };
     }
 
     const workflowUrl = `http://localhost:3000/v1/orchestration/workflows`;
@@ -185,9 +193,9 @@
     );
   };
 
-  const fetchProjectDetails = async (
+  const fetchProjectAttributes = async (
     projectId: string
-  ): Promise<[WorkflowCanvasJson, WorkflowAttributes]> => {
+  ): Promise<Record<string, unknown>> => {
     const url = `http://localhost:3000/v1/workspace/projects/${projectId}`;
     try {
       const response = await axios.get(url, {
@@ -195,18 +203,15 @@
           Accept: "application/vnd.api+json",
         },
       });
-      return [
-        response.data.data.attributes.canvas,
-        response.data.data.attributes.dag,
-      ];
+      return response.data.data.attributes;
     } catch (exception) {
       console.log(`error received from GET ${url}: ${exception}`);
     }
 
-    return [null, null];
+    return {};
   };
 
-  const saveProjectDetails = async (
+  const saveCanvasAndWorkflow = async (
     projectId: string,
     workflowCanvasJson: WorkflowCanvasJson,
     workflowAttributes: WorkflowAttributes
@@ -221,7 +226,7 @@
             id: projectId,
             attributes: {
               canvas: workflowCanvasJson,
-              dag: workflowAttributes,
+              workflow: workflowAttributes,
             },
           },
         },
@@ -242,29 +247,61 @@
     canvas.svgNode.style.display = "block";
 
     canvas.nodeAddedHandler = async (node: WorkflowNode) => {
-      const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes`;
-      try {
-        const response = await axios.post(
-          url,
-          {
-            data: {
-              type: "nodes",
-            },
+      open(
+        TextInputModal,
+        {
+          inputTitle: "Please enter a name for this node",
+          inputDetail: "",
+          acceptButtonText: "Done",
+          acceptHandler: async (nodeName: string) => {
+            close();
+
+            node.title = nodeName;
+            const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes`;
+            try {
+              const response = await axios.post(
+                url,
+                {
+                  data: {
+                    type: "nodes",
+                    attributes: {
+                      name: node.title,
+                    },
+                  },
+                },
+                {
+                  headers: {
+                    Accept: "application/vnd.api+json",
+                    "Content-Type": "application/vnd.api+json",
+                  },
+                }
+              );
+              if (response.status === 201) {
+                node.nodeId = response.data.data.id;
+                node.attributes = response.data.data.attributes;
+              }
+            } catch (exception) {
+              console.log(`error received from POST ${url}: ${exception}`);
+            }
+            updateValidConnections(workflowId);
+
+            const workflowAttributes = await fetchWorkflowAttributes(
+              workflowId
+            );
+            saveCanvasAndWorkflow(
+              projectId,
+              canvas.toJson(),
+              workflowAttributes
+            );
           },
-          {
-            headers: {
-              Accept: "application/vnd.api+json",
-              "Content-Type": "application/vnd.api+json",
-            },
-          }
-        );
-        if (response.status === 201) {
-          node.nodeId = response.data.data.id;
-          node.attributes = response.data.data.attributes;
+        },
+        {
+          closeButton: false,
+          closeOnOuterClick: false,
+          styleWindow: { "max-width": "max-content", "border-radius": "3px" },
+          transitionBg: fade,
+          transitionWindow: scale,
         }
-      } catch (exception) {
-        console.log(`error received from POST ${url}: ${exception}`);
-      }
 
       const websocket = new WebSocket(
         `ws://localhost:3000/v1/orchestration/nodes/${node.nodeId}/ws`
@@ -300,10 +337,6 @@
       };
 
       node.ws = websocket;
-      updateValidConnections(workflowId);
-
-      const workflowAttributes = await fetchWorkflowAttributes(workflowId);
-      saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
     };
 
     canvas.nodeDeletedHandler = async (nodeId: string) => {
@@ -321,7 +354,7 @@
       updateValidConnections(workflowId);
 
       const workflowAttributes = await fetchWorkflowAttributes(workflowId);
-      saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
+      saveCanvasAndWorkflow(projectId, canvas.toJson(), workflowAttributes);
     };
 
     canvas.nodeEditRequestedHandler = (node: WorkflowNode) => {
@@ -381,12 +414,12 @@
       }
 
       const workflowAttributes = await fetchWorkflowAttributes(workflowId);
-      saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
+      saveCanvasAndWorkflow(projectId, canvas.toJson(), workflowAttributes);
     };
 
     canvas.nodeMovedHandler = async (_node: WorkflowNode) => {
       const workflowAttributes = await fetchWorkflowAttributes(workflowId);
-      saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
+      saveCanvasAndWorkflow(projectId, canvas.toJson(), workflowAttributes);
     };
 
     canvas.connectorAddedHandler = async (
@@ -441,7 +474,7 @@
       updateValidConnections(workflowId);
 
       const workflowAttributes = await fetchWorkflowAttributes(workflowId);
-      saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
+      saveCanvasAndWorkflow(projectId, canvas.toJson(), workflowAttributes);
     };
 
     canvas.connectorDeletedHandler = async (
@@ -463,7 +496,7 @@
       updateValidConnections(workflowId);
 
       const workflowAttributes = await fetchWorkflowAttributes(workflowId);
-      saveProjectDetails(projectId, canvas.toJson(), workflowAttributes);
+      saveCanvasAndWorkflow(projectId, canvas.toJson(), workflowAttributes);
 
       // write outputs from source into json when a connector is deleted
       await src.workflowNode.updateAttributes();
@@ -549,12 +582,21 @@
     );
 
     // Load any previously saved state for this project
-    const [workflowCanvasJson, workflowAttributes] = await fetchProjectDetails(
-      projectId
-    );
+    const projectAttributes = await fetchProjectAttributes(projectId);
+    const workflowCanvasJson = projectAttributes[
+      "canvas"
+    ] as WorkflowCanvasJson;
+    const workflowAttributes = projectAttributes[
+      "workflow"
+    ] as WorkflowAttributes;
+    const notebooksDir = projectAttributes["notebooks_dir"] as string;
 
     // Create a new workflow and store its ID for all future orchestration calls
-    workflowId = await createWorkflow(projectId, workflowAttributes);
+    workflowId = await createWorkflow(
+      projectId,
+      notebooksDir,
+      workflowAttributes
+    );
     canvas.workflowId = workflowId;
     updateValidConnections(workflowId);
 
