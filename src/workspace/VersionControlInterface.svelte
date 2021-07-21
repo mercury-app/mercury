@@ -132,6 +132,8 @@
           transitionWindow: scale,
         }
       );
+    } else {
+      _checkoutRef();
     }
   };
 
