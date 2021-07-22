@@ -129,6 +129,7 @@
   const createWorkflow = async (
     projectId: string,
     notebooksDir: string,
+    portRange: [number, number],
     workflowAttributes: WorkflowAttributes = {}
   ): Promise<string> => {
     const data = {
@@ -136,6 +137,7 @@
       type: "workflows",
       attributes: {
         notebooks_dir: notebooksDir,
+        port_range: portRange,
       },
     };
     if (Object.entries(workflowAttributes).length !== 0) {
@@ -615,11 +617,13 @@
       "workflow"
     ] as WorkflowAttributes;
     const notebooksDir = projectAttributes["notebooks_dir"] as string;
+    const portRange = projectAttributes["port_range"] as [number, number];
 
     // Create a new workflow and store its ID for all future orchestration calls
     workflowId = await createWorkflow(
       projectId,
       notebooksDir,
+      portRange,
       workflowAttributes
     );
     canvas.workflowId = workflowId;
