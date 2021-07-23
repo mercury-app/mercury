@@ -61,8 +61,9 @@ export class WorkflowNode extends G {
     this._titleElement = document.createElement("p");
     this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
-    this._titleElement.style.maxWidth = `${this._innerRect.width() - titleOffset * 2
-      }px`;
+    this._titleElement.style.maxWidth = `${
+      this._innerRect.width() - titleOffset * 2
+    }px`;
     this._titleElement.style.fontSize = "14px";
     this._titleElement.style.lineHeight = `${cellSize}px`;
     this._titleElement.style.overflow = "hidden";
@@ -70,14 +71,13 @@ export class WorkflowNode extends G {
     this._titleElement.style.whiteSpace = "nowrap";
     titleObject.add(this._titleElement);
 
-
     const kernelStatusObject = this._svg
       // @ts-ignore
       .foreignObject(this._innerRect.width(), cellSize)
       .move(titleOffset, 30);
     this._kernelStatusElement = document.createElement("div");
     this._kernelStatusElement.style.display = "table-cell";
-    kernelStatusObject.add(this._kernelStatusElement)
+    kernelStatusObject.add(this._kernelStatusElement);
 
     this._svg.add(this);
     this.add(titleObject);
@@ -233,26 +233,34 @@ export class WorkflowNode extends G {
 
   public insertInputsMessageMercuryExtension(): void {
     const message = {
-      "data":
-      {
-        "action": "add_input_cell",
-        "code": this._attributes.notebook_attributes.io.input_code
-      }
+      data: {
+        action: "add_input_cell",
+        code: this._attributes.notebook_attributes.io.input_code,
+      },
     };
-    const frame = document.getElementById("notebook-iframe") as HTMLIFrameElement;
-    frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
+    const frame = document.getElementById(
+      "notebook-iframe"
+    ) as HTMLIFrameElement;
+    frame.contentWindow.postMessage(
+      message,
+      this._attributes.notebook_attributes.url
+    );
   }
 
   public insertOutputsMessageMercuryExtension(): void {
     const message = {
-      "data":
-      {
-        "action": "add_output_cell",
-        "code": this._attributes.notebook_attributes.io.output_code
-      }
+      data: {
+        action: "add_output_cell",
+        code: this._attributes.notebook_attributes.io.output_code,
+      },
     };
-    const frame = document.getElementById("notebook-iframe") as HTMLIFrameElement;
-    frame.contentWindow.postMessage(message, this._attributes.notebook_attributes.url);
+    const frame = document.getElementById(
+      "notebook-iframe"
+    ) as HTMLIFrameElement;
+    frame.contentWindow.postMessage(
+      message,
+      this._attributes.notebook_attributes.url
+    );
   }
 
   get isSelected(): boolean {
@@ -306,8 +314,12 @@ export class WorkflowNode extends G {
 
   set ready(ready: boolean) {
     const notReadyTitle = "Preparing…";
-    if (ready && this.title === notReadyTitle && this.attributes.notebook_attributes.jupyter_server) {
-      this.title = "Untitled"
+    if (
+      ready &&
+      this.title === notReadyTitle &&
+      this.attributes.notebook_attributes.jupyter_server
+    ) {
+      this.title = "Untitled";
     } else if (!ready) {
       this.title = notReadyTitle;
     }

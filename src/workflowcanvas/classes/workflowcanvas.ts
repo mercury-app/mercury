@@ -46,10 +46,13 @@ export class WorkflowCanvas {
     dest: IOPort,
     connector: WorkflowConnector
   ) => Promise<void>;
-  private _connectorDeletedHandler: (src: IOPort, dest: IOPort, connectorId: string) => Promise<void>;
-  private _runWorkflow: () => Promise<void>
-  private _stopWorkflow: () => Promise<void>
-
+  private _connectorDeletedHandler: (
+    src: IOPort,
+    dest: IOPort,
+    connectorId: string
+  ) => Promise<void>;
+  private _runWorkflow: () => Promise<void>;
+  private _stopWorkflow: () => Promise<void>;
 
   constructor(elementId: string, width: number, height: number) {
     this._divId = elementId;
@@ -268,8 +271,8 @@ export class WorkflowCanvas {
     // @ts-ignore
     const nodeSelectionMenu = this._svg.foreignObject(
       menuItemWidth * containerDiv.childElementCount +
-      spacing * (containerDiv.childElementCount + 1) -
-      1,
+        spacing * (containerDiv.childElementCount + 1) -
+        1,
       menuItemHeight + spacing * 2
     );
 
@@ -920,10 +923,12 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.insertInputsMessageMercuryExtension()
-        // eslint-disable-next-line no-console
-      ).catch(error => console.error(error));
+      this._nodeIOChangedHandler(this._selectedNode)
+        .then(
+          () => this._selectedNode.insertInputsMessageMercuryExtension()
+          // eslint-disable-next-line no-console
+        )
+        .catch((error) => console.error(error));
     }
   }
 
@@ -931,10 +936,12 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.insertOutputsMessageMercuryExtension()
-        // eslint-disable-next-line no-console
-      ).catch(error => console.error(error));
+      this._nodeIOChangedHandler(this._selectedNode)
+        .then(
+          () => this._selectedNode.insertOutputsMessageMercuryExtension()
+          // eslint-disable-next-line no-console
+        )
+        .catch((error) => console.error(error));
     }
   }
 
@@ -942,10 +949,12 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.insertInputsMessageMercuryExtension()
-        // eslint-disable-next-line no-console
-      ).catch(error => console.error(error));
+      this._nodeIOChangedHandler(this._selectedNode)
+        .then(
+          () => this._selectedNode.insertInputsMessageMercuryExtension()
+          // eslint-disable-next-line no-console
+        )
+        .catch((error) => console.error(error));
     }
   }
 
@@ -953,40 +962,40 @@ export class WorkflowCanvas {
     if (this._selectedNode !== null) {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
-      this._nodeIOChangedHandler(this._selectedNode).then(
-        () => this._selectedNode.insertOutputsMessageMercuryExtension()
-        // eslint-disable-next-line no-console
-      ).catch(error => console.error(error));
+      this._nodeIOChangedHandler(this._selectedNode)
+        .then(
+          () => this._selectedNode.insertOutputsMessageMercuryExtension()
+          // eslint-disable-next-line no-console
+        )
+        .catch((error) => console.error(error));
     }
   }
 
   public async executeOnNotebookOverlayClosed(): Promise<void> {
     if (this._selectedNode !== null) {
-
       if (this._selectedNode.attributes.output)
         () => this._selectedNode.insertOutputsMessageMercuryExtension();
     }
   }
 
   public toggleNodeSelectionMenuButtons(disable = true): void {
-    this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) { x.disabled = disable })
+    this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) {
+      x.disabled = disable;
+    });
   }
-
 
   public async runWorkflowRequestedHandler(): Promise<void> {
     if (this.workflowId !== null && this._nodes.size > 0)
-      await this._runWorkflow()
-    else
-      // eslint-disable-next-line no-console
-      console.warn("no nodes exist in this workflow")
+      await this._runWorkflow();
+    // eslint-disable-next-line no-console
+    else console.warn("no nodes exist in this workflow");
   }
 
   public async stopWorkflowRequestedHandler(): Promise<void> {
     if (this.workflowId !== null && this._nodes.size > 0)
-      await this._stopWorkflow()
-    else
-      // eslint-disable-next-line no-console
-      console.warn("no nodes exist in this workflow")
+      await this._stopWorkflow();
+    // eslint-disable-next-line no-console
+    else console.warn("no nodes exist in this workflow");
   }
 
   get container(): HTMLElement {
@@ -1033,7 +1042,9 @@ export class WorkflowCanvas {
     this._connectorAddedHandler = fn;
   }
 
-  set connectorDeletedHandler(fn: (src: IOPort, dest: IOPort, conenctorId: string) => Promise<void>) {
+  set connectorDeletedHandler(
+    fn: (src: IOPort, dest: IOPort, conenctorId: string) => Promise<void>
+  ) {
     this._connectorDeletedHandler = fn;
   }
 
