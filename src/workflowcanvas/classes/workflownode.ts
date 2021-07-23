@@ -223,9 +223,11 @@ export class WorkflowNode extends G {
         },
       });
       this._attributes = response.data.data.attributes;
+      // eslint-disable-next-line no-console
       console.log("updated node attributes");
     } catch (exception) {
-      console.log(`error received from GET ${url}: ${exception}`);
+      // eslint-disable-next-line no-console
+      console.warn(`error received from GET ${url}: ${exception}`);
     }
   }
 

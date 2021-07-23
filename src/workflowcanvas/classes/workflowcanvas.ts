@@ -14,7 +14,6 @@ import { Delta } from "../types.js";
 import { IOPort } from "./ioport.js";
 import { WorkflowNode } from "./workflownode.js";
 import { WorkflowConnector } from "./workflowconnector.js";
-import { select_option } from "svelte/internal";
 
 export class WorkflowCanvas {
   private _workflowId: string;
@@ -923,7 +922,8 @@ export class WorkflowCanvas {
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
         () => this._selectedNode.insertInputsMessageMercuryExtension()
-      );
+        // eslint-disable-next-line no-console
+      ).catch(error => console.error(error));
     }
   }
 
@@ -933,7 +933,8 @@ export class WorkflowCanvas {
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
         () => this._selectedNode.insertOutputsMessageMercuryExtension()
-      );
+        // eslint-disable-next-line no-console
+      ).catch(error => console.error(error));
     }
   }
 
@@ -943,7 +944,8 @@ export class WorkflowCanvas {
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
         () => this._selectedNode.insertInputsMessageMercuryExtension()
-      );
+        // eslint-disable-next-line no-console
+      ).catch(error => console.error(error));
     }
   }
 
@@ -953,7 +955,8 @@ export class WorkflowCanvas {
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode).then(
         () => this._selectedNode.insertOutputsMessageMercuryExtension()
-      );
+        // eslint-disable-next-line no-console
+      ).catch(error => console.error(error));
     }
   }
 
@@ -965,7 +968,7 @@ export class WorkflowCanvas {
     }
   }
 
-  public toggleNodeSelectionMenuButtons(disable: boolean = true): void {
+  public toggleNodeSelectionMenuButtons(disable = true): void {
     this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) { x.disabled = disable })
   }
 
@@ -974,14 +977,16 @@ export class WorkflowCanvas {
     if (this.workflowId !== null && this._nodes.size > 0)
       await this._runWorkflow()
     else
-      console.log("no nodes exist in this workflow")
+      // eslint-disable-next-line no-console
+      console.warn("no nodes exist in this workflow")
   }
 
   public async stopWorkflowRequestedHandler(): Promise<void> {
     if (this.workflowId !== null && this._nodes.size > 0)
       await this._stopWorkflow()
     else
-      console.log("no nodes exist in this workflow")
+      // eslint-disable-next-line no-console
+      console.warn("no nodes exist in this workflow")
   }
 
   get container(): HTMLElement {
@@ -1032,7 +1037,7 @@ export class WorkflowCanvas {
     this._connectorDeletedHandler = fn;
   }
 
-  get workflowId() {
+  get workflowId(): string {
     return this._workflowId;
   }
 
