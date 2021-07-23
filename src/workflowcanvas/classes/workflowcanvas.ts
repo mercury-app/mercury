@@ -924,10 +924,8 @@ export class WorkflowCanvas {
       this._addInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode)
-        .then(
-          () => this._selectedNode.insertInputsMessageMercuryExtension()
-          // eslint-disable-next-line no-console
-        )
+        .then(() => this._selectedNode.insertInputsMessageMercuryExtension())
+        // eslint-disable-next-line no-console
         .catch((error) => console.error(error));
     }
   }
@@ -937,10 +935,8 @@ export class WorkflowCanvas {
       this._addOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode)
-        .then(
-          () => this._selectedNode.insertOutputsMessageMercuryExtension()
-          // eslint-disable-next-line no-console
-        )
+        .then(() => this._selectedNode.insertOutputsMessageMercuryExtension())
+        // eslint-disable-next-line no-console
         .catch((error) => console.error(error));
     }
   }
@@ -950,10 +946,8 @@ export class WorkflowCanvas {
       this._removeInput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode)
-        .then(
-          () => this._selectedNode.insertInputsMessageMercuryExtension()
-          // eslint-disable-next-line no-console
-        )
+        .then(() => this._selectedNode.insertInputsMessageMercuryExtension())
+        // eslint-disable-next-line no-console
         .catch((error) => console.error(error));
     }
   }
@@ -963,10 +957,8 @@ export class WorkflowCanvas {
       this._removeOutput(this._selectedNode, name);
       this._showNodeSelectionMenu(this._selectedNode);
       this._nodeIOChangedHandler(this._selectedNode)
-        .then(
-          () => this._selectedNode.insertOutputsMessageMercuryExtension()
-          // eslint-disable-next-line no-console
-        )
+        .then(() => this._selectedNode.insertOutputsMessageMercuryExtension())
+        // eslint-disable-next-line no-console
         .catch((error) => console.error(error));
     }
   }
