@@ -97,7 +97,7 @@
           removeInputOnSelectedNode(event.detail.inputName)}"
         on:outputRemoved="{(event) =>
           removeOutputOnSelectedNode(event.detail.outputName)}"
-        on:NotebookPanelRemoved="{() => executeOnNotebookOverlayClosed()}"
+        on:notebookPanelRemoved="{() => executeOnNotebookOverlayClosed()}"
       />
     </div>
   </div>

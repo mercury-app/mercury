@@ -60,7 +60,7 @@
 
   const dispatchNotebookPanelRemovedEvent = () => {
     visible = false;
-    dispatch("NotebookPanelRemoved");
+    dispatch("notebookPanelRemoved");
   };
 </script>
 
