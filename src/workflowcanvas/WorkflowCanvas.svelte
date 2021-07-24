@@ -93,23 +93,24 @@
   ): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       let correctIframe = false;
-      const timeStarted: any = new Date();
-      var interval = setInterval(() => {
-        let DateNow: any = new Date();
+      const timeStarted: Date = new Date();
+      const interval = setInterval(() => {
+        const DateNow: Date = new Date();
         if (
           lastMessageFrameOrigin !== null &&
           notebookUrl.split("/")[2] === lastMessageFrameOrigin.split("/")[2]
         ) {
           console.log("correct origin detected");
-          console.log("resolved after", DateNow - timeStarted, "ms");
+          const resolvedTime = DateNow.getTime() - timeStarted.getTime();
+          console.log("resolved after", resolvedTime, "ms");
           correctIframe = true;
           clearInterval(interval);
           resolve(true);
-        } else if (DateNow - timeStarted > 25000) {
+        } else if (DateNow.getTime() - timeStarted.getTime() > 25000) {
           console.log(lastMessageFrameOrigin);
           console.log(
             "Timed out waiting for notebook after ",
-            DateNow - timeStarted,
+            DateNow.getTime() - timeStarted.getTime(),
             "ms"
           );
           clearInterval(interval);
@@ -233,7 +234,6 @@
       const notebookUrl = node.attributes.notebook_attributes.url;
       dispatch("nodeEditRequested", { notebookUrl });
 
-      // waitForCorrectIframe(notebookUrl).then(() => console.log("adsdasdasd"));
       waitForCorrectIframe(notebookUrl)
         .then(() => console.log("Correct Iframe detected"))
         .then(() => node.insertInputsMessageMercuryExtension())
