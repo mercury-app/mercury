@@ -18,7 +18,7 @@ export class WorkflowNode extends G {
   private _outlineRect: Rect;
   private _titleSeparator: Line;
   private _titleElement: HTMLParagraphElement;
-  private _kernelStatusElement: HTMLUnknownElement;
+  private _kernelStatusElement: Rect;
   private _mainBody: G;
   private _isSelected: boolean;
   private _inputPorts: Array<IOPort>;
@@ -56,14 +56,14 @@ export class WorkflowNode extends G {
     const titleOffset = 6;
     const titleObject = this._svg
       // @ts-ignore
-      .foreignObject(this._innerRect.width(), cellSize)
+      .foreignObject(this._innerRect.width() * (4 / 5), cellSize)
       .move(titleOffset, 0);
+
     this._titleElement = document.createElement("p");
     this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
-    this._titleElement.style.maxWidth = `${
-      this._innerRect.width() - titleOffset * 2
-    }px`;
+    this._titleElement.style.maxWidth = `${this._innerRect.width() - titleOffset * 2
+      }px`;
     this._titleElement.style.fontSize = "14px";
     this._titleElement.style.lineHeight = `${cellSize}px`;
     this._titleElement.style.overflow = "hidden";
@@ -71,17 +71,16 @@ export class WorkflowNode extends G {
     this._titleElement.style.whiteSpace = "nowrap";
     titleObject.add(this._titleElement);
 
-    const kernelStatusObject = this._svg
-      // @ts-ignore
-      .foreignObject(this._innerRect.width(), cellSize)
-      .move(titleOffset, 30);
-    this._kernelStatusElement = document.createElement("div");
-    this._kernelStatusElement.style.display = "table-cell";
-    kernelStatusObject.add(this._kernelStatusElement);
+    this._kernelStatusElement = this._svg.rect(this._innerRect.width() * (1 / 5), cellSize)
+      .move(this._innerRect.width() * (4 / 5), 0)
+      .fill("#E8E8E8")
+    // this._kernelStatusElement = document.createElement("div");
+    // this._kernelStatusElement.style.display = "table-cell";
+    // kernelStatusObject.add(this._kernelStatusElement);
 
     this._svg.add(this);
     this.add(titleObject);
-    this.add(kernelStatusObject);
+    this.add(this._kernelStatusElement);
     this.add(this._mainBody);
     this.move(position.x, position.y);
 
@@ -248,10 +247,26 @@ export class WorkflowNode extends G {
   }
 
   public insertOutputsMessageMercuryExtension(): void {
+    console.log("sent insert output message")
     const message = {
       data: {
         action: "add_output_cell",
         code: this._attributes.notebook_attributes.io.output_code,
+      },
+    };
+    const frame = document.getElementById(
+      "notebook-iframe"
+    ) as HTMLIFrameElement;
+    frame.contentWindow.postMessage(
+      message,
+      this._attributes.notebook_attributes.url
+    );
+  }
+
+  public saveNotebookMessageMercuryExtension(): void {
+    const message = {
+      data: {
+        action: "save_notebook",
       },
     };
     const frame = document.getElementById(
@@ -287,7 +302,7 @@ export class WorkflowNode extends G {
     this._titleElement.textContent = title;
   }
 
-  get kernelStatusElement(): HTMLUnknownElement {
+  get kernelStatusElement(): Rect {
     return this._kernelStatusElement;
   }
 

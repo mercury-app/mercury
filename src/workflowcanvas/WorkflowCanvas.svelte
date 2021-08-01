@@ -1,5 +1,4 @@
 <script lang="ts" context="module">
-  import { BarLoader } from "svelte-loading-spinners";
   import axios from "axios";
   import "@svgdotjs/svg.draggable.js";
 
@@ -190,20 +189,11 @@
         } else kernelStatus = node.attributes.notebook_attributes.kernel_state;
 
         if (kernelStatus == "busy") {
-          node.kernelStatusElement.innerHTML = null;
-          new BarLoader({
-            target: node.kernelStatusElement,
-            props: {
-              size: "60",
-              color: "#FF3E00",
-              unit: "px",
-              duration: "1s",
-            },
-          });
+          node.kernelStatusElement.fill("darkgrey");
         }
 
         if (kernelStatus == "idle") {
-          node.kernelStatusElement.innerHTML = "&#9634";
+          node.kernelStatusElement.fill("#E8E8E8");
         }
       };
 
