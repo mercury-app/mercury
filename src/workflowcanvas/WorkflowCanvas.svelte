@@ -421,9 +421,13 @@
 
     // listen to iframe message event
     window.addEventListener("message", (event) => {
-      console.log("message received from notebook");
-      console.log(event.origin);
-      lastMessageFrameOrigin = event.origin;
+      console.log(`message received from ${event.origin}`);
+      if ("scope" in event.data) {
+        if (event.data.scope === "mercury") {
+          lastMessageFrameOrigin = event.origin;
+          console.log("message received from mercury nbextension");
+        }
+      }
     });
   });
 </script>
