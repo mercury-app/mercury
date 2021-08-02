@@ -976,7 +976,7 @@ export class WorkflowCanvas {
   }
 
   public toggleNodeSelectionMenuButtons(disable = true): void {
-    this._nodeSelectionMenu.node.childNodes[0].children.forEach(function (x) {
+    [...this._nodeSelectionMenu.node.childNodes[0].children].forEach(function (x) {
       x.disabled = disable;
     });
   }
