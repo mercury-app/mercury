@@ -225,6 +225,7 @@
       dispatch("nodeEditRequested", { notebookUrl });
 
       waitForCorrectIframe(notebookUrl)
+        .then(() => node.updateAttributes())
         .then(() => console.log("Correct Iframe detected"))
         .then(() => node.insertInputsMessageMercuryExtension())
         .then(() => node.insertOutputsMessageMercuryExtension());
