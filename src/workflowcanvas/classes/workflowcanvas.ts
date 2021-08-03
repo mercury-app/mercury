@@ -271,8 +271,8 @@ export class WorkflowCanvas {
     // @ts-ignore
     const nodeSelectionMenu = this._svg.foreignObject(
       menuItemWidth * containerDiv.childElementCount +
-      spacing * (containerDiv.childElementCount + 1) -
-      1,
+        spacing * (containerDiv.childElementCount + 1) -
+        1,
       menuItemHeight + spacing * 2
     );
 
@@ -965,10 +965,7 @@ export class WorkflowCanvas {
 
   public async executeOnNotebookOverlayClosed(): Promise<void> {
     if (this._selectedNode !== null) {
-      console.log("selected node outputs");
-      console.log(this._selectedNode.attributes.output);
       if (this._selectedNode.attributes.output) {
-        console.log("executing output cell on notebook overlay closing");
         () => this._selectedNode.insertOutputsMessageMercuryExtension();
       }
     }
@@ -976,7 +973,9 @@ export class WorkflowCanvas {
   }
 
   public toggleNodeSelectionMenuButtons(disable = true): void {
-    [...this._nodeSelectionMenu.node.childNodes[0].children].forEach(function (x) {
+    [...this._nodeSelectionMenu.node.childNodes[0].children].forEach(function (
+      x
+    ) {
       x.disabled = disable;
     });
   }

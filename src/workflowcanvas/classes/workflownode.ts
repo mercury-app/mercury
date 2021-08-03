@@ -62,8 +62,9 @@ export class WorkflowNode extends G {
     this._titleElement = document.createElement("p");
     this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
-    this._titleElement.style.maxWidth = `${this._innerRect.width() - titleOffset * 2
-      }px`;
+    this._titleElement.style.maxWidth = `${
+      this._innerRect.width() - titleOffset * 2
+    }px`;
     this._titleElement.style.fontSize = "14px";
     this._titleElement.style.lineHeight = `${cellSize}px`;
     this._titleElement.style.overflow = "hidden";
@@ -71,9 +72,10 @@ export class WorkflowNode extends G {
     this._titleElement.style.whiteSpace = "nowrap";
     titleObject.add(this._titleElement);
 
-    this._kernelStatusElement = this._svg.rect(this._innerRect.width() * (1 / 5), cellSize)
+    this._kernelStatusElement = this._svg
+      .rect(this._innerRect.width() * (1 / 5), cellSize)
       .move(this._innerRect.width() * (4 / 5), 0)
-      .fill("#E8E8E8")
+      .fill("#E8E8E8");
     // this._kernelStatusElement = document.createElement("div");
     // this._kernelStatusElement.style.display = "table-cell";
     // kernelStatusObject.add(this._kernelStatusElement);
@@ -247,7 +249,6 @@ export class WorkflowNode extends G {
   }
 
   public insertOutputsMessageMercuryExtension(): void {
-    console.log("sent insert output message")
     const message = {
       data: {
         action: "add_output_cell",
