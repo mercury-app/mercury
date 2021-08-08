@@ -1,4 +1,5 @@
 import { G, Line, Svg, Rect } from "@svgdotjs/svg.js";
+import axios from "axios";
 
 import {
   mainBodyHeight,
@@ -17,6 +18,7 @@ export class WorkflowNode extends G {
   private _outlineRect: Rect;
   private _titleSeparator: Line;
   private _titleElement: HTMLParagraphElement;
+  private _kernelStatusElement: Rect;
   private _mainBody: G;
   private _isSelected: boolean;
   private _inputPorts: Array<IOPort>;
@@ -24,6 +26,7 @@ export class WorkflowNode extends G {
   private _nodeId: string;
   private _attributes: WorkflowNodeAttributes | null;
   private _ready: boolean;
+  private _ws: WebSocket;
 
   constructor(svg: Svg, position: Point) {
     super();
@@ -53,8 +56,9 @@ export class WorkflowNode extends G {
     const titleOffset = 6;
     const titleObject = this._svg
       // @ts-ignore
-      .foreignObject(this._innerRect.width(), cellSize)
+      .foreignObject(this._innerRect.width() * (4 / 5), cellSize)
       .move(titleOffset, 0);
+
     this._titleElement = document.createElement("p");
     this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
@@ -68,8 +72,17 @@ export class WorkflowNode extends G {
     this._titleElement.style.whiteSpace = "nowrap";
     titleObject.add(this._titleElement);
 
+    this._kernelStatusElement = this._svg
+      .rect(this._innerRect.width() * (1 / 5), cellSize)
+      .move(this._innerRect.width() * (4 / 5), 0)
+      .fill("#E8E8E8");
+    // this._kernelStatusElement = document.createElement("div");
+    // this._kernelStatusElement.style.display = "table-cell";
+    // kernelStatusObject.add(this._kernelStatusElement);
+
     this._svg.add(this);
     this.add(titleObject);
+    this.add(this._kernelStatusElement);
     this.add(this._mainBody);
     this.move(position.x, position.y);
 
@@ -82,6 +95,7 @@ export class WorkflowNode extends G {
     this._attributes = null;
 
     this._ready = false;
+    this._ws = null;
   }
 
   public select(): void {
@@ -200,6 +214,71 @@ export class WorkflowNode extends G {
     }
   }
 
+  public async updateAttributes(): Promise<void> {
+    const url = `http://localhost:3000/v1/orchestration/nodes/${this._nodeId}`;
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/vnd.api+json",
+          "Content-Type": "application/vnd.api+json",
+        },
+      });
+      this._attributes = response.data.data.attributes;
+      // eslint-disable-next-line no-console
+      console.log("updated node attributes");
+    } catch (exception) {
+      // eslint-disable-next-line no-console
+      console.warn(`error received from GET ${url}: ${exception}`);
+    }
+  }
+
+  public insertInputsMessageMercuryExtension(): void {
+    const message = {
+      data: {
+        action: "add_input_cell",
+        code: this._attributes.notebook_attributes.io.input_code,
+      },
+    };
+    const frame = document.getElementById(
+      "notebook-iframe"
+    ) as HTMLIFrameElement;
+    frame.contentWindow.postMessage(
+      message,
+      this._attributes.notebook_attributes.url
+    );
+  }
+
+  public insertOutputsMessageMercuryExtension(): void {
+    const message = {
+      data: {
+        action: "add_output_cell",
+        code: this._attributes.notebook_attributes.io.output_code,
+      },
+    };
+    const frame = document.getElementById(
+      "notebook-iframe"
+    ) as HTMLIFrameElement;
+    frame.contentWindow.postMessage(
+      message,
+      this._attributes.notebook_attributes.url
+    );
+  }
+
+  public saveNotebookMessageMercuryExtension(): void {
+    const message = {
+      data: {
+        action: "save_notebook",
+      },
+    };
+    const frame = document.getElementById(
+      "notebook-iframe"
+    ) as HTMLIFrameElement;
+    frame.contentWindow.postMessage(
+      message,
+      this._attributes.notebook_attributes.url
+    );
+  }
+
   get isSelected(): boolean {
     return this._isSelected;
   }
@@ -222,6 +301,10 @@ export class WorkflowNode extends G {
 
   set title(title: string) {
     this._titleElement.textContent = title;
+  }
+
+  get kernelStatusElement(): Rect {
+    return this._kernelStatusElement;
   }
 
   get nodeId(): string {
@@ -247,11 +330,19 @@ export class WorkflowNode extends G {
 
   set ready(ready: boolean) {
     const notReadyTitle = "Preparing…";
-    if (ready && this.title === notReadyTitle) {
+    if (
+      ready &&
+      this.title === notReadyTitle &&
+      this.attributes.notebook_attributes.jupyter_server
+    ) {
       this.title = "Untitled";
     } else if (!ready) {
       this.title = notReadyTitle;
     }
     this._ready = ready;
+  }
+
+  set ws(websocket: WebSocket) {
+    this._ws = websocket;
   }
 }

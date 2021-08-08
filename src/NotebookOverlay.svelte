@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
+
   import InputPanel from "./InputPanel.svelte";
   import OutputPanel from "./OutputPanel.svelte";
 
@@ -6,6 +8,7 @@
   export let inputs: Array<string> = [];
   export let outputs: Array<string> = [];
   export let notebookUrl = "about:blank";
+  export let reloadIframe = false;
 
   const hiddenClass = "hidden";
   const visibleClass = "visible";
@@ -13,6 +16,15 @@
     const notebookPanel = document.getElementById("notebook-panel");
     if (notebookPanel !== null) {
       if (visible) {
+        // reloadiframe if the notebook file has been overwritten by workflow run
+        if (reloadIframe) {
+          console.log("Reloading iframe");
+          const notebookIframe = document.getElementById(
+            "notebook-iframe"
+          ) as HTMLIFrameElement;
+          notebookIframe.src = notebookIframe.src;
+        }
+        reloadIframe = false;
         notebookPanel.classList.remove(hiddenClass);
         notebookPanel.classList.add(visibleClass);
 
@@ -43,10 +55,20 @@
 
   let inputPanelVisible = false;
   let outputPanelVisible = false;
+
+  const dispatch = createEventDispatcher();
+
+  const dispatchNotebookPanelRemovedEvent = () => {
+    visible = false;
+    dispatch("notebookPanelRemoved");
+  };
 </script>
 
 <div id="notebook-panel" class="{hiddenClass}" tabindex="-1">
-  <button id="notebook-back-button" on:click="{() => (visible = false)}">
+  <button
+    id="notebook-back-button"
+    on:click="{dispatchNotebookPanelRemovedEvent}"
+  >
     <img src="/icons/chevron-left.svg" alt="Go back icon" class="icon" />
   </button>
 

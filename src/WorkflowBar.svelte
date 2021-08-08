@@ -2,6 +2,7 @@
   import { createEventDispatcher } from "svelte";
 
   export let workflowBarWidth: number = 48;
+  export let runningWorkflow;
 
   const spacing = 6;
 
@@ -20,6 +21,7 @@
   <div id="workflow-bar" style="{workflowBarStyle}">
     <button
       style="{buttonStyle}"
+      disabled="{runningWorkflow}"
       on:click="{() => dispatch('newNodeRequested')}"
     >
       <img src="/icons/plus.svg" alt="Add node icon" class="icon" />

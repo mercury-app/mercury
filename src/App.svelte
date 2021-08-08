@@ -8,6 +8,9 @@
     addOutputOnSelectedNode,
     removeInputOnSelectedNode,
     removeOutputOnSelectedNode,
+    executeOnNotebookOverlayClosed,
+    runWorkflowRequestedHandler,
+    stopWorkflowRequestedHandler,
   } from "./workflowcanvas/WorkflowCanvas.svelte";
 
   const workflowBarWidth = 48;
@@ -30,18 +33,40 @@
     notebookUrl = event.detail.notebookUrl;
     notebookOverlayVisible = true;
   };
+
+  const runWorkflowRequested = async (event: CustomEvent) => {
+    runningWorkflow = true;
+    await runWorkflowRequestedHandler();
+    console.log("workflow execution complete");
+    runningWorkflow = false;
+    reloadIframe = true;
+  };
+
+  const stopWorkflowRequested = async (event: CustomEvent) => {
+    runningWorkflow = true;
+    await stopWorkflowRequestedHandler();
+    console.log("workflow stopped");
+    runningWorkflow = false;
+    reloadIframe = true;
+  };
+
+  let runningWorkflow = false;
+  let reloadIframe = false;
 </script>
 
 <main>
   <div id="workflow-builder-main">
     <div class="container" id="workflow-bar-container">
       <WorkflowBar
+        bind:runningWorkflow
         workflowBarWidth="{workflowBarWidth}"
         on:newNodeRequested="{placeNewNode}"
       />
     </div>
     <div class="container" id="workflow-canvas-container">
       <WorkflowCanvas
+        bind:runningWorkflow
+        bind:notebookUrl
         numColumns="{numCanvasColumns}"
         numRows="{numCanvasRows}"
         colWidth="{canvasColWidth}"
@@ -51,7 +76,11 @@
       />
     </div>
     <div class="container" id="workflow-actions-container">
-      <WorkflowActions />
+      <WorkflowActions
+        bind:runningWorkflow
+        on:workflowRunRequested="{runWorkflowRequested}"
+        on:workflowStopRequested="{stopWorkflowRequested}"
+      />
     </div>
     <div>
       <NotebookOverlay
@@ -59,6 +88,7 @@
         bind:inputs="{selectedNotebookInputs}"
         bind:outputs="{selectedNotebookOutputs}"
         bind:notebookUrl
+        bind:reloadIframe
         on:inputAdded="{(event) =>
           addInputOnSelectedNode(event.detail.inputName)}"
         on:outputAdded="{(event) =>
@@ -67,6 +97,7 @@
           removeInputOnSelectedNode(event.detail.inputName)}"
         on:outputRemoved="{(event) =>
           removeOutputOnSelectedNode(event.detail.outputName)}"
+        on:notebookPanelRemoved="{() => executeOnNotebookOverlayClosed()}"
       />
     </div>
   </div>
