@@ -329,6 +329,7 @@
           transitionBg: fade,
           transitionWindow: scale,
         }
+      );
 
       const websocket = new WebSocket(
         `ws://localhost:3000/v1/orchestration/nodes/${node.nodeId}/ws`

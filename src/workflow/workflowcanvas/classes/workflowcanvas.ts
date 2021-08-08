@@ -998,7 +998,7 @@ export class WorkflowCanvas {
     // eslint-disable-next-line no-console
     else console.warn("no nodes exist in this workflow");
   }
-  
+
   public toJson(): WorkflowCanvasJson {
     const nodes = Array.from(this._nodes);
     const connectors = Array.from(this._connectionsDestForSrc.values()).map(
