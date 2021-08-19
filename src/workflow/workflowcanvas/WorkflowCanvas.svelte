@@ -114,6 +114,7 @@
           clearInterval(interval);
           resolve(true);
         } else if (DateNow.getTime() - timeStarted.getTime() > 25000) {
+          console.log(notebookUrl);
           console.log(lastMessageFrameOrigin);
           console.log(
             "Timed out waiting for notebook after ",
@@ -258,7 +259,7 @@
           acceptHandler: async (nodeName: string) => {
             close();
 
-            node.title = nodeName;
+            node.name = nodeName;
             const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes`;
             try {
               const response = await axios.post(
@@ -281,6 +282,45 @@
               if (response.status === 201) {
                 node.nodeId = response.data.data.id;
                 node.attributes = response.data.data.attributes;
+
+                const websocket = new WebSocket(
+                  `ws://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes/${node.nodeId}/ws`
+                );
+
+                websocket.onopen = (event) => {
+                  console.log(`WebSocket opened for node`);
+                  console.log(
+                    `ws://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes/${node.nodeId}/ws`
+                  );
+                };
+
+                websocket.onmessage = (event) => {
+                  console.log(`Message received`);
+                  const message = JSON.parse(event.data);
+                  node.attributes = message.attributes;
+                  node.title = node.name;
+                  let kernelStatus;
+
+                  if (runningWorkflow) {
+                    kernelStatus =
+                      node.attributes.notebook_attributes.workflow_kernel_state;
+                  } else
+                    kernelStatus =
+                      node.attributes.notebook_attributes.kernel_state;
+
+                  if (kernelStatus == "busy") {
+                    node.kernelStatusElement.fill("darkgrey");
+                  }
+
+                  if (kernelStatus == "idle") {
+                    node.kernelStatusElement.fill("#E8E8E8");
+                  }
+                };
+
+                websocket.onclose = (event) => {
+                  console.log("websocket closed for node");
+                };
+                node.ws = websocket;
               }
             } catch (exception) {
               console.log(`error received from POST ${url}: ${exception}`);
@@ -330,41 +370,6 @@
           transitionWindow: scale,
         }
       );
-
-      const websocket = new WebSocket(
-        `ws://localhost:3000/v1/orchestration/nodes/${node.nodeId}/ws`
-      );
-
-      websocket.onopen = (event) => {
-        console.log(`WebSocket opened for node`);
-      };
-
-      websocket.onmessage = (event) => {
-        console.log(`Message received`);
-        const message = JSON.parse(event.data);
-        node.attributes = message.attributes;
-        node.title = "Untitled";
-        let kernelStatus;
-
-        if (runningWorkflow) {
-          kernelStatus =
-            node.attributes.notebook_attributes.workflow_kernel_state;
-        } else kernelStatus = node.attributes.notebook_attributes.kernel_state;
-
-        if (kernelStatus == "busy") {
-          node.kernelStatusElement.fill("darkgrey");
-        }
-
-        if (kernelStatus == "idle") {
-          node.kernelStatusElement.fill("#E8E8E8");
-        }
-      };
-
-      websocket.onclose = (event) => {
-        console.log("websocket closed for node");
-      };
-
-      node.ws = websocket;
     };
 
     canvas.nodeDeletedHandler = async (nodeId: string) => {
@@ -390,7 +395,7 @@
       dispatch("nodeEditRequested", { notebookUrl });
 
       waitForCorrectIframe(notebookUrl)
-        .then(() => node.updateAttributes())
+        .then(() => node.updateAttributes(workflowId))
         .then(() => console.log("Correct Iframe detected"))
         .then(() => node.insertInputsMessageMercuryExtension())
         .then(() => node.insertOutputsMessageMercuryExtension());
@@ -494,7 +499,7 @@
       // on creation of a connector, the source node tries to write its outputs to the json
       // for this we also need to set the active iframae as the source node of the connector
       // and wait for the iframe to be loaded for injecting the cell
-      await src.workflowNode.updateAttributes();
+      await src.workflowNode.updateAttributes(workflowId);
       notebookUrl = src.workflowNode.attributes.notebook_attributes.url;
       waitForCorrectIframe(notebookUrl)
         .then(() => console.log("Correct Iframe detected"))
@@ -527,7 +532,7 @@
       saveCanvasAndWorkflow(projectId, canvas.toJson(), workflowAttributes);
 
       // write outputs from source into json when a connector is deleted
-      await src.workflowNode.updateAttributes();
+      await src.workflowNode.updateAttributes(workflowId);
       notebookUrl = src.workflowNode.attributes.notebook_attributes.url;
       waitForCorrectIframe(notebookUrl)
         .then(() => console.log("Correct Iframe detected"))
@@ -634,6 +639,16 @@
     canvas.fromJson(workflowCanvasJson);
 
     close();
+
+    window.addEventListener("message", (event) => {
+      console.log(`message received from ${event.origin}`);
+      if ("scope" in event.data) {
+        if (event.data.scope === "mercury") {
+          lastMessageFrameOrigin = event.origin;
+          console.log("message received from mercury nbextension");
+        }
+      }
+    });
   });
 </script>
 

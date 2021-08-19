@@ -29,6 +29,7 @@ export class WorkflowNode extends G {
   private _outputPorts: Array<IOPort>;
   private _nodeId: string;
   private _attributes: WorkflowNodeAttributes | null;
+  private _name: string;
   private _ready: boolean;
   private _ws: WebSocket;
 
@@ -66,9 +67,8 @@ export class WorkflowNode extends G {
     this._titleElement = document.createElement("p");
     this._titleElement.textContent = "";
     this._titleElement.style.display = "table-cell"; // For some reason this works
-    this._titleElement.style.maxWidth = `${
-      this._innerRect.width() - titleOffset * 2
-    }px`;
+    this._titleElement.style.maxWidth = `${this._innerRect.width() - titleOffset * 2
+      }px`;
     this._titleElement.style.fontSize = "14px";
     this._titleElement.style.lineHeight = `${cellSize}px`;
     this._titleElement.style.overflow = "hidden";
@@ -218,8 +218,8 @@ export class WorkflowNode extends G {
     }
   }
 
-  public async updateAttributes(): Promise<void> {
-    const url = `http://localhost:3000/v1/orchestration/nodes/${this._nodeId}`;
+  public async updateAttributes(workflowId: string): Promise<void> {
+    const url = `http://localhost:3000/v1/orchestration/workflows/${workflowId}/nodes/${this._nodeId}`;
     try {
       const response = await axios.get(url, {
         headers: {
@@ -243,6 +243,7 @@ export class WorkflowNode extends G {
         code: this._attributes.notebook_attributes.io.input_code,
       },
     };
+    console.log(message)
     const frame = document.getElementById(
       "notebook-iframe"
     ) as HTMLIFrameElement;
@@ -318,6 +319,14 @@ export class WorkflowNode extends G {
     this._titleElement.textContent = title;
   }
 
+  get name(): string {
+    return this._name;
+  }
+
+  set name(name: string) {
+    this._name = name;
+  }
+
   get kernelStatusElement(): Rect {
     return this._kernelStatusElement;
   }
@@ -347,10 +356,13 @@ export class WorkflowNode extends G {
     const notReadyTitle = "Preparing…";
     if (
       ready &&
-      this.title === notReadyTitle &&
-      this.attributes.notebook_attributes.jupyter_server
-    ) {
-      this.title = "Untitled";
+      this.title === notReadyTitle) {
+      if (this._attributes !== null) {
+        if (this.attributes.notebook_attributes.jupyter_server)
+          this.title = this._name;
+        else
+          this.title = notReadyTitle;
+      }
     } else if (!ready) {
       this.title = notReadyTitle;
     }
