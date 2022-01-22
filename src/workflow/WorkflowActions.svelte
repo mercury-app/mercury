@@ -45,7 +45,7 @@
     display: flex;
     flex-direction: row;
 
-    border: 1px solid var(--main-border-color);
+    border: var(--common-border-width) solid var(--main-border-color);
     border-radius: var(--common-radius);
   }
 
@@ -65,6 +65,6 @@
   }
 
   .vertical-separator {
-    border-right: 1px solid var(--main-border-color);
+    border-right: var(--common-border-width) solid var(--main-border-color);
   }
 </style>

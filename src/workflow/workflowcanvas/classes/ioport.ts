@@ -7,7 +7,7 @@ import {
   portWidth,
   portHeight,
 } from "../constants.js";
-import { Point } from "../interfaces.js";
+import { IOPortJson, Point } from "../interfaces.js";
 import { IOPortType } from "../types.js";
 
 import { WorkflowNode } from "./workflownode.js";
@@ -118,6 +118,14 @@ export class IOPort extends G {
     this.children().forEach((element) => {
       element.stroke({ color: "lightgray" });
     });
+  }
+
+  public toJson(): IOPortJson {
+    return {
+      node_id: this._workflowNode.nodeId,
+      port_type: this._portType,
+      port_name: this._name,
+    };
   }
 
   get workflowNode(): WorkflowNode {

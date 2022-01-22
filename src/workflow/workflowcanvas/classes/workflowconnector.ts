@@ -1,13 +1,16 @@
 import { G, Path, Svg } from "@svgdotjs/svg.js";
 
 import { strokeWidth, cellSize, clamp } from "../constants.js";
-import { Point } from "../interfaces.js";
+import { Point, WorkflowConnectorJson } from "../interfaces.js";
+import { IOPort } from "./ioport.js";
 
 export class WorkflowConnector extends G {
   private _mainPath: Path;
   private _overlayPath: Path;
   private _isSelected: boolean;
   private _connectorId: string;
+  private _src: IOPort;
+  private _dest: IOPort;
 
   constructor(svg: Svg, start: Point) {
     super();
@@ -28,6 +31,8 @@ export class WorkflowConnector extends G {
 
     this._isSelected = false;
     this._connectorId = "";
+    this._src = null;
+    this._dest = null;
 
     svg.add(this);
   }
@@ -153,8 +158,6 @@ export class WorkflowConnector extends G {
     }
   }
 
-  //public is default behaviour
-
   public redraw(
     start: Point,
     end: Point,
@@ -211,6 +214,35 @@ export class WorkflowConnector extends G {
       return;
     }
     this._mainPath.stroke({ color: "lightgray" });
+  }
+
+  public setSrcAndDest(src: IOPort, dest: IOPort): void {
+    this._src = src;
+    this._dest = dest;
+    if (this._src && this._dest) {
+      const p1 = this._src.coordinate;
+      const p2 = this._dest.coordinate;
+      const startTopOffset = this._src.topOffset;
+      const startBottomOffset = this._src.bottomOffset;
+      const endTopOffset = this._dest.topOffset;
+      const endBottomOffset = this._dest.bottomOffset;
+      this.redraw(
+        p1,
+        p2,
+        startTopOffset,
+        startBottomOffset,
+        endTopOffset,
+        endBottomOffset
+      );
+    }
+  }
+
+  public toJson(): WorkflowConnectorJson {
+    return {
+      id: this._connectorId,
+      src: this._src ? this._src.toJson() : null,
+      dest: this._dest ? this._dest.toJson() : null,
+    };
   }
 
   get isSelected(): boolean {

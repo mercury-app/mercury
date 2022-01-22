@@ -43,12 +43,13 @@
     width: 100%;
     height: 100%;
     padding-left: calc(
-      (var(--default-button-width) / 2) + var(--common-spacing) - 1px
+      (var(--default-button-width) / 2) + var(--common-spacing) -
+        var(--common-border-width)
     );
 
     background-color: #fff;
 
-    border: 1px solid var(--main-border-color);
+    border: var(--common-border-width) solid var(--main-border-color);
     border-top-left-radius: var(--common-radius);
     border-bottom-left-radius: var(--common-radius);
     border-right: 0;
@@ -60,14 +61,19 @@
     height: 100%;
     width: 0;
 
-    left: calc((var(--default-button-width) / 2) + var(--common-spacing) - 1px);
+    left: calc(
+      (var(--default-button-width) / 2) + var(--common-spacing) -
+        var(--common-border-width)
+    );
 
-    border-left: 1px solid var(--main-border-color);
+    border-left: var(--common-border-width) solid var(--main-border-color);
   }
 
   #output-panel-switch {
     position: absolute;
-    left: calc((-1 * var(--default-button-width) / 2) - 1px);
+    left: calc(
+      (-1 * var(--default-button-width) / 2) - var(--common-border-width)
+    );
 
     width: var(--default-button-width);
     height: var(--default-button-height);

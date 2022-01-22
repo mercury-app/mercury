@@ -45,7 +45,7 @@
 
     background-color: #fff;
 
-    border: 1px solid var(--main-border-color);
+    border: var(--common-border-width) solid var(--main-border-color);
     border-top-right-radius: var(--common-radius);
     border-bottom-right-radius: var(--common-radius);
     border-left: 0;
@@ -58,15 +58,18 @@
     width: 0;
 
     right: calc(
-      (var(--default-button-width) / 2) + var(--common-spacing) - 1px
+      (var(--default-button-width) / 2) + var(--common-spacing) -
+        var(--common-border-width)
     );
 
-    border-left: 1px solid var(--main-border-color);
+    border-left: var(--common-border-width) solid var(--main-border-color);
   }
 
   #input-panel-switch {
     position: absolute;
-    right: calc((-1 * var(--default-button-width) / 2) - 1px);
+    right: calc(
+      (-1 * var(--default-button-width) / 2) - var(--common-border-width)
+    );
 
     width: var(--default-button-width);
     height: var(--default-button-height);

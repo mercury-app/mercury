@@ -1,5 +1,6 @@
 import { Runner, Box } from "@svgdotjs/svg.js";
 import "@svgdotjs/svg.draggable.js";
+import { IOPortType } from "./types";
 
 export interface Point {
   x: number;
@@ -65,4 +66,36 @@ export interface WorkflowNodeAttributes extends Object {
   };
   input: Array<string>;
   output: Array<string>;
+}
+
+export interface WorkflowCanvasJson extends Object {
+  nodes: Array<WorkflowNodeJson>;
+  connectors: Array<WorkflowConnectorJson>;
+  window: {
+    scroll_position: {
+      left: number;
+      top: number;
+    };
+  };
+}
+
+export interface WorkflowNodeJson extends Object {
+  position: Point;
+  input_ports: Array<IOPortJson>;
+  output_ports: Array<IOPortJson>;
+  title: string;
+  id: string;
+  attributes: WorkflowNodeAttributes;
+}
+
+export interface WorkflowConnectorJson extends Object {
+  id: string;
+  src: IOPortJson;
+  dest: IOPortJson;
+}
+
+export interface IOPortJson extends Object {
+  node_id: string;
+  port_type: IOPortType;
+  port_name: string;
 }
